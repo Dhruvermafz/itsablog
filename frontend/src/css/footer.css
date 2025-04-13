@@ -1,0 +1,17 @@
+/* Footer Styles */
+.footer {
+    background: #e6ebef;
+    padding: 20px 0;
+    width: 100%;
+    text-align: center;
+}
+
+.footer .copyright {
+    font-size: 13px;
+    font-weight: 300;
+    float: left;
+}
+
+.footer img {
+    float: right;
+}
