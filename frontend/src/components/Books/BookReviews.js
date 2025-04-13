@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { Spin, Alert, List } from "antd";
-import "../../css/book.css"; // Import the CSS file with improved classnames
+import { Spin, Alert, List, Typography } from "antd";
+
+const { Title, Text } = Typography;
 
 function BookReviews() {
   const [newReleases, setNewReleases] = useState([]);
@@ -44,30 +45,44 @@ function BookReviews() {
   }, []);
 
   return (
-    <div className="book-reviews-container">
+    <div className="book-reviews-container" style={{ padding: "20px" }}>
       {loading && (
-        <div className="spinner-container">
+        <div className="spinner-container" style={{ textAlign: "center" }}>
           <Spin size="large" />
         </div>
       )}
-      {error && <Alert message={`Error: ${error.message}`} type="error" />}
+      {error && (
+        <Alert
+          message={`Error: ${error.message}`}
+          type="error"
+          showIcon
+          style={{ marginBottom: "20px" }}
+        />
+      )}
       {newReleases.length > 0 && (
         <List
           className="book-reviews-list"
+          itemLayout="horizontal"
           dataSource={newReleases}
           renderItem={(book, index) => (
-            <List.Item className="book-item" key={index}>
-              <h3 className="book-item-title">
-                <a
-                  className="book-item-link"
-                  href={book.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  {book.title}
-                </a>
-              </h3>
-              <p className="book-item-rating">Rating: {book.rating}</p>
+            <List.Item key={index}>
+              <List.Item.Meta
+                title={
+                  <a
+                    href={book.link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: "18px", fontWeight: "bold" }}
+                  >
+                    {book.title}
+                  </a>
+                }
+                description={
+                  <>
+                    <Text>Rating: {book.rating}</Text>
+                  </>
+                }
+              />
             </List.Item>
           )}
         />

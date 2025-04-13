@@ -1,26 +1,16 @@
-import { useTheme } from "@emotion/react";
-import {
-  Avatar,
-  Button,
-  Card,
-  Divider,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import React, { useEffect, useState } from "react";
-import { AiFillEdit } from "react-icons/ai";
+import { Avatar, Button, Card, Divider, Typography, Space, Spin } from "antd";
+import { EditOutlined } from "@ant-design/icons";
 import { isLoggedIn } from "../../helpers/authHelper";
 import ContentUpdateEditor from "../Content/ContentUpdateEditor";
-import Loading from "../Home/Loading";
 import UserAvatar from "../UserModal/UserAvatar";
 import HorizontalStack from "../util/HorizontalStack";
+
+const { Text, Title, Paragraph } = Typography;
 
 const Profile = (props) => {
   const [user, setUser] = useState(null);
   const currentUser = isLoggedIn();
-  const theme = useTheme();
-  const iconColor = theme.palette.primary.main;
 
   useEffect(() => {
     if (props.profile) {
@@ -29,62 +19,60 @@ const Profile = (props) => {
   }, [props.profile]);
 
   return (
-    <Card>
+    <Card style={{ textAlign: "center", padding: "24px" }}>
       {user ? (
-        <Stack alignItems="center" spacing={2}>
-          <Box my={1}>
-            <UserAvatar width={150} height={150} username={user.username} />
-          </Box>
+        <Space
+          direction="vertical"
+          size="middle"
+          style={{ width: "100%", alignItems: "center" }}
+        >
+          <UserAvatar width={150} height={150} username={user.username} />
 
-          <Typography variant="h5">{user.username}</Typography>
+          <Title level={4}>{user.username}</Title>
 
           {props.editing ? (
-            <Box>
-              <ContentUpdateEditor
-                handleSubmit={props.handleSubmit}
-                originalContent={user.biography}
-                validate={props.validate}
-              />
-            </Box>
+            <ContentUpdateEditor
+              handleSubmit={props.handleSubmit}
+              originalContent={user.biography}
+              validate={props.validate}
+            />
           ) : user.biography ? (
-            <Typography textAlign="center" variant="p">
-              <b>Bio: </b>
-              {user.biography}
-            </Typography>
+            <Paragraph>
+              <Text strong>Bio:</Text> {user.biography}
+            </Paragraph>
           ) : (
-            <Typography variant="p">
-              <i>No bio yet</i>
-            </Typography>
+            <Paragraph italic>No bio yet</Paragraph>
           )}
 
           {currentUser && user._id === currentUser.userId && (
-            <Box>
-              <Button
-                startIcon={<AiFillEdit color={iconColor} />}
-                onClick={props.handleEditing}
-              >
-                {props.editing ? <>Cancel</> : <>Edit bio</>}
-              </Button>
-            </Box>
+            <Button
+              icon={<EditOutlined />}
+              onClick={props.handleEditing}
+              type="primary"
+            >
+              {props.editing ? "Cancel" : "Edit bio"}
+            </Button>
           )}
 
           {currentUser && user._id !== currentUser.userId && (
-            <Button variant="outlined" onClick={props.handleMessage}>
+            <Button type="default" onClick={props.handleMessage}>
               Message
             </Button>
           )}
 
+          <Divider />
+
           <HorizontalStack>
-            <Typography color="text.secondary">
-              Likes <b>{props.profile.posts.likeCount}</b>
-            </Typography>
-            <Typography color="text.secondary">
-              Posts <b>{props.profile.posts.count}</b>
-            </Typography>
+            <Text type="secondary">
+              Likes <Text strong>{props.profile.posts.likeCount}</Text>
+            </Text>
+            <Text type="secondary">
+              Posts <Text strong>{props.profile.posts.count}</Text>
+            </Text>
           </HorizontalStack>
-        </Stack>
+        </Space>
       ) : (
-        <Loading label="Loading profile" />
+        <Spin tip="Loading profile..." />
       )}
     </Card>
   );

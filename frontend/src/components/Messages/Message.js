@@ -1,12 +1,13 @@
-import { Avatar, Card, useTheme } from "@mui/material";
 import React from "react";
-import UserAvatar from "../UserModal/UserAvatar";
+import { Avatar, Card, Typography } from "antd";
 import HorizontalStack from "../util/HorizontalStack";
+import UserAvatar from "../UserModal/UserAvatar"; // Assuming this is a custom component, we will keep it
+
+const { Text } = Typography;
 
 const Message = (props) => {
   const username = props.conservant.username;
   const message = props.message;
-  const theme = useTheme();
 
   let styles = {};
   if (message.direction === "to") {
@@ -15,14 +16,14 @@ const Message = (props) => {
     };
   } else if (message.direction === "from") {
     styles = {
-      messageColor: theme.palette.grey["100"],
+      messageColor: "#f0f0f0", // Ant Design's light gray background color
       justifyContent: "flex-end",
     };
   }
 
   return (
     <HorizontalStack
-      sx={{ paddingY: 1, width: "100%" }}
+      style={{ paddingY: 8, width: "100%" }}
       spacing={2}
       justifyContent={styles.justifyContent}
       alignItems="flex-end"
@@ -32,16 +33,16 @@ const Message = (props) => {
       )}
 
       <Card
-        sx={{
-          borderRadius: "25px",
+        style={{
+          borderRadius: 25,
           backgroundColor: styles.messageColor,
-          borderWidth: "1px",
-          paddingY: "12px",
+          borderWidth: 1,
+          paddingY: 12,
           maxWidth: "70%",
-          paddingX: 2,
+          paddingX: 16,
         }}
       >
-        {message.content}
+        <Text>{message.content}</Text>
       </Card>
     </HorizontalStack>
   );

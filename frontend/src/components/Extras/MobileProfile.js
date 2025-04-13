@@ -1,27 +1,15 @@
-import { useTheme } from "@emotion/react";
-import {
-  Avatar,
-  Button,
-  Card,
-  Divider,
-  IconButton,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import React, { useEffect, useState } from "react";
+import { Avatar, Button, Card, Col, Divider, Row, Typography } from "antd";
 import { AiFillEdit } from "react-icons/ai";
 import { MdCancel } from "react-icons/md";
 import { isLoggedIn } from "../../helpers/authHelper";
 import ContentUpdateEditor from "../Content/ContentUpdateEditor";
 import UserAvatar from "../UserModal/UserAvatar";
-import HorizontalStack from "../util/HorizontalStack";
+import HorizontalStack from "../util/HorizontalStack"; // Keep this if you prefer it, or use Ant Design's Row/Col
 
 const MobileProfile = (props) => {
   const [user, setUser] = useState(null);
   const currentUser = isLoggedIn();
-  const theme = useTheme();
-  const iconColor = theme.palette.primary.main;
 
   useEffect(() => {
     if (props.profile) {
@@ -30,80 +18,83 @@ const MobileProfile = (props) => {
   }, [props.profile]);
 
   return (
-    <Card sx={{ display: { sm: "block", md: "none" }, mb: 2 }}>
+    <Card style={{ display: "block", marginBottom: "16px" }}>
       {user ? (
-        <Stack spacing={2}>
-          <HorizontalStack spacing={2} justifyContent="space-between">
-            <HorizontalStack>
-              <UserAvatar width={50} height={50} username={user.username} />
-              <Typography variant="h6" textOverflow="ellipses">
-                {user.username}
-              </Typography>
-            </HorizontalStack>
-
-            <Box sx={{ display: { xs: "none", sm: "block" } }}>
-              <HorizontalStack spacing={3}>
-                <Stack alignItems="center">
-                  <Typography>Likes</Typography>
-                  <Typography color="text.secondary">
-                    <b>{props.profile.posts.likeCount}</b>
-                  </Typography>
-                </Stack>
-                <Stack alignItems="center">
-                  <Typography color="text.secondary">Posts</Typography>
-                  <Typography color="text.secondary">
-                    <b>{props.profile.posts.count}</b>
-                  </Typography>
-                </Stack>
+        <div>
+          <Row justify="space-between">
+            <Col>
+              <HorizontalStack spacing={2}>
+                <UserAvatar width={50} height={50} username={user.username} />
+                <Typography.Text>{user.username}</Typography.Text>
               </HorizontalStack>
-            </Box>
-          </HorizontalStack>
+            </Col>
+
+            <Col>
+              <Row gutter={16}>
+                <Col>
+                  <Typography.Text>Likes</Typography.Text>
+                  <Typography.Text type="secondary">
+                    <b>{props.profile.posts.likeCount}</b>
+                  </Typography.Text>
+                </Col>
+                <Col>
+                  <Typography.Text type="secondary">Posts</Typography.Text>
+                  <Typography.Text type="secondary">
+                    <b>{props.profile.posts.count}</b>
+                  </Typography.Text>
+                </Col>
+              </Row>
+            </Col>
+          </Row>
+
           <Divider />
-          <Box>
+
+          <div>
             {currentUser && user._id === currentUser.userId && (
-              <IconButton onClick={props.handleEditing} sx={{ mr: 1 }}>
-                {props.editing ? (
-                  <MdCancel color={iconColor} />
-                ) : (
-                  <AiFillEdit color={iconColor} />
-                )}
-              </IconButton>
+              <Button
+                onClick={props.handleEditing}
+                icon={props.editing ? <MdCancel /> : <AiFillEdit />}
+                style={{ marginRight: "8px" }}
+              />
             )}
+
             {user.biography ? (
               <>
-                <Typography textAlign="center" variant="p">
+                <Typography.Paragraph>
                   <b>Bio: </b>
                   {user.biography}
-                </Typography>
+                </Typography.Paragraph>
               </>
             ) : (
-              <Typography variant="p">
+              <Typography.Text>
                 <i>
                   No bio yet{" "}
                   {currentUser && user._id === currentUser.userId && (
                     <span>- Tap on the edit icon to add your bio</span>
                   )}
                 </i>
-              </Typography>
+              </Typography.Text>
             )}
+
             {currentUser && user._id !== currentUser.userId && (
-              <Box sx={{ mt: 2 }}>
-                <Button variant="outlined" onClick={props.handleMessage}>
+              <div style={{ marginTop: "16px" }}>
+                <Button type="outline" onClick={props.handleMessage}>
                   Message
                 </Button>
-              </Box>
+              </div>
             )}
+
             {props.editing && (
-              <Box>
+              <div>
                 <ContentUpdateEditor
                   handleSubmit={props.handleSubmit}
                   originalContent={user.biography}
                   validate={props.validate}
                 />
-              </Box>
+              </div>
             )}
-          </Box>
-        </Stack>
+          </div>
+        </div>
       ) : (
         <>Loading...</>
       )}

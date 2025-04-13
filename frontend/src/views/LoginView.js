@@ -1,8 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api/users";
-import { Input, Button, TextField } from "@mui/material";
-import { PersonOutline, LockOutlined } from "@mui/icons-material";
+import { Input, Button, Form, Typography, Alert } from "antd";
+import { PersonOutline, LockOutlined } from "@mui/icons-material"; // Optional: icons can be used if needed
 import ErrorAlert from "../components/Extras/ErrorAlert";
 import { loginUser } from "../helpers/authHelper";
 import Copyright from "../components/Home/Footer";
@@ -10,6 +10,8 @@ import Banner from "../components/Banner";
 import { icon } from "../static";
 import Layout from "../components/Layout/Layout";
 import TransitionOptions from "../components/util/TransitionOptions";
+
+const { Title, Text } = Typography;
 
 const LoginView = () => {
   const [allowTrial] = useState(true);
@@ -28,10 +30,8 @@ const LoginView = () => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const data = await login(formData);
+  const handleSubmit = async (values) => {
+    const data = await login(values);
     if (data.error) {
       setServerError(data.error);
       setTransitionOption("failure");
@@ -61,43 +61,65 @@ const LoginView = () => {
             </div>
           )}
           <div className="portal">
-            <h2 className="portal-head">Login</h2>
+            <Title level={2} className="portal-head">
+              Login
+            </Title>
 
-            <form onSubmit={handleSubmit}>
-              <TextField
+            <Form
+              name="loginForm"
+              initialValues={{ remember: true }}
+              onFinish={handleSubmit}
+            >
+              <Form.Item
                 label="Email Address"
                 name="email"
-                variant="outlined"
-                fullWidth
-                size="small"
-                value={formData.email}
-                onChange={handleChange}
-                required
-                type="email"
-                margin="normal"
-              />
-              <TextField
+                rules={[
+                  {
+                    required: true,
+                    type: "email",
+                    message: "Please enter a valid email address!",
+                  },
+                ]}
+              >
+                <Input
+                  name="email"
+                  size="large"
+                  value={formData.email}
+                  onChange={handleChange}
+                  placeholder="Enter your email"
+                />
+              </Form.Item>
+
+              <Form.Item
                 label="Password"
                 name="password"
-                variant="outlined"
-                fullWidth
-                size="small"
-                value={formData.password}
-                onChange={handleChange}
-                required
-                type="password"
-                margin="normal"
-              />
-              <ErrorAlert error={serverError} />
-              <Button
-                type="submit"
-                variant="contained"
-                color="primary"
-                className="portal-submit"
+                rules={[
+                  { required: true, message: "Please enter your password!" },
+                ]}
               >
-                Login
-              </Button>
-            </form>
+                <Input.Password
+                  name="password"
+                  size="large"
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                />
+              </Form.Item>
+
+              <ErrorAlert error={serverError} />
+
+              <Form.Item>
+                <Button
+                  type="primary"
+                  htmlType="submit"
+                  className="portal-submit"
+                  block
+                >
+                  Login
+                </Button>
+              </Form.Item>
+            </Form>
+
             <Link to="/signup" className="portal-link">
               Create an account?
             </Link>

@@ -1,17 +1,24 @@
-import { Card, Tab, Tabs } from "@mui/material";
 import React from "react";
+import { Card, Tabs } from "antd";
+
+const { TabPane } = Tabs;
 
 const ProfileTabs = (props) => {
-  const handleChange = (e, newValue) => {
-    props.setTab(newValue);
+  const handleChange = (key) => {
+    props.setTab(key);
   };
 
   return (
-    <Card sx={{ padding: 0 }}>
-      <Tabs value={props.tab} onChange={handleChange} variant="scrollable">
-        <Tab label="Posts" value="posts" />
-        <Tab label="Liked" value="liked" />
-        <Tab label="Comments" value="comments" />
+    <Card style={{ padding: 0 }}>
+      <Tabs
+        activeKey={props.tab}
+        onChange={handleChange}
+        type="line"
+        tabBarGutter={32}
+      >
+        <TabPane tab="Posts" key="posts" />
+        <TabPane tab="Liked" key="liked" />
+        <TabPane tab="Comments" key="comments" />
       </Tabs>
     </Card>
   );

@@ -1,39 +1,44 @@
 import React from "react";
+import { Row, Col, Typography, Image, Space } from "antd";
 import logo from "../static/img/icon.png";
 import gif from "../static/img/resources/error500.gif";
 import "../css/error500.css";
+
+const { Title, Paragraph } = Typography;
+
 const Error500 = () => {
   return (
     <div className="www-layout">
       <section>
-        <div className="gap no-gap ">
-          <div className="eror eror500">
-            <div className="container">
-              <div className="row">
-                <div className="col-lg-2 col-md-3 col-sm-3">
+        <Row justify="center" align="middle" style={{ minHeight: "100vh" }}>
+          <Col xs={24} sm={18} md={16} lg={12} xl={8}>
+            <div className="error-page500">
+              <Row justify="center">
+                <Col>
                   <div className="big-font">
-                    <span>500</span>
+                    <Title
+                      level={1}
+                      style={{ fontSize: "100px", color: "#ff4d4f" }}
+                    >
+                      500
+                    </Title>
                   </div>
-                </div>
-                <div className="col-lg-10 col-md-9 col-sm-9">
-                  <div className="error-page500">
-                    <div className="error-meta">
-                      <a href="#" title="">
-                        <img src={logo} alt="" />
-                      </a>
-                      <h1>Unexpeted Internal Server Error 500</h1>
-                      <p>
-                        the server has been deserted for a while please be
-                        patient or try again later.
-                      </p>
-                      <img src={gif} alt="" />
-                    </div>
-                  </div>
-                </div>
+                </Col>
+              </Row>
+              <div className="error-meta" style={{ textAlign: "center" }}>
+                <a href="#" title="">
+                  <Image width={100} src={logo} alt="Logo" />
+                </a>
+                <Title level={3}>Unexpected Internal Server Error 500</Title>
+                <Paragraph>
+                  The server has been deserted for a while. Please be patient or
+                  try again later.
+                </Paragraph>
+                <Image width={400} src={gif} alt="Error Image" />
               </div>
             </div>
-          </div>
-        </div>
+          </Col>
+        </Row>
       </section>
     </div>
   );

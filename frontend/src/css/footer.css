@@ -1,17 +1,13 @@
-/* Footer Styles */
 .footer {
-    background: #e6ebef;
-    padding: 20px 0;
-    width: 100%;
-    text-align: center;
+  background-color: #f0f2f5;
+  padding: 20px 0;
+  text-align: center;
+  border-top: 1px solid #e8e8e8;
+  margin-top: 50px;
 }
 
-.footer .copyright {
-    font-size: 13px;
-    font-weight: 300;
-    float: left;
-}
-
-.footer img {
-    float: right;
+.footer-content {
+  max-width: 1000px;
+  margin: 0 auto;
+  padding: 0 16px;
 }

@@ -1,13 +1,21 @@
 import React from "react";
-import { Spin, Space, Typography } from "antd";
+import { Progress, Space, Typography } from "antd";
 import PropTypes from "prop-types";
 
 const Loading = ({ label, size, showLabel }) => {
+  const progressSize = size === "small" ? 30 : size === "large" ? 80 : 50; // Size logic for different progress sizes
+
   return (
     <Space direction="vertical" align="center">
-      <Spin size={size} style={{ margin: "16px 0" }} />
+      <Progress
+        type="circle"
+        percent={75} // You can adjust the percent to simulate loading (e.g., 75% means it's still loading)
+        width={progressSize}
+        showInfo={false} // Hide percentage if you don't need it
+        strokeWidth={8} // Adjust stroke width
+      />
       {showLabel && (
-        <Typography.Text type="secondary" style={{ marginBottom: "24px" }}>
+        <Typography.Text type="secondary" style={{ marginTop: "16px" }}>
           {label || "Loading..."}
         </Typography.Text>
       )}

@@ -1,26 +1,24 @@
-import { createTheme } from "@mui/material";
+// theme.js
+import { theme } from "antd";
 
-const theme = createTheme({
+export const getAntdTheme = (darkmode = false) => ({
+  algorithm: darkmode ? theme.darkAlgorithm : theme.defaultAlgorithm,
+  token: {
+    borderRadius: 8,
+    colorPrimary: "#1677ff",
+    fontFamily: "'Inter', sans-serif",
+    // Add other global tokens if needed
+  },
   components: {
-    MuiCard: {
-      defaultProps: {
-        variant: "outlined",
-      },
-      styleOverrides: {
-        root: ({ ownerState, theme }) => ({
-          ...{
-            padding: theme.spacing(2),
-            borderWidth: "1.5px",
-          },
-        }),
-      },
+    Card: {
+      borderRadius: 10,
+      padding: 16,
+      boxShadow: darkmode
+        ? "0 1px 4px rgba(255, 255, 255, 0.05)"
+        : "0 1px 4px rgba(0, 0, 0, 0.1)",
     },
-    MuiContainer: {
-      defaultProps: {
-        maxWidth: "md",
-      },
+    Layout: {
+      headerBg: darkmode ? "#1f1f1f" : "#ffffff",
     },
   },
 });
-
-export default theme;

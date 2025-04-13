@@ -1,6 +1,5 @@
-import { Card, Grid } from "@mui/material";
-import { Box, Container } from "@mui/system";
 import React, { useEffect, useState } from "react";
+import { Layout, Row, Col, Card } from "antd";
 import Messages from "../components/Messages/Messages";
 import Navbar from "../components/Home/Navbar";
 import UserMessengerEntries from "../components/UserModal/UserMessengerEntries";
@@ -8,23 +7,23 @@ import { getConversations } from "../api/messages";
 import { isLoggedIn } from "../helpers/authHelper";
 import { useLocation } from "react-router-dom";
 
+const { Content } = Layout;
+
 const MessengerView = () => {
   const [conservant, setConservant] = useState(null);
   const [conversations, setConversations] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [width, setWindowWidth] = useState(0);
+  const [width, setWindowWidth] = useState(window.innerWidth);
   const mobile = width < 800;
+
   const user = isLoggedIn();
   const { state } = useLocation();
   const newConservant = state && state.user;
 
   const getConversation = (conversations, conservantId) => {
-    for (let i = 0; i < conversations.length; i++) {
-      const conversation = conversations[i];
-      if (conversation.recipient._id === conservantId) {
-        return conversation;
-      }
-    }
+    return conversations.find(
+      (conversation) => conversation.recipient._id === conservantId
+    );
   };
 
   const fetchConversations = async () => {
@@ -50,36 +49,28 @@ const MessengerView = () => {
   }, []);
 
   useEffect(() => {
-    updateDimensions();
+    const updateDimensions = () => {
+      setWindowWidth(window.innerWidth);
+    };
 
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
-  const updateDimensions = () => {
-    const width = window.innerWidth;
-    setWindowWidth(width);
-  };
-
   return (
-    <Container>
+    <Layout style={{ minHeight: "100vh" }}>
       <Navbar />
-      <Box>
-        <Card sx={{ padding: 0 }}>
-          <Grid
-            container
-            sx={{ height: "calc(100vh - 110px)" }}
-            alignItems="stretch"
-          >
+      <Content style={{ padding: "16px" }}>
+        <Card bodyStyle={{ padding: 0 }}>
+          <Row style={{ height: "calc(100vh - 110px)" }}>
             {!mobile ? (
               <>
-                <Grid
-                  item
-                  xs={5}
-                  sx={{
-                    borderRight: 1,
-                    borderColor: "divider",
+                <Col
+                  span={8}
+                  style={{
+                    borderRight: "1px solid #f0f0f0",
                     height: "100%",
+                    overflowY: "auto",
                   }}
                 >
                   <UserMessengerEntries
@@ -88,9 +79,8 @@ const MessengerView = () => {
                     setConservant={setConservant}
                     loading={loading}
                   />
-                </Grid>
-
-                <Grid item xs={7} sx={{ height: "100%" }}>
+                </Col>
+                <Col span={16} style={{ height: "100%", overflowY: "auto" }}>
                   <Messages
                     conservant={conservant}
                     conversations={conversations}
@@ -98,36 +88,19 @@ const MessengerView = () => {
                     setConversations={setConversations}
                     getConversation={getConversation}
                   />
-                </Grid>
+                </Col>
               </>
             ) : !conservant ? (
-              <Grid
-                item
-                xs={12}
-                sx={{
-                  borderRight: 1,
-                  borderColor: "divider",
-                  height: "100%",
-                }}
-              >
+              <Col span={24} style={{ height: "100%", overflowY: "auto" }}>
                 <UserMessengerEntries
                   conservant={conservant}
                   conversations={conversations}
                   setConservant={setConservant}
                   loading={loading}
                 />
-                <Box sx={{ display: "none" }}>
-                  <Messages
-                    conservant={conservant}
-                    conversations={conversations}
-                    setConservant={setConservant}
-                    setConversations={setConversations}
-                    getConversation={getConversation}
-                  />
-                </Box>
-              </Grid>
+              </Col>
             ) : (
-              <Grid item xs={12} sx={{ height: "100%" }}>
+              <Col span={24} style={{ height: "100%", overflowY: "auto" }}>
                 <Messages
                   conservant={conservant}
                   conversations={conversations}
@@ -136,12 +109,12 @@ const MessengerView = () => {
                   getConversation={getConversation}
                   mobile
                 />
-              </Grid>
+              </Col>
             )}
-          </Grid>
+          </Row>
         </Card>
-      </Box>
-    </Container>
+      </Content>
+    </Layout>
   );
 };
 

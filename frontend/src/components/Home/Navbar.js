@@ -1,53 +1,29 @@
 import React, { useEffect, useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { NavLink, useNavigate } from "react-router-dom";
 import { AiFillHome, AiFillMessage, AiOutlineSearch } from "react-icons/ai";
-import {
-  Box,
-  Popover,
-  Stack,
-  TextField,
-  Typography,
-  Button,
-  IconButton,
-} from "@mui/material";
+import { Input, Typography, Button, Popover, Row, Col } from "antd";
 import UserAvatar from "../UserModal/UserAvatar";
 import { routes } from "../../router/routes";
 import NavLinks from "./NavLinks";
 import "../../css/navbar.css";
-import { useTheme } from "@emotion/react";
 import icon from "../../static/img/icon.png";
 import { isLoggedIn } from "../../helpers/authHelper";
+
 const Navbar = () => {
   const navigate = useNavigate();
-  const theme = useTheme();
   const user = isLoggedIn();
-  const username = user && isLoggedIn().username;
   const [search, setSearch] = useState("");
   const [searchIcon, setSearchIcon] = useState(false);
-  const [width, setWindowWidth] = useState(0);
-  const [avatarMenuAnchor, setAvatarMenuAnchor] = useState(null);
+  const [width, setWindowWidth] = useState(window.innerWidth);
 
   useEffect(() => {
-    updateDimensions();
+    const updateDimensions = () => setWindowWidth(window.innerWidth);
     window.addEventListener("resize", updateDimensions);
     return () => window.removeEventListener("resize", updateDimensions);
   }, []);
 
   const mobile = width < 500;
   const navbarWidth = width < 600;
-
-  const updateDimensions = () => {
-    const width = window.innerWidth;
-    setWindowWidth(width);
-  };
-
-  const handleAvatarClick = (e) => {
-    setAvatarMenuAnchor(e.currentTarget);
-  };
-
-  const handleAvatarMenuClose = () => {
-    setAvatarMenuAnchor(null);
-  };
 
   const handleChange = (e) => {
     setSearch(e.target.value);
@@ -64,103 +40,111 @@ const Navbar = () => {
 
   return (
     <header>
-      <Stack mb={2}>
-        <Stack
-          direction="row"
-          alignItems="center"
-          justifyContent="space-between"
-          pt={2}
-          pb={0}
-          spacing={!mobile ? 2 : 0}
+      <div style={{ marginBottom: 16 }}>
+        <Row
+          align="middle"
+          justify="space-between"
+          style={{ paddingTop: 16, paddingBottom: 0 }}
         >
-          <div className="banner">
-            <Typography
-              display={mobile ? "none" : "block"}
-              variant={navbarWidth ? "h6" : "h4"}
-              mr={1}
-              color={theme.palette.primary.main}
-            >
-              <Link to="/" color="inherit">
-                <img src={icon} alt={icon} />
-                <strong>ItsABlog</strong>
-              </Link>
-            </Typography>
-          </div>
+          <Col>
+            <div className="banner">
+              {!mobile && (
+                <Typography.Title
+                  level={navbarWidth ? 5 : 3}
+                  style={{ margin: 0 }}
+                >
+                  <NavLink
+                    to="/"
+                    style={{ textDecoration: "none", color: "inherit" }}
+                  >
+                    <img
+                      src={icon}
+                      alt="icon"
+                      style={{ height: 32, marginRight: 8 }}
+                    />
+                    <strong>ItsABlog</strong>
+                  </NavLink>
+                </Typography.Title>
+              )}
+            </div>
+          </Col>
 
-          {!navbarWidth && (
-            <Box component="form" onSubmit={handleSubmit}>
-              <TextField
-                size="small"
-                label="Search"
-                sx={{ flexGrow: 1, maxWidth: 300 }}
-                onChange={handleChange}
-                value={search}
+          <Col>
+            {!navbarWidth && (
+              <form onSubmit={handleSubmit} style={{ display: "inline-block" }}>
+                <Input
+                  size="middle"
+                  placeholder="Search"
+                  value={search}
+                  onChange={handleChange}
+                  style={{ maxWidth: 300 }}
+                />
+              </form>
+            )}
+          </Col>
+
+          <Col>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {mobile && (
+                <Button
+                  type="text"
+                  icon={<AiOutlineSearch />}
+                  onClick={handleSearchIcon}
+                />
+              )}
+
+              <Button
+                type="text"
+                icon={<AiFillHome />}
+                onClick={() => navigate("/")}
               />
-            </Box>
-          )}
 
-          <div>
-            {mobile && (
-              <IconButton onClick={handleSearchIcon}>
-                <AiOutlineSearch />
-              </IconButton>
-            )}
-
-            <IconButton component={Link} to={"/"}>
-              <AiFillHome />
-            </IconButton>
-
-            {user ? (
-              <>
-                <IconButton component={Link} to={`${routes.MESSANGER}`}>
-                  <AiFillMessage />
-                </IconButton>
-                <IconButton onClick={handleAvatarClick} sx={{ padding: 0 }}>
-                  <UserAvatar width={30} height={30} username={user.username} />
-                </IconButton>
-                <Popover
-                  open={Boolean(avatarMenuAnchor)}
-                  anchorEl={avatarMenuAnchor}
-                  onClose={handleAvatarMenuClose}
-                  anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
-                  transformOrigin={{ vertical: "top", horizontal: "right" }}
-                >
-                  <NavLinks />
-                </Popover>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="text"
-                  sx={{ minWidth: 80 }}
-                  href={`${routes.SIGNUP}`}
-                >
-                  Sign Up
-                </Button>
-                <Button
-                  variant="text"
-                  sx={{ minWidth: 65 }}
-                  href={`${routes.LOGIN}`}
-                >
-                  Login
-                </Button>
-              </>
-            )}
-          </div>
-        </Stack>
+              {user ? (
+                <>
+                  <Button
+                    type="text"
+                    icon={<AiFillMessage />}
+                    onClick={() => navigate(routes.MESSANGER)}
+                  />
+                  <Popover
+                    content={<NavLinks />}
+                    trigger="click"
+                    placement="bottomRight"
+                  >
+                    <div style={{ cursor: "pointer" }}>
+                      <UserAvatar
+                        width={30}
+                        height={30}
+                        username={user.username}
+                      />
+                    </div>
+                  </Popover>
+                </>
+              ) : (
+                <>
+                  <Button type="link" href={routes.SIGNUP}>
+                    Sign Up
+                  </Button>
+                  <Button type="link" href={routes.LOGIN}>
+                    Login
+                  </Button>
+                </>
+              )}
+            </div>
+          </Col>
+        </Row>
 
         {navbarWidth && searchIcon && (
-          <Box component="form" onSubmit={handleSubmit} mt={2}>
-            <TextField
-              size="small"
-              label="Search"
-              fullWidth
-              onChange={handleChange}
+          <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
+            <Input
+              size="middle"
+              placeholder="Search"
               value={search}
+              onChange={handleChange}
             />
-          </Box>
+          </form>
         )}
-      </Stack>
+      </div>
     </header>
   );
 };

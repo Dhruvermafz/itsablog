@@ -1,13 +1,15 @@
-import { Typography } from "@mui/material";
 import React from "react";
+import { Typography } from "antd";
 import ReactMarkdown from "react-markdown";
 import "./markdown.css";
+
+const { Paragraph } = Typography;
 
 const Markdown = ({ content }) => {
   const disallowed = ["Image"];
 
   return (
-    <Typography component="span">
+    <Paragraph>
       <ReactMarkdown
         className="markdown"
         style={{ "&p": { margin: 0 } }}
@@ -15,7 +17,7 @@ const Markdown = ({ content }) => {
         skipHtml
         children={content}
       />
-    </Typography>
+    </Paragraph>
   );
 };
 

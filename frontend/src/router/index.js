@@ -27,6 +27,7 @@ import PasswordReset from "../views/PasswordReset";
 import Error500 from "../views/Error500";
 import PrivacyView from "../views/PrivacyView";
 import EditPost from "../views/EditPostView";
+import Footer from "../components/Home/Footer";
 function Router() {
   return (
     <BrowserRouter>
@@ -73,7 +74,7 @@ function Router() {
         <Route path={routes.PASSWORD_RESET} element={<PasswordReset />} />
         <Route path={routes.FORGOT_PASSWORD} element={<ForgotPassword />} />
       </Routes>
-      <Copyright />
+      <Footer />
     </BrowserRouter>
   );
 }

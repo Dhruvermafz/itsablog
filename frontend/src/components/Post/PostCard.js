@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import "./postCard.css";
+
 import {
   Button,
   Card,

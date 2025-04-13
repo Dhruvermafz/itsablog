@@ -1,11 +1,13 @@
-import { Button, Card, Stack, TextField, Typography } from "@mui/material";
-import { Box } from "@mui/system";
 import React, { useState } from "react";
+import { Button, Card, Typography, Input, message } from "antd";
+import { Box } from "@mui/system";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { createComment } from "../../api/posts";
 import { isLoggedIn } from "../../helpers/authHelper";
 import ErrorAlert from "../Extras/ErrorAlert";
 import HorizontalStack from "../util/HorizontalStack";
+
+const { TextArea } = Input;
 
 const CommentEditor = ({ label, comment, addComment, setReplying }) => {
   const [formData, setFormData] = useState({
@@ -36,10 +38,12 @@ const CommentEditor = ({ label, comment, addComment, setReplying }) => {
 
     if (data.error) {
       setError(data.error);
+      message.error(data.error);
     } else {
-      formData.content = "";
+      setFormData({ content: "" });
       setReplying && setReplying(false);
       addComment(data);
+      message.success("Comment submitted successfully");
     }
   };
 
@@ -49,49 +53,46 @@ const CommentEditor = ({ label, comment, addComment, setReplying }) => {
 
   return (
     <Card>
-      <Stack spacing={2}>
+      <div style={{ marginBottom: "16px" }}>
         <HorizontalStack justifyContent="space-between">
-          <Typography variant="h5">
+          <Typography.Title level={5}>
             {comment ? <>Reply</> : <>Comment</>}
-          </Typography>
-          <Typography>
-            <a href="https://commonmark.org/help/" target="_blank">
+          </Typography.Title>
+          <Typography.Text>
+            <a
+              href="https://commonmark.org/help/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
               Markdown Help
             </a>
-          </Typography>
+          </Typography.Text>
         </HorizontalStack>
+      </div>
 
-        <Box component="form" onSubmit={handleSubmit}>
-          <TextField
-            multiline
-            fullWidth
-            label={label}
-            rows={5}
-            required
-            name="content"
-            sx={{
-              backgroundColor: "white",
-            }}
-            onChange={handleChange}
-            onFocus={handleFocus}
-            value={formData.content}
-          />
+      <form onSubmit={handleSubmit}>
+        <TextArea
+          name="content"
+          rows={5}
+          placeholder={label}
+          required
+          onChange={handleChange}
+          onFocus={handleFocus}
+          value={formData.content}
+          style={{ backgroundColor: "white", marginBottom: "16px" }}
+        />
 
-          <ErrorAlert error={error} sx={{ my: 4 }} />
-          <Button
-            variant="outlined"
-            type="submit"
-            fullWidth
-            disabled={loading}
-            sx={{
-              backgroundColor: "white",
-              mt: 2,
-            }}
-          >
-            {loading ? <div>Submitting</div> : <div>Submit</div>}
-          </Button>
-        </Box>
-      </Stack>
+        {error && <ErrorAlert error={error} />}
+        <Button
+          type="primary"
+          htmlType="submit"
+          block
+          loading={loading}
+          style={{ marginTop: "16px" }}
+        >
+          {loading ? "Submitting" : "Submit"}
+        </Button>
+      </form>
     </Card>
   );
 };

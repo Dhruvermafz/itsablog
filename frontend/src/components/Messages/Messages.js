@@ -1,16 +1,5 @@
-import {
-  Button,
-  Divider,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  OutlinedInput,
-  Stack,
-  Typography,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import React, { useEffect, useRef, useState } from "react";
+import { Button, Divider, Typography, Avatar, Row, Col } from "antd";
 import { AiFillBackward, AiFillCaretLeft, AiFillMessage } from "react-icons/ai";
 import { Link } from "react-router-dom";
 import { getMessages, sendMessage } from "../../api/messages";
@@ -19,7 +8,6 @@ import { socket } from "../../helpers/socketHelper";
 import Loading from "../Home/Loading";
 import Message from "./Message";
 import SendMessage from "./SendMessage";
-import UserAvatar from "../UserModal/UserAvatar";
 import HorizontalStack from "../util/HorizontalStack";
 
 const Messages = (props) => {
@@ -31,6 +19,7 @@ const Messages = (props) => {
   const conversationsRef = useRef(props.conversations);
   const conservantRef = useRef(props.conservant);
   const messagesRef = useRef(messages);
+
   useEffect(() => {
     conversationsRef.current = props.conversations;
     conservantRef.current = props.conservant;
@@ -174,17 +163,16 @@ const Messages = (props) => {
             sx={{ px: 2, height: "60px" }}
           >
             {props.mobile && (
-              <IconButton
+              <Button
+                type="text"
+                icon={<AiFillCaretLeft />}
                 onClick={() => props.setConservant(null)}
-                sx={{ padding: 0 }}
-              >
-                <AiFillCaretLeft />
-              </IconButton>
+              />
             )}
-            <UserAvatar
-              username={props.conservant.username}
-              height={30}
-              width={30}
+            <Avatar
+              src={props.conservant.avatarUrl}
+              size={30}
+              style={{ marginRight: 10 }}
             />
             <Typography>
               <Link to={"/" + props.conservant.username}>
@@ -193,13 +181,18 @@ const Messages = (props) => {
             </Typography>
           </HorizontalStack>
           <Divider />
-          <Box sx={{ height: "calc(100vh - 240px)" }}>
-            <Box sx={{ height: "100%" }}>
-              <Stack
-                sx={{ padding: 2, overflowY: "auto", maxHeight: "100%" }}
-                direction="column-reverse"
+          <Row style={{ height: "calc(100vh - 240px)" }}>
+            <Col span={24}>
+              <div ref={messagesEndRef} />
+              <div
+                style={{
+                  padding: 16,
+                  overflowY: "auto",
+                  maxHeight: "100%",
+                  display: "flex",
+                  flexDirection: "column-reverse",
+                }}
               >
-                <div ref={messagesEndRef} />
                 {messages.map((message, i) => (
                   <Message
                     conservant={props.conservant}
@@ -207,31 +200,37 @@ const Messages = (props) => {
                     key={i}
                   />
                 ))}
-              </Stack>
-            </Box>
-          </Box>
+              </div>
+            </Col>
+          </Row>
           <SendMessage onSendMessage={handleSendMessage} />
           {scrollToBottom()}
         </>
       ) : (
-        <Stack sx={{ height: "100%" }} justifyContent="center">
-          <Loading />
-        </Stack>
+        <Row style={{ height: "100%" }} justify="center">
+          <Col span={24}>
+            <Loading />
+          </Col>
+        </Row>
       )}
     </>
   ) : (
-    <Stack
-      sx={{ height: "100%" }}
-      justifyContent="center"
-      alignItems="center"
-      spacing={2}
+    <Row
+      style={{ height: "100%" }}
+      justify="center"
+      align="middle"
+      gutter={[0, 16]}
     >
-      <AiFillMessage size={80} />
-      <Typography variant="h5">ItsABlog Messenger</Typography>
-      <Typography color="text.secondary">
-        Privately message other users on ItsABlog.
-      </Typography>
-    </Stack>
+      <Col span={24}>
+        <AiFillMessage size={80} />
+      </Col>
+      <Col span={24}>
+        <Typography variant="h5">ItsABlog Messenger</Typography>
+        <Typography color="text.secondary">
+          Privately message other users on ItsABlog.
+        </Typography>
+      </Col>
+    </Row>
   );
 };
 

@@ -1,11 +1,12 @@
-import { Stack, Typography } from "@mui/material";
-import { Box } from "@mui/system";
 import React, { useEffect, useState } from "react";
+import { Card, Button, Typography, Spin, Row, Col } from "antd";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons"; // Import icons from @ant-design/icons
 import Comment from "./Comment";
-import Loading from "../Home/Loading";
 import { getComments } from "../../api/posts";
 import { useParams } from "react-router-dom";
 import CommentEditor from "./CommentEditor";
+
+const { Title, Text } = Typography;
 
 const Comments = () => {
   const [comments, setComments] = useState(null);
@@ -15,7 +16,9 @@ const Comments = () => {
   const params = useParams();
 
   const fetchComments = async () => {
+    setLoading(true);
     const data = await getComments(params);
+    setLoading(false);
     if (data.error) {
       setError("Failed to fetch comments");
     } else {
@@ -31,7 +34,6 @@ const Comments = () => {
     let commentToFind;
 
     const recurse = (comment, id) => {
-      console.log(comment);
       if (comment._id === id) {
         commentToFind = comment;
       } else {
@@ -84,7 +86,6 @@ const Comments = () => {
 
   const addComment = (comment) => {
     if (comment.parent) {
-      console.log(comment.parent);
       const parentComment = findComment(comment.parent);
       parentComment.children = [comment, ...parentComment.children];
 
@@ -95,15 +96,17 @@ const Comments = () => {
   };
 
   return comments ? (
-    <Stack spacing={2}>
-      <CommentEditor
-        addComment={addComment}
-        label="What are your thoughts on this post?"
-      />
+    <div>
+      <Card>
+        <CommentEditor
+          addComment={addComment}
+          label="What are your thoughts on this post?"
+        />
+      </Card>
 
       {comments.length > 0 ? (
-        <Box pb={4}>
-          {comments.map((comment, i) => (
+        <div style={{ paddingBottom: "16px" }}>
+          {comments.map((comment) => (
             <Comment
               addComment={addComment}
               removeComment={removeComment}
@@ -111,30 +114,52 @@ const Comments = () => {
               comment={comment}
               key={comment._id}
               depth={0}
-            />
+            >
+              {/* Edit and Delete Icons for each comment */}
+              <Button
+                icon={<EditOutlined />}
+                onClick={() => editComment(comment)} // Add edit functionality here
+                style={{ marginRight: 8 }}
+              >
+                Edit
+              </Button>
+              <Button
+                icon={<DeleteOutlined />}
+                onClick={() => removeComment(comment)} // Add remove functionality here
+                danger
+              >
+                Delete
+              </Button>
+            </Comment>
           ))}
-          {loading && <Loading />}
-        </Box>
+          {loading && (
+            <Row justify="center" style={{ marginTop: "16px" }}>
+              <Col>
+                <Spin tip="Loading comments..." />
+              </Col>
+            </Row>
+          )}
+        </div>
       ) : (
-        <Box
-          display="flex"
-          justifyContent="center"
-          textAlign="center"
-          paddingY={3}
+        <Row
+          justify="center"
+          style={{ paddingTop: "16px", paddingBottom: "16px" }}
         >
-          <Box>
-            <Typography variant="h5" color="text.secondary" gutterBottom>
+          <Col>
+            <Title level={5} style={{ color: "gray" }}>
               No comments yet...
-            </Typography>
-            <Typography variant="body" color="text.secondary">
-              Be the first one to comment!
-            </Typography>
-          </Box>
-        </Box>
+            </Title>
+            <Text style={{ color: "gray" }}>Be the first one to comment!</Text>
+          </Col>
+        </Row>
       )}
-    </Stack>
+    </div>
   ) : (
-    <Loading label="Loading comments" />
+    <Row justify="center" style={{ marginTop: "16px" }}>
+      <Col>
+        <Spin tip="Loading comments..." />
+      </Col>
+    </Row>
   );
 };
 

@@ -1,10 +1,11 @@
-import { Button, Card, Stack, Typography } from "@mui/material";
 import React, { useEffect, useState } from "react";
+import { Button, Card, Typography, Row, Col, Spin, Select } from "antd";
 import { getUserComments } from "../../api/posts";
 import { isLoggedIn } from "../../helpers/authHelper";
 import Comment from "./Comment";
 import Loading from "../Home/Loading";
-import SortBySelect from "../Content/SortBySelect";
+
+const { Option } = Select;
 
 const CommentBrowser = (props) => {
   const [comments, setComments] = useState([]);
@@ -31,17 +32,10 @@ const CommentBrowser = (props) => {
     fetchComments();
   }, [sortBy]);
 
-  const handleSortBy = (e) => {
-    const newSortName = e.target.value;
-    let newSortBy;
-
-    Object.keys(sorts).forEach((sortName) => {
-      if (sorts[sortName] === newSortName) newSortBy = sortName;
-    });
-
+  const handleSortBy = (value) => {
     setComments([]);
     setPage(0);
-    setSortBy(newSortBy);
+    setSortBy(value);
   };
 
   const handleBackToTop = () => {
@@ -57,12 +51,23 @@ const CommentBrowser = (props) => {
   };
 
   return (
-    <Stack spacing={2}>
+    <div>
       <Card>
-        <SortBySelect onSortBy={handleSortBy} sortBy={sortBy} sorts={sorts} />
+        <Select
+          defaultValue={sortBy}
+          style={{ width: 200 }}
+          onChange={handleSortBy}
+        >
+          {Object.keys(sorts).map((key) => (
+            <Option key={key} value={key}>
+              {sorts[key]}
+            </Option>
+          ))}
+        </Select>
       </Card>
+
       {loading ? (
-        <Loading />
+        <Spin size="large" />
       ) : (
         <>
           {comments &&
@@ -70,21 +75,25 @@ const CommentBrowser = (props) => {
               <Comment key={comment._id} comment={comment} profile />
             ))}
 
-          <Stack py={5} alignItems="center">
-            <Typography variant="h5" color="text.secondary" gutterBottom>
-              {comments.length > 0 ? (
-                <>All comments have been viewed</>
-              ) : (
-                <>No comments available</>
-              )}
-            </Typography>
-            <Button variant="text" size="small" onClick={handleBackToTop}>
-              Back to top
-            </Button>
-          </Stack>
+          <Row justify="center" style={{ padding: "20px 0" }}>
+            <Col>
+              <Typography.Text>
+                {comments.length > 0 ? (
+                  <>All comments have been viewed</>
+                ) : (
+                  <>No comments available</>
+                )}
+              </Typography.Text>
+            </Col>
+            <Col>
+              <Button type="link" onClick={handleBackToTop}>
+                Back to top
+              </Button>
+            </Col>
+          </Row>
         </>
       )}
-    </Stack>
+    </div>
   );
 };
 

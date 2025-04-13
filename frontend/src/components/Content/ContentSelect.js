@@ -1,21 +1,23 @@
-import { MenuItem, Select, Typography } from "@mui/material";
 import React, { useState } from "react";
+import { Select, Typography, Space } from "antd";
 import HorizontalStack from "../util/HorizontalStack";
+
+const { Option } = Select;
 
 const ContentSelect = () => {
   const [content, setContent] = useState("post");
 
   return (
     <HorizontalStack spacing={1}>
-      <Typography>Content:</Typography>
+      <Typography.Text>Content:</Typography.Text>
       <Select
         size="small"
         value={content}
-        sx={{ minWidth: 150 }}
-        onChange={(e) => setContent(e.target.value)}
+        style={{ minWidth: 150 }}
+        onChange={(value) => setContent(value)}
       >
-        <MenuItem value={"post"}>Posts</MenuItem>
-        <MenuItem value={"comment"}>Comments</MenuItem>
+        <Option value="post">Posts</Option>
+        <Option value="comment">Comments</Option>
       </Select>
     </HorizontalStack>
   );

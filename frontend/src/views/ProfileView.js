@@ -1,28 +1,28 @@
-import { Card, Container, Stack, Tab, Tabs } from "@mui/material";
 import React, { useEffect, useState } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
+import { Layout, Row, Col, Tabs, Space, Spin, Alert } from "antd";
 import { getUser, updateUser } from "../api/users";
 import { isLoggedIn } from "../helpers/authHelper";
+
 import CommentBrowser from "../components/Comments/CommentBrowser";
-import ErrorAlert from "../components/Extras/ErrorAlert";
 import FindUsers from "../components/Extras/FindUsers";
 import Footer from "../components/Home/NavLinks";
 import GoBack from "../components/Extras/GoBack";
-import GridLayout from "../components/Extras/GridLayout";
-import Loading from "../components/Home/Loading";
 import MobileProfile from "../components/Extras/MobileProfile";
 import Navbar from "../components/Home/Navbar";
 import PostBrowser from "../components/Post/PostBrowser";
 import Profile from "../components/Profile/Profile";
-import ProfileTabs from "../components/Profile/ProfileTabs";
+
+const { Content } = Layout;
+const { TabPane } = Tabs;
 
 const ProfileView = () => {
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
   const [editing, setEditing] = useState(false);
   const [tab, setTab] = useState("posts");
-  const user = isLoggedIn();
   const [error, setError] = useState("");
+  const user = isLoggedIn();
   const params = useParams();
   const navigate = useNavigate();
   const location = useLocation();
@@ -31,6 +31,7 @@ const ProfileView = () => {
     setLoading(true);
     const data = await getUser(params);
     setLoading(false);
+
     if (data.error) {
       setError(data.error);
     } else {
@@ -38,9 +39,12 @@ const ProfileView = () => {
     }
   };
 
+  useEffect(() => {
+    fetchUser();
+  }, [location]);
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const content = e.target.content.value;
 
     await updateUser(user, { biography: content });
@@ -57,48 +61,33 @@ const ProfileView = () => {
     navigate("/messenger", { state: { user: profile.user } });
   };
 
-  useEffect(() => {
-    fetchUser();
-  }, [location]);
-
   const validate = (content) => {
-    let error = "";
-
     if (content.length > 250) {
-      error = "Bio cannot be longer than 250 characters";
+      return "Bio cannot be longer than 250 characters";
     }
-
-    return error;
+    return "";
   };
 
-  let tabs;
-  if (profile) {
-    tabs = {
-      posts: (
-        <PostBrowser
-          profileUser={profile.user}
-          contentType="posts"
-          key="posts"
-        />
-      ),
-      liked: (
-        <PostBrowser
-          profileUser={profile.user}
-          contentType="liked"
-          key="liked"
-        />
-      ),
-      comments: <CommentBrowser profileUser={profile.user} />,
-    };
-  }
+  const renderTabs = () => (
+    <Tabs activeKey={tab} onChange={setTab}>
+      <TabPane tab="Posts" key="posts">
+        <PostBrowser profileUser={profile.user} contentType="posts" />
+      </TabPane>
+      <TabPane tab="Liked" key="liked">
+        <PostBrowser profileUser={profile.user} contentType="liked" />
+      </TabPane>
+      <TabPane tab="Comments" key="comments">
+        <CommentBrowser profileUser={profile.user} />
+      </TabPane>
+    </Tabs>
+  );
 
   return (
-    <Container>
+    <Layout>
       <Navbar />
-
-      <GridLayout
-        left={
-          <>
+      <Content style={{ padding: "24px 48px", minHeight: "100vh" }}>
+        <Row gutter={24}>
+          <Col xs={24} md={16}>
             <MobileProfile
               profile={profile}
               editing={editing}
@@ -107,36 +96,28 @@ const ProfileView = () => {
               handleMessage={handleMessage}
               validate={validate}
             />
-            <Stack spacing={2}>
-              {profile ? (
-                <>
-                  <ProfileTabs tab={tab} setTab={setTab} />
+            <Space direction="vertical" style={{ width: "100%" }} size="large">
+              {loading ? <Spin tip="Loading..." /> : profile && renderTabs()}
+              {error && <Alert message={error} type="error" showIcon />}
+            </Space>
+          </Col>
 
-                  {tabs[tab]}
-                </>
-              ) : (
-                <Loading />
-              )}
-              {error && <ErrorAlert error={error} />}
-            </Stack>
-          </>
-        }
-        right={
-          <Stack spacing={2}>
-            <Profile
-              profile={profile}
-              editing={editing}
-              handleSubmit={handleSubmit}
-              handleEditing={handleEditing}
-              handleMessage={handleMessage}
-              validate={validate}
-            />
-
-            <FindUsers />
-          </Stack>
-        }
-      />
-    </Container>
+          <Col xs={24} md={8}>
+            <Space direction="vertical" style={{ width: "100%" }} size="large">
+              <Profile
+                profile={profile}
+                editing={editing}
+                handleSubmit={handleSubmit}
+                handleEditing={handleEditing}
+                handleMessage={handleMessage}
+                validate={validate}
+              />
+              <FindUsers />
+            </Space>
+          </Col>
+        </Row>
+      </Content>
+    </Layout>
   );
 };
 

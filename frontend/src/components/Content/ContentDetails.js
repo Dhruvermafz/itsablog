@@ -1,5 +1,5 @@
-import { Avatar, Typography } from "@mui/material";
 import React from "react";
+import { Avatar, Typography, Space } from "antd";
 import HorizontalStack from "../util/HorizontalStack";
 import Moment from "react-moment";
 import UserAvatar from "../UserModal/UserAvatar";
@@ -7,26 +7,21 @@ import { Link } from "react-router-dom";
 
 const ContentDetails = ({ username, createdAt, edited, preview }) => {
   return (
-    <HorizontalStack sx={{}}>
+    <HorizontalStack>
       <UserAvatar width={30} height={30} username={username} />
-      <Typography variant="subtitle2" color="text.secondary" gutterBottom>
-        <Link
-          color="inherit"
-          underline="hover"
-          onClick={(e) => {
-            e.stopPropagation();
-          }}
-          to={"/" + username}
-        >
-          {username}
-        </Link>
-        {!preview && (
-          <>
-            {" "}
-            · <Moment fromNow>{createdAt}</Moment> {edited && <>(Edited)</>}
-          </>
-        )}
-      </Typography>
+      <Space direction="vertical" style={{ marginLeft: 8 }}>
+        <Typography.Text style={{ fontWeight: 500 }}>
+          <Link to={"/" + username} style={{ color: "inherit" }}>
+            {username}
+          </Link>
+          {!preview && (
+            <>
+              {" "}
+              · <Moment fromNow>{createdAt}</Moment> {edited && <>(Edited)</>}
+            </>
+          )}
+        </Typography.Text>
+      </Space>
     </HorizontalStack>
   );
 };

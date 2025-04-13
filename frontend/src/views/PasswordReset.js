@@ -1,27 +1,34 @@
 import React, { useState } from "react";
-import { ToastContainer, toast } from "react-toastify";
+import { Form, Input, Button, Typography, notification } from "antd";
+import { MailOutlined } from "@ant-design/icons";
+
+const { Title, Text } = Typography;
 
 const PasswordReset = () => {
   const [email, setEmail] = useState("");
+  const [message, setMessage] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  const [message, setMessage] = useState("");
-
-  const setVal = (e) => {
-    setEmail(e.target.value);
+  const openNotification = (type, msg) => {
+    notification[type]({
+      message: msg,
+      placement: "top",
+    });
   };
 
-  const sendLink = async (e) => {
-    e.preventDefault();
+  const sendLink = async () => {
+    if (email.trim() === "") {
+      openNotification("error", "Email is required!");
+      return;
+    }
 
-    if (email === "") {
-      toast.error("email is required!", {
-        position: "top-center",
-      });
-    } else if (!email.includes("@")) {
-      toast.warning("includes @ in your email!", {
-        position: "top-center",
-      });
-    } else {
+    if (!email.includes("@")) {
+      openNotification("warning", "Email must include '@'");
+      return;
+    }
+
+    try {
+      setLoading(true);
       const res = await fetch("/sendpasswordlink", {
         method: "POST",
         headers: {
@@ -32,53 +39,53 @@ const PasswordReset = () => {
 
       const data = await res.json();
 
-      if (data.status == 201) {
+      if (data.status === 201) {
         setEmail("");
         setMessage(true);
       } else {
-        toast.error("Invalid User", {
-          position: "top-center",
-        });
+        openNotification("error", "Invalid User");
       }
+    } catch (error) {
+      openNotification("error", "Something went wrong!");
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <>
-      <section>
-        <div className="form_data">
-          <div className="form_heading">
-            <h1>Enter Your Email</h1>
-          </div>
+    <div
+      style={{
+        maxWidth: 400,
+        margin: "50px auto",
+        padding: 24,
+        border: "1px solid #f0f0f0",
+        borderRadius: 8,
+        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+      }}
+    >
+      <Title level={3}>Reset Your Password</Title>
+      {message && (
+        <Text type="success" strong>
+          Password reset link sent successfully to your email.
+        </Text>
+      )}
+      <Form layout="vertical" onFinish={sendLink} style={{ marginTop: 24 }}>
+        <Form.Item label="Email" name="email">
+          <Input
+            prefix={<MailOutlined />}
+            placeholder="Enter your email address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+        </Form.Item>
 
-          {message ? (
-            <p style={{ color: "green", fontWeight: "bold" }}>
-              pasword reset link sent Succesfully to Your Email
-            </p>
-          ) : (
-            ""
-          )}
-          <form>
-            <div className="form_input">
-              <label htmlFor="email">Email</label>
-              <input
-                type="email"
-                value={email}
-                onChange={setVal}
-                name="email"
-                id="email"
-                placeholder="Enter Your Email Address"
-              />
-            </div>
-
-            <button className="btn" onClick={sendLink}>
-              Send
-            </button>
-          </form>
-          <ToastContainer />
-        </div>
-      </section>
-    </>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block loading={loading}>
+            Send Reset Link
+          </Button>
+        </Form.Item>
+      </Form>
+    </div>
   );
 };
 
