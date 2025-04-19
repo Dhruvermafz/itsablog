@@ -15,7 +15,7 @@ const Footer = () => {
           © ItsABlog {currentYear}. All rights reserved.
         </Typography.Text>
         <Typography.Text type="secondary">
-          <Link to="/terms">Terms of Use</Link> &nbsp;|&nbsp;
+          <Link to="/terms-and-conditions">Terms of Use</Link> &nbsp;|&nbsp;
           <Link to="/privacy">Privacy Policy</Link> &nbsp;|&nbsp;
           <Link to="/license">License</Link>
         </Typography.Text>

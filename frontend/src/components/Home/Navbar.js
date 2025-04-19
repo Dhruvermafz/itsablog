@@ -1,20 +1,32 @@
 import React, { useEffect, useState } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
 import { AiFillHome, AiFillMessage, AiOutlineSearch } from "react-icons/ai";
-import { Input, Typography, Button, Popover, Row, Col } from "antd";
+import {
+  Input,
+  Typography,
+  Button,
+  Popover,
+  Row,
+  Col,
+  Menu,
+  Dropdown,
+  Modal,
+} from "antd";
+import { DownOutlined } from "@ant-design/icons";
+
 import UserAvatar from "../UserModal/UserAvatar";
-import { routes } from "../../router/routes";
 import NavLinks from "./NavLinks";
-import "../../css/navbar.css";
 import icon from "../../static/img/icon.png";
+import "../../css/navbar.css";
+import AddBookReviewModal from "../Books/AddBookReviews";
 import { isLoggedIn } from "../../helpers/authHelper";
 
 const Navbar = () => {
-  const navigate = useNavigate();
   const user = isLoggedIn();
   const [search, setSearch] = useState("");
   const [searchIcon, setSearchIcon] = useState(false);
   const [width, setWindowWidth] = useState(window.innerWidth);
+  const [showBookReviewModal, setShowBookReviewModal] = useState(false);
+  const [showAddBlogModal, setShowAddBlogModal] = useState(false); // placeholder if you have this modal too
 
   useEffect(() => {
     const updateDimensions = () => setWindowWidth(window.innerWidth);
@@ -31,21 +43,33 @@ const Navbar = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    navigate(`${routes.SEARCH}?` + new URLSearchParams({ search }));
+    console.log("Search submitted:", search);
   };
 
   const handleSearchIcon = () => {
     setSearchIcon(!searchIcon);
   };
 
+  const handleMenuClick = ({ key }) => {
+    if (key === "addBlog") {
+      setShowAddBlogModal(true);
+    } else if (key === "addReview") {
+      setShowBookReviewModal(true);
+    }
+  };
+
+  const addMenu = (
+    <Menu onClick={handleMenuClick}>
+      <Menu.Item key="addBlog">Add Blog</Menu.Item>
+      <Menu.Item key="addReview">Add Book Review</Menu.Item>
+    </Menu>
+  );
+
   return (
     <header>
       <div style={{ marginBottom: 16 }}>
-        <Row
-          align="middle"
-          justify="space-between"
-          style={{ paddingTop: 16, paddingBottom: 0 }}
-        >
+        <Row align="middle" justify="space-between" style={{ paddingTop: 16 }}>
+          {/* Logo */}
           <Col>
             <div className="banner">
               {!mobile && (
@@ -53,22 +77,18 @@ const Navbar = () => {
                   level={navbarWidth ? 5 : 3}
                   style={{ margin: 0 }}
                 >
-                  <NavLink
-                    to="/"
-                    style={{ textDecoration: "none", color: "inherit" }}
-                  >
-                    <img
-                      src={icon}
-                      alt="icon"
-                      style={{ height: 32, marginRight: 8 }}
-                    />
-                    <strong>ItsABlog</strong>
-                  </NavLink>
+                  <img
+                    src={icon}
+                    alt="icon"
+                    style={{ height: 32, marginRight: 8 }}
+                  />
+                  <strong>ItsABlog</strong>
                 </Typography.Title>
               )}
             </div>
           </Col>
 
+          {/* Desktop Search */}
           <Col>
             {!navbarWidth && (
               <form onSubmit={handleSubmit} style={{ display: "inline-block" }}>
@@ -83,6 +103,18 @@ const Navbar = () => {
             )}
           </Col>
 
+          {/* Add Dropdown */}
+          <Col>
+            {user && (
+              <Dropdown overlay={addMenu} trigger={["click"]}>
+                <Button>
+                  Add <DownOutlined />
+                </Button>
+              </Dropdown>
+            )}
+          </Col>
+
+          {/* Right Icons / Actions */}
           <Col>
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               {mobile && (
@@ -96,7 +128,7 @@ const Navbar = () => {
               <Button
                 type="text"
                 icon={<AiFillHome />}
-                onClick={() => navigate("/")}
+                onClick={() => console.log("Go Home")}
               />
 
               {user ? (
@@ -104,7 +136,7 @@ const Navbar = () => {
                   <Button
                     type="text"
                     icon={<AiFillMessage />}
-                    onClick={() => navigate(routes.MESSANGER)}
+                    onClick={() => console.log("Open Messenger")}
                   />
                   <Popover
                     content={<NavLinks />}
@@ -122,10 +154,10 @@ const Navbar = () => {
                 </>
               ) : (
                 <>
-                  <Button type="link" href={routes.SIGNUP}>
+                  <Button onClick={() => console.log("Sign Up modal")}>
                     Sign Up
                   </Button>
-                  <Button type="link" href={routes.LOGIN}>
+                  <Button onClick={() => console.log("Login modal")}>
                     Login
                   </Button>
                 </>
@@ -134,6 +166,7 @@ const Navbar = () => {
           </Col>
         </Row>
 
+        {/* Mobile Search Input */}
         {navbarWidth && searchIcon && (
           <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
             <Input
@@ -145,6 +178,18 @@ const Navbar = () => {
           </form>
         )}
       </div>
+
+      {/* Modals */}
+      <AddBookReviewModal
+        visible={showBookReviewModal}
+        onClose={() => setShowBookReviewModal(false)}
+      />
+
+      {/* Optional if you have an AddBlogModal */}
+      {/* <AddBlogModal
+        visible={showAddBlogModal}
+        onClose={() => setShowAddBlogModal(false)}
+      /> */}
     </header>
   );
 };

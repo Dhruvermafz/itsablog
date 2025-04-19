@@ -1,19 +1,14 @@
 import React, { useState } from "react";
-import { Button, Card, Typography, Input, message } from "antd";
-import { Box } from "@mui/system";
+import { Button, Card, Typography, Input, message, Row, Col } from "antd";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { createComment } from "../../api/posts";
 import { isLoggedIn } from "../../helpers/authHelper";
 import ErrorAlert from "../Extras/ErrorAlert";
-import HorizontalStack from "../util/HorizontalStack";
 
 const { TextArea } = Input;
 
 const CommentEditor = ({ label, comment, addComment, setReplying }) => {
-  const [formData, setFormData] = useState({
-    content: "",
-  });
-
+  const [formData, setFormData] = useState({ content: "" });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -47,17 +42,19 @@ const CommentEditor = ({ label, comment, addComment, setReplying }) => {
     }
   };
 
-  const handleFocus = (e) => {
-    !isLoggedIn() && navigate("/login");
+  const handleFocus = () => {
+    if (!isLoggedIn()) navigate("/login");
   };
 
   return (
     <Card>
-      <div style={{ marginBottom: "16px" }}>
-        <HorizontalStack justifyContent="space-between">
+      <Row justify="space-between" align="middle" style={{ marginBottom: 16 }}>
+        <Col>
           <Typography.Title level={5}>
-            {comment ? <>Reply</> : <>Comment</>}
+            {comment ? "Reply" : "Comment"}
           </Typography.Title>
+        </Col>
+        <Col>
           <Typography.Text>
             <a
               href="https://commonmark.org/help/"
@@ -67,8 +64,8 @@ const CommentEditor = ({ label, comment, addComment, setReplying }) => {
               Markdown Help
             </a>
           </Typography.Text>
-        </HorizontalStack>
-      </div>
+        </Col>
+      </Row>
 
       <form onSubmit={handleSubmit}>
         <TextArea
@@ -79,18 +76,19 @@ const CommentEditor = ({ label, comment, addComment, setReplying }) => {
           onChange={handleChange}
           onFocus={handleFocus}
           value={formData.content}
-          style={{ backgroundColor: "white", marginBottom: "16px" }}
+          style={{ backgroundColor: "white", marginBottom: 16 }}
         />
 
         {error && <ErrorAlert error={error} />}
+
         <Button
           type="primary"
           htmlType="submit"
           block
           loading={loading}
-          style={{ marginTop: "16px" }}
+          style={{ marginTop: 16 }}
         >
-          {loading ? "Submitting" : "Submit"}
+          {loading ? "Submitting..." : "Submit"}
         </Button>
       </form>
     </Card>

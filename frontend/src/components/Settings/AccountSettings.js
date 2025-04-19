@@ -1,12 +1,14 @@
 import React from "react";
-import "./index.css";
 import { connect } from "react-redux";
+import { Card, Typography } from "antd";
+
+const { Title } = Typography;
 
 const AccountSettings = () => {
   return (
-    <div>
-      <h2 className="sett-head">Account Settings</h2>
-    </div>
+    <Card bordered={false} style={{ padding: 20 }}>
+      <Title level={2}>Account Settings</Title>
+    </Card>
   );
 };
 

@@ -15,11 +15,12 @@ export const routes = {
 
   MESSANGER: "/messenger/",
 
+  ADD_BOOK_REVIEW: "/book-review/add",
   Error404: "/404/",
   Error500: "/500",
   ABOUT: "/about",
   PASSWORD_RESET: "/password-reset",
   FORGOT_PASSWORD: "/forgotpassword/:id/:token",
-
+  TERMS: "/terms-and-conditions",
   PRIVACY: "/privacy",
 };

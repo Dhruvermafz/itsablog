@@ -1,12 +1,15 @@
 import React from "react";
-import "./index.css";
 import { connect } from "react-redux";
+import { Card, Typography } from "antd";
+
+const { Title } = Typography;
 
 const PrivacySettings = () => {
   return (
-    <div>
-      <h2 className="sett-head">Privacy Settings</h2>
-    </div>
+    <Card bordered={false} style={{ padding: 20 }}>
+      <Title level={2}>Privacy Settings</Title>
+      {/* You can add additional privacy settings controls here */}
+    </Card>
   );
 };
 

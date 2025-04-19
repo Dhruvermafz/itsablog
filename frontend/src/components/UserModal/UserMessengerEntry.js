@@ -1,45 +1,34 @@
-import {
-  Divider,
-  ListItem,
-  ListItemAvatar,
-  ListItemButton,
-  ListItemText,
-  MenuItem,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import React from "react";
+import { List, Avatar, Typography } from "antd";
+import moment from "moment";
 import UserAvatar from "./UserAvatar";
 
-import moment from "moment";
+const { Text } = Typography;
 
 const UserMessengerEntry = (props) => {
   const recipient = props.conversation.recipient;
   const username = recipient.username;
-  const selected =
-    props.conservant && props.conservant.username === recipient.username;
+  const selected = props.conservant && props.conservant.username === username;
 
   const handleClick = () => {
     props.setConservant(recipient);
   };
 
   return (
-    <>
-      <MenuItem
-        onClick={handleClick}
-        sx={{ padding: 2 }}
-        divider
-        disableGutters
-        selected={selected}
-      >
-        <ListItemAvatar>
-          <UserAvatar height={45} width={45} username={username} />
-        </ListItemAvatar>
-        <ListItemText
-          primary={username}
-          secondary={moment(props.conversation.lastMessageAt).fromNow()}
-        />
-      </MenuItem>
-    </>
+    <List.Item
+      style={{
+        padding: 16,
+        backgroundColor: selected ? "#e6f7ff" : "white",
+        cursor: "pointer",
+      }}
+      onClick={handleClick}
+    >
+      <List.Item.Meta
+        avatar={<UserAvatar height={45} width={45} username={username} />}
+        title={<Text strong>{username}</Text>}
+        description={moment(props.conversation.lastMessageAt).fromNow()}
+      />
+    </List.Item>
   );
 };
 

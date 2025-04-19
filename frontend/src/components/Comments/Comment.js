@@ -5,13 +5,17 @@ import { Link, useNavigate } from "react-router-dom";
 import { isLoggedIn } from "../../helpers/authHelper";
 import CommentEditor from "./CommentEditor";
 import ContentDetails from "../Content/ContentDetails";
-import { deleteComment, updateComment } from "../../api/posts";
 import ContentUpdateEditor from "../Content/ContentUpdateEditor";
 import Markdown from "../Markdown/Markdown";
 import { MdCancel } from "react-icons/md";
 import { BsReplyFill } from "react-icons/bs";
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons"; // Correct icon imports
+import { DeleteOutlined } from "@ant-design/icons";
 import Moment from "react-moment";
+
+import {
+  useUpdateCommentMutation,
+  useDeleteCommentMutation,
+} from "../../api/commentApi"; // Make sure the path is correct
 
 const { Panel } = Collapse;
 
@@ -26,6 +30,9 @@ const Comment = (props) => {
   const isAuthor = user && user.userId === comment.commenter._id;
   const navigate = useNavigate();
 
+  const [updateCommentApi] = useUpdateCommentMutation();
+  const [deleteCommentApi] = useDeleteCommentMutation();
+
   const handleSetReplying = () => {
     if (isLoggedIn()) {
       setReplying(!replying);
@@ -36,23 +43,34 @@ const Comment = (props) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     const content = e.target.content.value;
 
-    await updateComment(comment._id, user, { content });
+    try {
+      await updateCommentApi({
+        id: comment._id,
+        token: user.token,
+        body: { content },
+      }).unwrap();
 
-    const newCommentData = { ...comment, content, edited: true };
-
-    setComment(newCommentData);
-
-    editComment(newCommentData);
-
-    setEditing(false);
+      const newCommentData = { ...comment, content, edited: true };
+      setComment(newCommentData);
+      editComment(newCommentData);
+      setEditing(false);
+    } catch (err) {
+      console.error("Error updating comment:", err);
+    }
   };
 
   const handleDelete = async () => {
-    await deleteComment(comment._id, user);
-    removeComment(comment);
+    try {
+      await deleteCommentApi({
+        id: comment._id,
+        token: user.token,
+      }).unwrap();
+      removeComment(comment);
+    } catch (err) {
+      console.error("Error deleting comment:", err);
+    }
   };
 
   return (
@@ -106,8 +124,7 @@ const Comment = (props) => {
                       title="Are you sure to delete this comment?"
                       onConfirm={handleDelete}
                     >
-                      <Button icon={<DeleteOutlined />} danger />{" "}
-                      {/* Updated */}
+                      <Button icon={<DeleteOutlined />} danger />
                     </Popconfirm>
                   </Space>
                 )}
@@ -137,6 +154,7 @@ const Comment = (props) => {
                 />
               </div>
             )}
+
             {comment.children && (
               <Collapse defaultActiveKey={["1"]}>
                 {comment.children.map((reply) => (

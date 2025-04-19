@@ -1,12 +1,17 @@
 import React from "react";
-import "./index.css";
 import { connect } from "react-redux";
+import { Card, Typography, Button } from "antd";
+
+const { Title } = Typography;
 
 const DeactivateAccount = () => {
   return (
-    <div>
-      <h2 className="sett-head">Deactivate Account</h2>
-    </div>
+    <Card bordered={false} style={{ padding: 20 }}>
+      <Title level={2}>Deactivate Account</Title>
+      <Button type="primary" danger>
+        Deactivate Account
+      </Button>
+    </Card>
   );
 };
 

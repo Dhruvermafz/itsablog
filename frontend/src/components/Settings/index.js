@@ -1,68 +1,170 @@
 import React from "react";
-import "./index.css";
-import { connect } from "react-redux";
-import Navbar from "../Home/Navbar";
-import AccountSettings from "./AccountSettings";
-import PrivacySettings from "./PrivacySettings";
-import DeactivateAccount from "./DeactivateAccount";
-import DeleteAccount from "./DeleteAccount";
-import { setTab } from "../../store/settings/actions";
+import {
+  Card,
+  Tabs,
+  Form,
+  Input,
+  Button,
+  Switch,
+  Typography,
+  Modal,
+  message,
+} from "antd";
+import {
+  UserOutlined,
+  SettingOutlined,
+  DeleteOutlined,
+  LockOutlined,
+  ExclamationCircleOutlined,
+} from "@ant-design/icons";
+
+const { Title } = Typography;
+const { confirm } = Modal;
 
 const Settings = () => {
+  const [form] = Form.useForm();
+
+  const handleProfileUpdate = (values) => {
+    console.log("Profile Updated:", values);
+    message.success("Profile updated successfully!");
+  };
+
+  const handleAccountUpdate = (values) => {
+    console.log("Account Settings Updated:", values);
+    message.success("Account settings updated!");
+  };
+
+  const handleDeactivateAccount = () => {
+    message.info("Account has been deactivated.");
+  };
+
+  const showDeleteConfirm = () => {
+    confirm({
+      title: "Are you sure you want to delete your account?",
+      icon: <ExclamationCircleOutlined />,
+      content: "This action cannot be undone.",
+      okText: "Yes, delete",
+      okType: "danger",
+      cancelText: "Cancel",
+      onOk() {
+        message.success("Your account has been permanently deleted.");
+        // Trigger backend deletion here
+      },
+    });
+  };
+
   return (
-    <div className="settings-wrapper">
-      <Navbar backBtn feed profile logout />
-      <div className="settings">
-        <menu className="settings-menu">
-          <nav
-            className={`${this.props.settings.tab === 1 ? "active" : ""}`}
-            onClick={() => this.props.setTab(1)}
+    <div style={{ maxWidth: "900px", margin: "40px auto" }}>
+      <Title level={2} style={{ textAlign: "center" }}>
+        Account Settings
+      </Title>
+
+      <Card>
+        <Tabs defaultActiveKey="1" tabPosition="top" type="line">
+          {/* Profile Settings */}
+          <Tabs.TabPane
+            tab={
+              <span>
+                <UserOutlined />
+                Profile
+              </span>
+            }
+            key="1"
           >
-            <span className="material-icons">settings</span>
-            <p>Account Settings</p>
-          </nav>
-          <nav
-            className={`${this.props.settings.tab === 2 ? "active" : ""}`}
-            onClick={() => this.props.setTab(2)}
+            <Form form={form} layout="vertical" onFinish={handleProfileUpdate}>
+              <Form.Item label="Full Name" name="name">
+                <Input placeholder="Enter your name" />
+              </Form.Item>
+              <Form.Item label="Bio" name="bio">
+                <Input.TextArea
+                  placeholder="Tell something about yourself"
+                  rows={4}
+                />
+              </Form.Item>
+              <Form.Item label="Email" name="email">
+                <Input type="email" placeholder="Enter your email" />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType="submit">
+                  Update Profile
+                </Button>
+              </Form.Item>
+            </Form>
+          </Tabs.TabPane>
+
+          {/* Account Settings */}
+          <Tabs.TabPane
+            tab={
+              <span>
+                <SettingOutlined />
+                Account
+              </span>
+            }
+            key="2"
           >
-            <span className="material-icons">settings</span>
-            <p>Privacy Settings</p>
-          </nav>
-          <nav
-            className={`${this.props.settings.tab === 3 ? "active" : ""}`}
-            onClick={() => this.props.setTab(3)}
+            <Form layout="vertical" onFinish={handleAccountUpdate}>
+              <Form.Item label="Change Password" name="password">
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Enter new password"
+                />
+              </Form.Item>
+              <Form.Item
+                label="Receive Email Notifications"
+                name="emailNotifications"
+                valuePropName="checked"
+              >
+                <Switch />
+              </Form.Item>
+              <Form.Item>
+                <Button type="primary" htmlType="submit">
+                  Save Changes
+                </Button>
+              </Form.Item>
+            </Form>
+          </Tabs.TabPane>
+
+          {/* Deactivate Account */}
+          <Tabs.TabPane
+            tab={
+              <span>
+                <LockOutlined />
+                Deactivate
+              </span>
+            }
+            key="3"
           >
-            <span className="material-icons">settings</span>
-            <p>Deactivate my Account</p>
-          </nav>
-          <nav
-            className={`${this.props.settings.tab === 4 ? "active" : ""}`}
-            onClick={() => this.props.setTab(4)}
+            <Typography.Paragraph>
+              Temporarily disable your account. You can reactivate it anytime by
+              logging back in.
+            </Typography.Paragraph>
+            <Button type="default" danger onClick={handleDeactivateAccount}>
+              Deactivate Account
+            </Button>
+          </Tabs.TabPane>
+
+          {/* Delete Account */}
+          <Tabs.TabPane
+            tab={
+              <span>
+                <DeleteOutlined />
+                Delete
+              </span>
+            }
+            key="4"
           >
-            <span className="material-icons">settings</span>
-            <p>Delete my Account</p>
-          </nav>
-        </menu>
-        <section>
-          {this.props.settings.tab === 1 ? (
-            <AccountSettings />
-          ) : this.props.settings.tab === 2 ? (
-            <PrivacySettings />
-          ) : this.props.settings.tab === 3 ? (
-            <DeactivateAccount />
-          ) : this.props.settings.tab === 4 ? (
-            <DeleteAccount />
-          ) : (
-            this.props.setTab(1)
-          )}
-        </section>
-      </div>
+            <Typography.Paragraph type="danger">
+              Permanently delete your account and all associated data. This
+              action cannot be undone.
+            </Typography.Paragraph>
+            <Button type="primary" danger onClick={showDeleteConfirm}>
+              Delete Account
+            </Button>
+          </Tabs.TabPane>
+        </Tabs>
+      </Card>
     </div>
   );
 };
 
-const mapStateToProps = (state) => {
-  return { settings: state.settings };
-};
-
-export default connect(mapStateToProps, { setTab })(Settings);
+export default Settings;

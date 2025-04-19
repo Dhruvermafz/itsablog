@@ -1,13 +1,6 @@
-import {
-  Button,
-  Card,
-  Stack,
-  Typography,
-  CircularProgress,
-  Pagination,
-} from "@mui/material";
-import { Box } from "@mui/system";
 import React, { useEffect, useState } from "react";
+import { Player } from "@lottiefiles/react-lottie-player";
+import { Button, Card, Pagination, Typography, Spin, Row, Col } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { getPosts, getUserLikedPosts } from "../../api/posts";
 import { isLoggedIn } from "../../helpers/authHelper";
@@ -15,6 +8,8 @@ import CreatePost from "../Post/CreatePost";
 import PostCard from "./PostCard";
 import SortBySelect from "../Content/SortBySelect";
 import HorizontalStack from "../util/HorizontalStack";
+
+const { Title, Text } = Typography;
 
 const PostBrowser = (props) => {
   const [posts, setPosts] = useState([]);
@@ -76,7 +71,7 @@ const PostBrowser = (props) => {
     setSortBy(newSortBy);
   };
 
-  const handlePageChange = (event, value) => {
+  const handlePageChange = (value) => {
     fetchPosts(value);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -109,69 +104,64 @@ const PostBrowser = (props) => {
 
   return (
     <>
-      <Stack spacing={2}>
-        <Card>
-          <HorizontalStack justifyContent="space-between">
-            {props.createPost && <CreatePost />}
-            <SortBySelect
-              onSortBy={handleSortBy}
-              sortBy={sortBy}
-              sorts={sorts}
-            />
-          </HorizontalStack>
-        </Card>
+      <Card>
+        <HorizontalStack justifyContent="space-between">
+          {props.createPost && <CreatePost />}
+          <SortBySelect onSortBy={handleSortBy} sortBy={sortBy} sorts={sorts} />
+        </HorizontalStack>
+      </Card>
 
-        {searchExists && (
-          <Box>
-            <Typography variant="h5" gutterBottom>
-              Showing results for "{search.get("search")}"
-            </Typography>
-            <Typography color="text.secondary" variant="span">
-              {count} results found
-            </Typography>
-          </Box>
-        )}
+      {searchExists && (
+        <div style={{ marginBottom: "20px" }}>
+          <Title level={5}>Showing results for "{search.get("search")}"</Title>
+          <Text type="secondary">{count} results found</Text>
+        </div>
+      )}
 
-        {posts.map((post) => (
-          <PostCard
-            preview="primary"
-            key={post._id}
-            post={post}
-            removePost={removePost}
-          />
-        ))}
+      {posts.map((post) => (
+        <PostCard
+          preview="primary"
+          key={post._id}
+          post={post}
+          removePost={removePost}
+        />
+      ))}
 
-        {loading && (
-          <Box display="flex" justifyContent="center">
-            <CircularProgress />
-          </Box>
-        )}
+      {loading && (
+        <div style={{ textAlign: "center", marginTop: "20px" }}>
+          <Spin />
+        </div>
+      )}
 
-        {!loading && posts.length === 0 && (
-          <Stack py={5} alignItems="center">
-            <Typography variant="h5" color="text.secondary" gutterBottom>
+      {!loading && posts.length === 0 && (
+        <Row justify="center" style={{ padding: "20px 0" }}>
+          <Col>
+            <Title level={4} type="secondary">
               No posts available
-            </Typography>
-            <Button variant="text" size="small" onClick={handleBackToTop}>
+            </Title>
+            <Button type="link" size="small" onClick={handleBackToTop}>
               Back to top
             </Button>
-          </Stack>
-        )}
+          </Col>
+        </Row>
+      )}
 
-        {totalPages > 1 && (
-          <Stack pt={2} pb={6} alignItems="center" spacing={2}>
+      {totalPages > 1 && (
+        <Row justify="center" style={{ paddingTop: "20px" }}>
+          <Col>
             <Pagination
-              count={totalPages}
-              page={page}
+              current={page}
+              total={totalPages * 10}
               onChange={handlePageChange}
-              color="primary"
+              pageSize={10}
+              showSizeChanger={false}
             />
-            <Button variant="text" size="small" onClick={handleBackToTop}>
+            <Button type="link" size="small" onClick={handleBackToTop}>
               Back to top
             </Button>
-          </Stack>
-        )}
-      </Stack>
+          </Col>
+        </Row>
+      )}
     </>
   );
 };

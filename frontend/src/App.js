@@ -5,7 +5,7 @@ import Router from "./router";
 import Footer from "./components/Home/Footer";
 import "antd/dist/reset.css"; // New in antd v5
 import "./index.css"; // Your global styles
-
+import Navbar from "./components/Home/Navbar";
 function App() {
   const [darkmode, setDarkMode] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
