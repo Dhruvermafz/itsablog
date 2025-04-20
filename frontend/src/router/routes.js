@@ -12,9 +12,9 @@ export const routes = {
   CREATE_BLOG: "/blog/create",
   READ_BLOG: (id) => `/blog/${id}`,
   EDIT_BLOG: (id) => `/blog/edit/${id}`,
-
+  ONBOARDING: "/onboarding",
   MESSANGER: "/messenger/",
-
+  CATEGORY: "/category-list",
   ADD_BOOK_REVIEW: "/book-review/add",
   Error404: "/404/",
   Error500: "/500",
@@ -23,4 +23,14 @@ export const routes = {
   FORGOT_PASSWORD: "/forgotpassword/:id/:token",
   TERMS: "/terms-and-conditions",
   PRIVACY: "/privacy",
+
+  ADMIN_DASHBOARD_HOME: "/admin/dashboard/",
+  ADMIN_MANAGE_USERS: "/admin/users/list",
+  ADMIN_MANAGE_POSTS: "/admin/posts/list",
+  ADMIN_MANAGE_CATEGORIES: "/admin/categories/list",
+  ADMIN_MANAGE_ROLES: "/admin/roles/list",
+  ADMIN_MANAGE_REPORTS: "/admin/reports/list",
+
+  GROUPS: "/groups",
+  NEWSROOM: "/newsroom",
 };

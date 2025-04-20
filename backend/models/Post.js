@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const CustomFilter = require("../util/filter");
 const PostLike = require("./PostLike");
+const PostComment = require("./PostComment"); // If you want to track comments in a separate model
 
 const PostSchema = new mongoose.Schema(
   {
@@ -31,18 +32,32 @@ const PostSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    editedAt: {
+      type: Date,
+      default: null, // Timestamp of when the post was last edited
+    },
+    status: {
+      type: String,
+      enum: ["draft", "published", "archived"],
+      default: "draft", // Post status to track whether the post is active or archived
+    },
+    category: {
+      type: String,
+      required: true, // Categorize posts (e.g., "technology", "politics")
+    },
     reports: [
       {
         type: mongoose.Types.ObjectId,
         ref: "user",
+        unique: true, // Prevent duplicate reports from the same user
       },
     ],
   },
   { timestamps: true }
 );
 
+// Middleware for cleaning content and title
 PostSchema.pre("save", function (next) {
-  // Create an instance of the custom filter
   const customFilter = new CustomFilter();
 
   if (this.title.length > 0) {
@@ -53,12 +68,19 @@ PostSchema.pre("save", function (next) {
     this.content = customFilter.cleanHacked(this.content);
   }
 
+  // Track editing time
+  if (this.edited) {
+    this.editedAt = Date.now();
+  }
+
   next();
 });
 
+// Middleware for deleting associated likes when the post is removed
 PostSchema.pre("remove", async function (next) {
   console.log(this._id);
   await PostLike.deleteMany({ postId: this._id });
+  await PostComment.deleteMany({ postId: this._id }); // Assuming you have a separate PostComment model
   next();
 });
 

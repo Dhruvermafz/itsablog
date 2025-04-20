@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const PostLike = new mongoose.Schema(
+const PostLikeSchema = new mongoose.Schema(
   {
     postId: {
       type: mongoose.Types.ObjectId,
@@ -16,4 +16,7 @@ const PostLike = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("postLike", PostLike);
+// Prevent a user from liking the same post multiple times
+PostLikeSchema.index({ postId: 1, userId: 1 }, { unique: true });
+
+module.exports = mongoose.model("postLike", PostLikeSchema);

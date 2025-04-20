@@ -3,7 +3,12 @@ import "react-icons/bi";
 import "react-icons/md";
 import "react-icons/bs";
 import "react-router-dom";
-
+import RoleRequests from "../components/Admin/RoleRequests";
+import ReportedPosts from "../components/Admin/ReportedPost";
+import ManageUsers from "../components/Admin/ManageUsers";
+import ManagePosts from "../components/Admin/ManagePost";
+import ManageCategories from "../components/Admin/ManageCategories";
+import DashboardHome from "../components/Admin/DashboardHome";
 // Import Ant Design components
 import { ConfigProvider, Layout } from "antd";
 import { BrowserRouter, Route, Routes } from "react-router-dom";
@@ -31,6 +36,10 @@ import Footer from "../components/Home/Footer";
 import Navbar from "../components/Home/Navbar";
 import TermsAndConditions from "../views/Terms";
 import AddBookReview from "../components/Books/AddBookReviews";
+import CategoryList from "../components/Categories/CategoryList";
+import UserOnboarding from "../components/Onboarding/Onboarding";
+import GroupFeed from "../components/Groups/GroupFeed";
+import NewsroomList from "../components/NewsRoom/NewsRoomList";
 function Router() {
   return (
     <ConfigProvider>
@@ -63,6 +72,28 @@ function Router() {
                 </PrivateRoute>
               }
             />
+            <Route
+              path={routes.ADMIN_DASHBOARD_HOME}
+              element={<DashboardHome />}
+            />
+            <Route path={routes.ADMIN_MANAGE_USERS} element={<ManageUsers />} />
+            <Route path={routes.ADMIN_MANAGE_POSTS} element={<ManagePosts />} />
+            <Route
+              path={routes.ADMIN_MANAGE_CATEGORIES}
+              element={<ManageCategories />}
+            />
+            <Route
+              path={routes.ADMIN_MANAGE_ROLES}
+              element={<RoleRequests />}
+            />
+            <Route
+              path={routes.ADMIN_MANAGE_REPORTS}
+              element={<ReportedPosts />}
+            />
+            <Route path={routes.GROUPS} element={<GroupFeed />} />
+            <Route path={routes.NEWSROOM} element={<NewsroomList />} />
+            <Route path={routes.ONBOARDING} element={<UserOnboarding />} />
+            <Route path={routes.CATEGORY} element={<CategoryList />} />
             <Route path={routes.SEARCH} element={<SearchView />} />
             <Route path={routes.PROFILE(":id")} element={<ProfileView />} />
             <Route path={routes.LOGIN} element={<LoginView />} />
