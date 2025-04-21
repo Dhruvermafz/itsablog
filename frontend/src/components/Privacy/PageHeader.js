@@ -7,7 +7,7 @@ const { Title, Paragraph } = Typography;
 
 const PageHeader = () => {
   return (
-    <section style={{ background: "#f5f5f5", padding: "40px 0" }}>
+    <section className="privacy">
       <Row justify="center" align="middle" gutter={[32, 32]}>
         <Col xs={24} md={12}>
           <Typography>

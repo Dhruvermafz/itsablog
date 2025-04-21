@@ -40,6 +40,7 @@ import CategoryList from "../components/Categories/CategoryList";
 import UserOnboarding from "../components/Onboarding/Onboarding";
 import GroupFeed from "../components/Groups/GroupFeed";
 import NewsroomList from "../components/NewsRoom/NewsRoomList";
+import GroupPage from "../components/Groups/GroupPage";
 function Router() {
   return (
     <ConfigProvider>
@@ -78,6 +79,7 @@ function Router() {
             />
             <Route path={routes.ADMIN_MANAGE_USERS} element={<ManageUsers />} />
             <Route path={routes.ADMIN_MANAGE_POSTS} element={<ManagePosts />} />
+
             <Route
               path={routes.ADMIN_MANAGE_CATEGORIES}
               element={<ManageCategories />}
@@ -92,6 +94,7 @@ function Router() {
             />
             <Route path={routes.GROUPS} element={<GroupFeed />} />
             <Route path={routes.NEWSROOM} element={<NewsroomList />} />
+            <Route path={routes.GROUP_PAGE} element={<GroupPage />} />
             <Route path={routes.ONBOARDING} element={<UserOnboarding />} />
             <Route path={routes.CATEGORY} element={<CategoryList />} />
             <Route path={routes.SEARCH} element={<SearchView />} />

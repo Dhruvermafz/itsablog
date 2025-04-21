@@ -6,10 +6,8 @@ const { Content } = Layout;
 
 const PrivacyPolicy = () => {
   return (
-    <Layout style={{ minHeight: "100vh", backgroundColor: "#fff" }}>
-      <Content
-        style={{ maxWidth: 900, margin: "0 auto", padding: "40px 20px" }}
-      >
+    <Layout className="theme-layout boxed">
+      <Content className="tab-content central-meta">
         <Typography>
           <Title level={1}>Privacy Policy</Title>
 

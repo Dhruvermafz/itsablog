@@ -15,7 +15,7 @@ import {
 } from "@mui/material";
 import Layout from "../components/Layout/Layout";
 import Banner from "../components/Banner";
-import "../css/signup.css";
+
 import { BASE_URL } from "../config";
 
 const SignupView = () => {

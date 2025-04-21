@@ -1,21 +1,24 @@
 import { useState, useEffect } from "react";
-import { ConfigProvider, theme as antdTheme } from "antd";
+import { ConfigProvider } from "antd";
 import { initiateSocketConnection } from "./helpers/socketHelper";
 import Router from "./router";
-import Footer from "./components/Home/Footer";
-import "antd/dist/reset.css"; // New in antd v5
-import "./index.css"; // Your global styles
+// import Footer from "./components/Home/Footer"; // Optional
 import Navbar from "./components/Home/Navbar";
+import { getAntdTheme } from "./theme";
+
+import "antd/dist/reset.css"; // Ant Design v5 reset
+import "./index.css"; // Your global CSS styles
+
 function App() {
   const [darkmode, setDarkMode] = useState(true);
   const [isOnline, setIsOnline] = useState(true);
 
-  // INITIATE SOCKET CONNECTION
+  // Initialize socket
   useEffect(() => {
     initiateSocketConnection();
   }, []);
 
-  // DARK MODE DETECTION
+  // Detect dark mode preference and apply background color
   useEffect(() => {
     const prefersDark =
       window.matchMedia &&
@@ -28,12 +31,16 @@ function App() {
       const isDark = localStorage.getItem("darkmode") === "true";
       setDarkMode(isDark);
     }
+  }, []);
 
-    // Dynamically set background color for dark/light mode
-    document.body.style.backgroundColor = darkmode ? "#1f1f1f" : "#f0f2f5";
+  // Update background dynamically on mode change
+  useEffect(() => {
+    document.body.style.backgroundColor = darkmode
+      ? "var(--bg-dark)"
+      : "var(--bg-color)";
   }, [darkmode]);
 
-  // ONLINE/OFFLINE EVENTS
+  // Handle online/offline status
   useEffect(() => {
     const goOnline = () => setIsOnline(true);
     const goOffline = () => setIsOnline(false);
@@ -48,18 +55,9 @@ function App() {
   }, []);
 
   return (
-    <ConfigProvider
-      theme={{
-        algorithm: darkmode
-          ? antdTheme.darkAlgorithm
-          : antdTheme.defaultAlgorithm,
-        token: {
-          colorPrimary: darkmode ? "#1677ff" : "#1890ff", // Primary color can change
-        },
-      }}
-    >
+    <ConfigProvider theme={getAntdTheme(darkmode)}>
       <Router />
-      {/* <Footer /> Uncomment if using */}
+      {/* <Footer /> */}
     </ConfigProvider>
   );
 }

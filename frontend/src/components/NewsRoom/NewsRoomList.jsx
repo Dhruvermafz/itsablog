@@ -1,61 +1,54 @@
-import React from "react";
-import { Card, Col, Row, Button, Typography } from "antd";
-import { EditOutlined, DeleteOutlined } from "@ant-design/icons";
+import { Layout, Row, Col, Typography, Button } from "antd";
+import { PlusOutlined } from "@ant-design/icons";
 
-const { Title, Text } = Typography;
+import NewsroomFilters from "./NewsroomFilter";
+import ArticleCard from "./ArticleCard";
+import WriterSpotlight from "./WriterSpotlight";
+import AdminControls from "./AdminControls";
+import styles from "./NewsRoom.module.css";
+
+const { Content } = Layout;
+const { Title } = Typography;
 
 const NewsroomList = () => {
-  const posts = [
+  const articles = [
+    // Mock data for demo
     {
-      title: "Tech Innovations in 2025",
-      content: "An in-depth look into the future of tech...",
       id: 1,
+      title: "The Future of Democracy",
+      category: "Politics",
+      author: "Jane Doe",
+      readTime: "8 min",
+      image: "...",
     },
-    {
-      title: "Health Benefits of Meditation",
-      content: "Meditation helps with stress and anxiety...",
-      id: 2,
-    },
+    // More articles...
   ];
 
-  const handleEdit = (id) => {
-    // Edit post logic
-    console.log("Editing post:", id);
-  };
-
-  const handleDelete = (id) => {
-    // Delete post logic
-    console.log("Deleting post:", id);
-  };
-
   return (
-    <div>
-      <Title level={2}>Newsroom Posts</Title>
-      <Row gutter={16}>
-        {posts.map((post) => (
-          <Col span={8} key={post.id}>
-            <Card
-              title={post.title}
-              extra={
-                <div>
-                  <Button
-                    icon={<EditOutlined />}
-                    onClick={() => handleEdit(post.id)}
-                    style={{ marginRight: 8 }}
-                  />
-                  <Button
-                    icon={<DeleteOutlined />}
-                    onClick={() => handleDelete(post.id)}
-                  />
-                </div>
-              }
-            >
-              <Text>{post.content.substring(0, 100)}...</Text>
-            </Card>
+    <Layout className={styles.newsroom}>
+      <Content className={styles.content}>
+        <Title level={2} className={styles.title}>
+          Newsroom
+        </Title>
+
+        <Row gutter={[16, 16]}>
+          <Col xs={24} md={6}>
+            <NewsroomFilters />
+            <WriterSpotlight />
           </Col>
-        ))}
-      </Row>
-    </div>
+          <Col xs={24} md={18}>
+            <AdminControls />
+            <Row gutter={[16, 16]}>
+              {articles.map((article) => (
+                <Col xs={24} sm={12} md={8} key={article.id}>
+                  <ArticleCard article={article} />
+                </Col>
+              ))}
+            </Row>
+          </Col>
+        </Row>
+      </Content>
+    </Layout>
   );
 };
 

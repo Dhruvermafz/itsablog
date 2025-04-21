@@ -30,7 +30,7 @@ export const routes = {
   ADMIN_MANAGE_CATEGORIES: "/admin/categories/list",
   ADMIN_MANAGE_ROLES: "/admin/roles/list",
   ADMIN_MANAGE_REPORTS: "/admin/reports/list",
-
+  GROUP_PAGE: "/groups/:id",
   GROUPS: "/groups",
   NEWSROOM: "/newsroom",
 };

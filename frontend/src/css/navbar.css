@@ -1,95 +1,117 @@
+/* Core Variables */
+:root {
+  --bannerBg: #1a1a1a;
+  --accentColor: #ff4c29; /* a bold but warm highlight */
+  --hoverAccent: #3498db;
+  --textPrimary: #f4f4f4;
+  --textSecondary: #999;
+  --fontMain: "DM Serif Display", "Georgia", serif;
+  --fontAlt: "Inter", "Ubuntu", sans-serif;
+}
+
 /* Navbar Styles */
 .Navbar {
   display: flex;
   align-items: center;
-  transition: 0.2s ease-in-out;
-  z-index: 1;
+  justify-content: space-between;
+  padding: 1rem 3rem;
+  background: rgba(10, 10, 10, 0.9);
+  backdrop-filter: blur(8px);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  z-index: 999;
+  transition: all 0.3s ease-in-out;
+  font-family: var(--fontAlt);
 }
 
 .Navbar-fixed {
-  top: 0;
   position: fixed;
+  top: 0;
+  width: 100%;
 }
 
-.Navbar-btw {
-  justify-content: space-between;
-}
-
-.Navbar-end {
-  justify-content: flex-end;
-}
-
-.Navbar-left {
-  display: flex;
-}
-
-/* Navbar Navigation Links */
+/* Navbar Nav Buttons */
 .Navbar nav {
-  width: 8vw;
-  padding: 10px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  justify-content: space-around;
+  padding: 0.5rem 1rem;
   cursor: pointer;
-  /* background-color: white; */
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.Navbar nav:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 .Navbar nav p {
   margin: 0;
-  font-size: 1.5vh;
-  font-family: "Ubuntu", sans-serif;
-  color: white;
+  font-size: 1.3vh;
+  color: var(--textSecondary);
+  transition: color 0.3s ease;
 }
 
 .Navbar nav span {
-  color: tomato;
+  color: var(--accentColor);
+  font-size: 1.5vh;
 }
 
-.Navbar nav:hover span,
-.Navbar nav:active span {
-  color: dodgerblue;
+.Navbar nav:hover span {
+  color: var(--hoverAccent);
 }
 
-/* Responsive Styles for Navbar */
-@media only screen and (max-width: 600px) {
-  .Navbar nav {
-    width: 18vw;
-  }
-  .Navbar nav p {
-    font-size: 1.2vh;
-  }
+.Navbar-left {
+  display: flex;
+  gap: 2rem;
 }
 
 /* Banner Styles */
 .banner {
-  background-color: var(--bannerBg); /* Make sure --bannerBg is defined */
+  background-color: var(--bannerBg);
   display: flex;
   align-items: center;
-  height: 8vh;
-  padding: 0 80px; /* Adjust as needed */
+  height: 9vh;
+  padding: 0 3rem;
+  color: var(--textPrimary);
+  font-family: var(--fontMain);
   transition: height 0.3s ease-in-out;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .banner img {
-  height: 45px;
-  margin-right: 15px;
+  height: 50px;
+  margin-right: 1.5rem;
+  border-radius: 6px;
+  filter: brightness(0.95);
 }
 
 .banner strong {
-  font-size: 32px;
+  font-size: 2rem;
+  font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
-/* Responsive Styles for Banner */
-@media only screen and (max-width: 600px) {
-  .banner {
-    padding: 0 50px; /* Adjust as needed */
+/* Responsive */
+@media only screen and (max-width: 768px) {
+  .Navbar {
+    flex-direction: column;
+    padding: 1rem 2rem;
   }
+
+  .Navbar nav {
+    width: auto;
+  }
+
+  .banner {
+    padding: 0 1.5rem;
+    height: 7vh;
+  }
+
+  .banner strong {
+    font-size: 1.6rem;
+  }
+
   .banner img {
     height: 40px;
-    margin-right: 15px;
-  }
-  .banner strong {
-    font-size: 30px;
   }
 }

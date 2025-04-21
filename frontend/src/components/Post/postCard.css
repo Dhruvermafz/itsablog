@@ -1,16 +1,63 @@
-.post-card .primary .content {
+.post-card {
+  background-color: #ffffff;
+  border-radius: 14px;
+  overflow: hidden;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  margin: 40px 0;
+}
+
+.post-card:hover {
+  transform: translateY(-6px);
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.08);
+}
+
+/* Primary Section */
+.post-card .primary {
+  padding: 24px;
+  font-family: "Merriweather", serif;
+  color: #222;
+  position: relative;
   -webkit-mask-image: linear-gradient(black 175px, transparent 250px);
   mask-image: linear-gradient(black 175px, transparent 250px);
 }
 
+.post-card .primary .content {
+  font-size: 1.1rem;
+  line-height: 1.8;
+  color: #2e2e2e;
+}
+
+/* Secondary Title Section */
+.post-card .secondary {
+  padding: 18px 24px;
+  border-top: 1px solid #eee;
+  background: #fafafa;
+}
+
 .post-card .secondary .title {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: 1.2rem;
+  color: #1a1a1a;
   -webkit-mask-image: linear-gradient(black 70px, transparent 125px);
   mask-image: linear-gradient(black 70px, transparent 125px);
 }
 
-html {
-  overflow-y: scroll;
+/* Subtle tag or date */
+.post-card .secondary .meta {
+  font-size: 0.875rem;
+  color: #666;
+  margin-top: 6px;
 }
 
-
-
+/* Optional: Fancy Scrollbar for storytime vibes */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 4px;
+}

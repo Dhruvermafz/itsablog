@@ -1,0 +1,114 @@
+.groups,
+.groupPage {
+  background: #ffffff;
+  min-height: 100vh;
+  padding: 40px 0;
+}
+
+.content {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.title {
+  font-family: "Merriweather", serif;
+  color: #1e3a8a;
+  margin-bottom: 24px;
+}
+
+.search {
+  margin-bottom: 24px;
+  max-width: 400px;
+}
+
+.groupCard {
+  border-radius: 8px;
+  transition: transform 0.3s;
+}
+
+.groupCard:hover {
+  transform: translateY(-5px);
+}
+
+.category {
+  color: #f59e0b;
+  font-weight: bold;
+}
+
+.meta {
+  color: #1f2a44;
+  font-size: 14px;
+}
+
+.joinButton {
+  background: #10b981;
+  border-color: #10b981;
+}
+.filtersCard {
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  margin-bottom: 24px;
+}
+
+.filterTitle {
+  font-family: "Merriweather", serif;
+  color: #1e3a8a;
+  margin-bottom: 16px;
+}
+
+.filterSection {
+  margin-bottom: 16px;
+}
+
+.select {
+  width: 100%;
+  margin-top: 8px;
+}
+.discussionThread {
+  background: #f3f4f6;
+  padding: 16px;
+  border-radius: 8px;
+}
+
+.replySection {
+  margin-top: 16px;
+  display: flex;
+  gap: 8px;
+  flex-direction: column;
+}
+
+.replyButton {
+  background: #10b981;
+  border-color: #10b981;
+  align-self: flex-end;
+}
+.editorCard {
+  border-radius: 8px;
+  background: #ffffff;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.editorTitle {
+  font-family: "Merriweather", serif;
+  color: #1e3a8a;
+  margin-bottom: 16px;
+}
+
+.contributors {
+  margin-bottom: 16px;
+}
+
+.editor {
+  margin-bottom: 16px;
+  font-family: "Inter", sans-serif;
+}
+
+.editorActions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+}
