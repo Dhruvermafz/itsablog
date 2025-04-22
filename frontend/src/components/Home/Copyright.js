@@ -1,35 +1,22 @@
-import { Typography } from "@mui/material";
 import React from "react";
 import { Link } from "react-router-dom";
+import { Typography } from "antd";
 
-const getCurrentYear = () => {
-  const currentYear = new Date().getFullYear();
-  return currentYear;
-};
+const { Text } = Typography;
+
+const getCurrentYear = () => new Date().getFullYear();
 
 const Copyright = () => {
   const currentYear = getCurrentYear();
 
   return (
     <div>
-      <Typography variant="subtitle1" color="text.secondary">
-      &copy; {currentYear}{" "}
-      <Link to="/" color="inherit">
-        ItsABlog
-      </Link>
-      . All rights reserved.{" "}
-      <Link to="/terms" color="inherit">
-        Terms of Use
-      </Link>{" "}
-      |{" "}
-      <Link to="/privacy" color="inherit">
-        Privacy Policy
-      </Link>{" "}
-      |{" "}
-      <Link to="/license" color="inherit">
-        License
-      </Link>
-    </Typography>
+      <Text type="secondary">
+        &copy; {currentYear} <Link to="/">ItsABlog</Link>. All rights reserved.{" "}
+        <Link to="/terms">Terms of Use</Link> |{" "}
+        <Link to="/privacy">Privacy Policy</Link> |{" "}
+        <Link to="/license">License</Link>
+      </Text>
     </div>
   );
 };

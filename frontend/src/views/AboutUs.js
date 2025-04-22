@@ -1,80 +1,104 @@
 import React from "react";
-import { Typography, Card } from "antd";
+import { Typography, Card, Divider } from "antd";
 import Navbar from "../components/Home/Navbar";
-const { Title, Paragraph } = Typography;
+
+const { Title, Paragraph, Link } = Typography;
 
 const AboutPage = () => {
   return (
-    <div style={{ padding: "20px" }}>
+    <div style={{ padding: "24px", maxWidth: "1000px", margin: "0 auto" }}>
       <Navbar />
-      <Card>
-        <Title level={2}>ItsABlog - Multiuser Blogging Application</Title>
-        <Paragraph>
-          ItsABlog is a multiuser blogging application designed for individuals
-          who have a lot to say but might not always have someone to listen.
-          With ItsABlog, you can easily share your thoughts, stories, and
-          opinions with the world. Whether you're a passionate writer or just
-          want to express yourself, ItsABlog provides the platform you need.
-        </Paragraph>
+      <Card
+        bordered={false}
+        style={{ marginTop: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}
+      >
+        <Typography>
+          <Title level={2}>ItsABlog - Multiuser Blogging Application</Title>
+          <Paragraph type="secondary">
+            ItsABlog is a multiuser blogging platform for people with a lot to
+            say but no one to listen. Share your thoughts, stories, and opinions
+            with the world — whether you're a seasoned writer or someone just
+            looking to express themselves.
+          </Paragraph>
 
-        <Title level={3}>Application Deployment</Title>
-        <a href="https://itsablog.vercel.app/" target="_blank">
-          ItsABlog - Deployed here
-        </a>
+          <Divider />
 
-        <Title level={3}>Features</Title>
-        <Paragraph>
-          1. Create, Read, Update, and Delete Posts: Easily create, edit, and
-          delete your blogs. Share your experiences and ideas with the ItsABlog
-          community.
-        </Paragraph>
-        <Paragraph>
-          2. Like and Unlike Posts: Show your appreciation for other users'
-          posts by liking them, and easily undo your like if you change your
-          mind.
-        </Paragraph>
-        <Paragraph>
-          3. Create, Reply to, Read, Update, and Delete Nested Comments: Engage
-          in discussions with other users by leaving comments on posts. You can
-          also reply to comments and manage your own comments effortlessly.
-        </Paragraph>
-        <Paragraph>
-          4. Markdown Support: Format your posts and comments using Markdown to
-          add headings, lists, links, and more, making your content more
-          visually appealing and organized.
-        </Paragraph>
-        {/* Add other features in a similar fashion */}
+          <Title level={3}>🚀 Application Deployment</Title>
+          <Paragraph>
+            <Link
+              href="https://itsablog.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              👉 Visit the live app here
+            </Link>
+          </Paragraph>
 
-        <Title level={3}>Getting Started</Title>
-        <Paragraph>
-          To start using ItsABlog, simply visit our{" "}
-          <a href="https://itsablog.vercel.app/" target="_blank">
-            deployed website
-          </a>{" "}
-          and sign up or log in to get started. You'll be able to create, share,
-          and interact with posts and comments right away.
-        </Paragraph>
+          <Divider />
 
-        <Title level={3}>Contributing</Title>
-        <Paragraph>
-          We welcome contributions from the community to help improve and expand
-          ItsABlog. If you'd like to contribute, please follow our{" "}
-          <a href="CONTRIBUTING.md" target="_blank">
-            contribution guidelines
-          </a>
-          .
-        </Paragraph>
+          <Title level={3}>🧩 Features</Title>
+          <Paragraph>
+            <strong>1. CRUD Posts:</strong> Create, edit, and delete blog posts
+            with ease.
+          </Paragraph>
+          <Paragraph>
+            <strong>2. Like/Unlike Posts:</strong> Show appreciation or take it
+            back — it’s your call.
+          </Paragraph>
+          <Paragraph>
+            <strong>3. Nested Comments:</strong> Reply to comments, engage in
+            discussions, and manage your conversations.
+          </Paragraph>
+          <Paragraph>
+            <strong>4. Markdown Support:</strong> Format your content
+            beautifully using Markdown.
+          </Paragraph>
+          {/* Add more feature blocks similarly if needed */}
 
-        <Title level={3}>Feedback and Support</Title>
-        <Paragraph>
-          If you have any feedback, questions, or need assistance, please don't
-          hesitate to reach out to us at{" "}
-          <a href="mailto:support@itsablog.com">support@itsablog.com</a>. We're
-          here to help you make the most of your blogging experience.
-        </Paragraph>
+          <Divider />
 
-        <Title level={3}>Happy Blogging!</Title>
-        <Paragraph>The ItsABlog Team</Paragraph>
+          <Title level={3}>🔰 Getting Started</Title>
+          <Paragraph>
+            Visit our{" "}
+            <Link
+              href="https://itsablog.vercel.app/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              deployed website
+            </Link>{" "}
+            and sign up or log in to begin your blogging journey.
+          </Paragraph>
+
+          <Divider />
+
+          <Title level={3}>🤝 Contributing</Title>
+          <Paragraph>
+            Contributions are welcome! Please read our{" "}
+            <Link
+              href="CONTRIBUTING.md"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              contribution guidelines
+            </Link>{" "}
+            to get started.
+          </Paragraph>
+
+          <Divider />
+
+          <Title level={3}>📬 Feedback & Support</Title>
+          <Paragraph>
+            Reach out to us at{" "}
+            <Link href="mailto:support@itsablog.com">support@itsablog.com</Link>{" "}
+            for feedback, questions, or assistance.
+          </Paragraph>
+
+          <Divider />
+
+          <Title level={3}>✍️ Happy Blogging!</Title>
+          <Paragraph>The ItsABlog Team</Paragraph>
+        </Typography>
       </Card>
     </div>
   );

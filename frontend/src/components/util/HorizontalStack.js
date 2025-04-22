@@ -1,11 +1,15 @@
-import { Stack } from "@mui/material";
 import React from "react";
+import { Row, Col } from "antd";
 
-const HorizontalStack = (props) => {
+const HorizontalStack = ({ children, gutter = 8, style, ...props }) => {
+  const wrappedChildren = React.Children.map(children, (child, index) => (
+    <Col key={index}>{child}</Col>
+  ));
+
   return (
-    <Stack direction="row" alignItems="center" spacing={1} {...props}>
-      {props.children}
-    </Stack>
+    <Row align="middle" gutter={gutter} style={style} {...props}>
+      {wrappedChildren}
+    </Row>
   );
 };
 

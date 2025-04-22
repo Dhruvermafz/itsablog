@@ -1,7 +1,9 @@
 import React from "react";
 import { Card, Row, Col, Layout } from "antd";
 import Sidebar from "./Sidebar";
+import "../../css/admin.css";
 const { Content } = Layout;
+
 const DashboardHome = () => {
   return (
     <Layout style={{ minHeight: "100vh" }}>

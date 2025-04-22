@@ -1,18 +1,25 @@
 import React from "react";
-import { Row, Col, Typography } from "antd";
+import { Row, Col, Typography, Space } from "antd";
 import UserAvatar from "./UserAvatar";
 import { Link } from "react-router-dom";
 
+const { Text } = Typography;
+
 const UserEntry = ({ username }) => {
   return (
-    <Row justify="space-between" key={username} align="middle">
-      <Col>
-        <Row align="middle" className="followers">
-          <UserAvatar size={30} username={username} />
-          <Typography.Text>{username}</Typography.Text>
-        </Row>
-      </Col>
-    </Row>
+    <Link
+      to={`/${username}`}
+      style={{ textDecoration: "none", color: "inherit" }}
+    >
+      <Row align="middle" gutter={8} wrap={false}>
+        <Col>
+          <UserAvatar size={32} username={username} />
+        </Col>
+        <Col>
+          <Text strong>{username}</Text>
+        </Col>
+      </Row>
+    </Link>
   );
 };
 

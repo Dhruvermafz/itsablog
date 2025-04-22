@@ -1,47 +1,46 @@
 import React from "react";
-import { Row, Col, Space } from "antd"; // Ant Design's layout components
+import { Row, Col, Space, Card, Button, Typography } from "antd";
+import { ReadOutlined, TeamOutlined } from "@ant-design/icons"; // Icons from Ant Design
 import FindUsers from "../Extras/FindUsers";
 import Footer from "./NavLinks";
 import Loading from "./Loading";
 import PostCard from "../Post/PostCard";
 import TopPosts from "../Post/TopPosts";
 import StickyWidget from "../Extras/StickyWidget";
-import { Card, Button, Typography } from "antd";
-import { useNavigate } from "react-router-dom"; // For navigation
+import { useNavigate } from "react-router-dom";
 
 const { Title } = Typography;
+
 const Sidebar = () => {
-  const history = useNavigate();
+  const navigate = useNavigate();
 
   const handleCardClick = (page) => {
     if (page === "newsroom") {
-      history("/newsroom"); // Navigate to Newsroom page
+      navigate("/newsroom");
     } else if (page === "groups") {
-      history("/groups"); // Navigate to Groups page
+      navigate("/groups");
     }
   };
+
   return (
     <Space direction="vertical" size="middle" style={{ width: "100%" }}>
       <TopPosts />
       <FindUsers />
-      <Row gutter={16}>
+      <Row gutter={[16, 16]}>
         <Col span={12}>
           <Card
             hoverable
-            cover={
-              <img
-                alt="Newsroom"
-                src="https://via.placeholder.com/400x200?text=Newsroom"
-              />
-            }
             onClick={() => handleCardClick("newsroom")}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", textAlign: "center" }}
           >
-            <Card.Meta
-              title="Newsroom"
-              description="A space for writers to post detailed and sophisticated articles."
-            />
-            <Button type="primary" block style={{ marginTop: "10px" }}>
+            <ReadOutlined style={{ fontSize: "48px", color: "#1890ff" }} />
+            <Title level={4} style={{ marginTop: "10px" }}>
+              Newsroom
+            </Title>
+            <p>
+              A space for writers to post detailed and sophisticated articles.
+            </p>
+            <Button type="primary" block>
               Go to Newsroom
             </Button>
           </Card>
@@ -49,20 +48,18 @@ const Sidebar = () => {
         <Col span={12}>
           <Card
             hoverable
-            cover={
-              <img
-                alt="Groups"
-                src="https://via.placeholder.com/400x200?text=Groups"
-              />
-            }
             onClick={() => handleCardClick("groups")}
-            style={{ cursor: "pointer" }}
+            style={{ cursor: "pointer", textAlign: "center" }}
           >
-            <Card.Meta
-              title="Groups"
-              description="Join and engage with different groups. Share quick posts up to 50 characters."
-            />
-            <Button type="primary" block style={{ marginTop: "10px" }}>
+            <TeamOutlined style={{ fontSize: "48px", color: "#52c41a" }} />
+            <Title level={4} style={{ marginTop: "10px" }}>
+              Groups
+            </Title>
+            <p>
+              Join and engage with different groups. Share quick posts up to 50
+              characters.
+            </p>
+            <Button type="primary" block>
               Go to Groups
             </Button>
           </Card>

@@ -1,17 +1,15 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { login } from "../api/users";
-import { Input, Button, Form, Typography, Alert } from "antd";
-import { PersonOutline, LockOutlined } from "@mui/icons-material"; // Optional: icons can be used if needed
+import { Input, Button, Form, Typography, Alert, Card, Space } from "antd";
+import { UserOutlined, LockOutlined } from "@ant-design/icons";
 import ErrorAlert from "../components/Extras/ErrorAlert";
 import { loginUser } from "../helpers/authHelper";
-import Copyright from "../components/Home/Footer";
 import Banner from "../components/Banner";
-import { icon } from "../static";
 import Layout from "../components/Layout/Layout";
-import TransitionOptions from "../components/util/TransitionOptions";
+import "./login.css";
 
-const { Title, Text } = Typography;
+const { Title } = Typography;
 
 const LoginView = () => {
   const [allowTrial] = useState(true);
@@ -23,10 +21,8 @@ const LoginView = () => {
   });
 
   const [serverError, setServerError] = useState("");
-  const [transitonOption, setTransitionOption] = useState("none");
 
   const handleChange = (e) => {
-    e.preventDefault();
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
@@ -34,11 +30,9 @@ const LoginView = () => {
     const data = await login(values);
     if (data.error) {
       setServerError(data.error);
-      setTransitionOption("failure");
     } else {
       loginUser(data);
       navigate("/");
-      setTransitionOption("success");
     }
   };
 
@@ -46,47 +40,53 @@ const LoginView = () => {
     <>
       <Banner />
       <Layout>
-        <div className="portal-login">
-          {allowTrial && (
-            <div className="portal-notif">
-              <h3>Trial Use</h3>
-              <ul>
-                <li>
-                  <span>Email </span>: &nbsp; <span>trial@trial.com</span>
-                </li>
-                <li>
-                  <span>Password </span>: &nbsp; <span>trial123</span>
-                </li>
-              </ul>
-            </div>
-          )}
-          <div className="portal">
-            <Title level={2} className="portal-head">
-              Login
+        <div className="login-container">
+          <Card className="login-card" bordered={false}>
+            <Title level={2} className="login-title">
+              Welcome Back
             </Title>
+
+            {allowTrial && (
+              <Alert
+                className="trial-alert"
+                message={
+                  <div>
+                    <strong>Trial Credentials</strong>
+                    <br />
+                    Email: <code>trial@trial.com</code>
+                    <br />
+                    Password: <code>trial123</code>
+                  </div>
+                }
+                type="info"
+                showIcon
+              />
+            )}
 
             <Form
               name="loginForm"
-              initialValues={{ remember: true }}
+              layout="vertical"
               onFinish={handleSubmit}
+              autoComplete="off"
             >
               <Form.Item
-                label="Email Address"
+                label="Email"
                 name="email"
                 rules={[
                   {
                     required: true,
                     type: "email",
-                    message: "Please enter a valid email address!",
+                    message: "Please enter a valid email!",
                   },
                 ]}
               >
                 <Input
-                  name="email"
+                  prefix={<UserOutlined className="input-icon" />}
                   size="large"
+                  placeholder="Enter your email"
+                  name="email"
                   value={formData.email}
                   onChange={handleChange}
-                  placeholder="Enter your email"
                 />
               </Form.Item>
 
@@ -98,38 +98,31 @@ const LoginView = () => {
                 ]}
               >
                 <Input.Password
-                  name="password"
+                  prefix={<LockOutlined className="input-icon" />}
                   size="large"
+                  placeholder="Enter your password"
+                  name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Enter your password"
                 />
               </Form.Item>
 
               <ErrorAlert error={serverError} />
 
               <Form.Item>
-                <Button
-                  type="primary"
-                  htmlType="submit"
-                  className="portal-submit"
-                  block
-                >
+                <Button type="primary" htmlType="submit" size="large" block>
                   Login
                 </Button>
               </Form.Item>
-            </Form>
 
-            <Link to="/signup" className="portal-link">
-              Create an account?
-            </Link>
-            <Link to="/forgotpassword" className="portal-link">
-              Forgot Password?
-            </Link>
-          </div>
+              <div className="login-footer">
+                <Link to="/signup">Create an account</Link>
+                <Link to="/forgotpassword">Forgot password?</Link>
+              </div>
+            </Form>
+          </Card>
         </div>
       </Layout>
-      {/* <Copyright /> */}
     </>
   );
 };

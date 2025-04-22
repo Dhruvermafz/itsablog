@@ -102,7 +102,7 @@ function Router() {
             <Route path={routes.LOGIN} element={<LoginView />} />
             <Route path={routes.SIGNUP} element={<SignupView />} />
             <Route path={routes.SETTINGS} element={<SettingsView />} />
-            <Route element={<Error404 />} />
+            <Route path={routes.Error404} element={<Error404 />} />
             <Route element={<Error500 />} />
             <Route path={routes.ABOUT} element={<AboutPage />} />
             <Route path={routes.PASSWORD_RESET} element={<PasswordReset />} />

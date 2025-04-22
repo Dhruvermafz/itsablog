@@ -1,87 +1,55 @@
 import React, { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { signup } from "../api/users";
-import { loginUser } from "../helpers/authHelper";
 import { isLength, isEmail, contains } from "validator";
-import {
-  Typography,
-  TextField,
-  Button,
-  Alert,
-  Container,
-  Paper,
-  Box,
-  Grid,
-} from "@mui/material";
+import { Typography, Input, Button, Form, Alert, Card, Space } from "antd";
+import { UserOutlined, MailOutlined, LockOutlined } from "@ant-design/icons";
 import Layout from "../components/Layout/Layout";
 import Banner from "../components/Banner";
+import "../css/signup.css";
 
-import { BASE_URL } from "../config";
+const { Title } = Typography;
 
 const SignupView = () => {
   const navigate = useNavigate();
   const [allowTrial] = useState(true);
   const [loading, setLoading] = useState(false);
   const [serverError, setServerError] = useState("");
-  const [errors, setErrors] = useState({});
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
   });
 
-  const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: value,
-    }));
-    setErrors((prevErrors) => ({
-      ...prevErrors,
-      [name]: "", // Clear error on input change
-    }));
-  };
+  const [form] = Form.useForm();
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    const validationErrors = validate();
-    if (Object.keys(validationErrors).length !== 0) return;
-
-    const data = await signup(formData);
+  const handleSubmit = async (values) => {
+    setLoading(true);
+    const data = await signup(values);
+    setLoading(false);
 
     if (data.error) {
       setServerError(data.error);
     } else {
-      const userId = data.userId;
-      navigate(`/email/confirm/${userId}`);
-      // loginUser(data);
-      // navigate("/");
+      navigate(`/email/confirm/${data.userId}`);
     }
   };
 
-  const validate = () => {
-    const validationErrors = {};
-
-    if (!isLength(formData.username, { min: 6, max: 30 })) {
-      validationErrors.username = "Must be between 6 and 30 characters long";
+  const validateUsername = (_, value) => {
+    if (!isLength(value || "", { min: 6, max: 30 })) {
+      return Promise.reject(new Error("Must be between 6 and 30 characters"));
     }
-
-    if (contains(formData.username, " ")) {
-      validationErrors.username = "Must contain only valid characters";
+    if (contains(value || "", " ")) {
+      return Promise.reject(new Error("Must not contain spaces"));
     }
+    return Promise.resolve();
+  };
 
-    if (!isLength(formData.password, { min: 8 })) {
-      validationErrors.password = "Must be at least 8 characters long";
+  const validatePassword = (_, value) => {
+    if (!isLength(value || "", { min: 8 })) {
+      return Promise.reject(new Error("Must be at least 8 characters long"));
     }
-
-    if (!isEmail(formData.email)) {
-      validationErrors.email = "Must be a valid email address";
-    }
-
-    setErrors(validationErrors);
-
-    return validationErrors;
+    return Promise.resolve();
   };
 
   return (
@@ -95,73 +63,90 @@ const SignupView = () => {
         )}
 
         <div className="portal portal-signup">
-          <h2 className="portal-head">Sign Up</h2>
+          <Card className="signup-card" bordered={false}>
+            <Title level={2} className="portal-head">
+              Sign Up
+            </Title>
+            <Link to="/login" className="portal-link">
+              Already have an account?
+            </Link>
 
-          <Link to="/login" className="portal-link">
-            Already have an account?
-          </Link>
-          <form aria-labelledby="vertical" onSubmit={handleSubmit}>
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <TextField
-                  label="Username"
-                  name="username"
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  error={Boolean(errors.username)}
-                  helperText={errors.username}
-                  value={formData.username}
-                  onChange={handleInputChange}
+            <Form
+              form={form}
+              layout="vertical"
+              onFinish={handleSubmit}
+              initialValues={formData}
+            >
+              <Form.Item
+                name="username"
+                label="Username"
+                rules={[
+                  { required: true, message: "Username is required" },
+                  { validator: validateUsername },
+                ]}
+              >
+                <Input
+                  prefix={<UserOutlined />}
+                  placeholder="Enter your username"
+                  size="large"
                 />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Email Address"
-                  name="email"
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  error={Boolean(errors.email)}
-                  helperText={errors.email}
-                  value={formData.email}
-                  onChange={handleInputChange}
+              </Form.Item>
+
+              <Form.Item
+                name="email"
+                label="Email Address"
+                rules={[
+                  { required: true, message: "Email is required" },
+                  {
+                    type: "email",
+                    message: "Must be a valid email address",
+                  },
+                ]}
+              >
+                <Input
+                  prefix={<MailOutlined />}
+                  placeholder="Enter your email"
+                  size="large"
                 />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Password"
-                  name="password"
-                  fullWidth
-                  variant="outlined"
-                  size="small"
-                  type="password"
-                  error={Boolean(errors.password)}
-                  helperText={errors.password}
-                  value={formData.password}
-                  onChange={handleInputChange}
+              </Form.Item>
+
+              <Form.Item
+                name="password"
+                label="Password"
+                rules={[
+                  { required: true, message: "Password is required" },
+                  { validator: validatePassword },
+                ]}
+              >
+                <Input.Password
+                  prefix={<LockOutlined />}
+                  placeholder="Enter your password"
+                  size="large"
                 />
-              </Grid>
+              </Form.Item>
 
               {serverError && (
-                <Alert severity="error" className="portal-error">
-                  {serverError}
-                </Alert>
+                <Alert
+                  message={serverError}
+                  type="error"
+                  showIcon
+                  style={{ marginBottom: 16 }}
+                />
               )}
-              <Grid item xs={12}>
+
+              <Form.Item>
                 <Button
-                  type="submit"
-                  variant="contained"
-                  color="primary"
+                  type="primary"
+                  htmlType="submit"
                   size="large"
-                  disabled={loading}
-                  className="portal-submit"
+                  block
+                  loading={loading}
                 >
                   Sign Up
                 </Button>
-              </Grid>
-            </Grid>
-          </form>
+              </Form.Item>
+            </Form>
+          </Card>
         </div>
       </Layout>
     </>
