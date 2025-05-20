@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ConfigProvider } from "antd";
 import { initiateSocketConnection } from "./helpers/socketHelper";
 import Router from "./router";
-// import Footer from "./components/Home/Footer"; // Optional
+import Footer from "./components/Home/Footer"; // Optional
 import Navbar from "./components/Home/Navbar";
 import { getAntdTheme } from "./theme";
 
@@ -56,8 +56,9 @@ function App() {
 
   return (
     <ConfigProvider theme={getAntdTheme(darkmode)}>
+      <Navbar />
       <Router />
-      {/* <Footer /> */}
+      <Footer />
     </ConfigProvider>
   );
 }

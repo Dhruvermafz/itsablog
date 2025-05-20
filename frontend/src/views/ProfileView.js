@@ -3,13 +3,9 @@ import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { Layout, Row, Col, Tabs, Space, Spin, Alert } from "antd";
 import { getUser, updateUser } from "../api/users";
 import { isLoggedIn } from "../helpers/authHelper";
-
 import CommentBrowser from "../components/Comments/CommentBrowser";
 import FindUsers from "../components/Extras/FindUsers";
-import Footer from "../components/Home/NavLinks";
-import GoBack from "../components/Extras/GoBack";
 import MobileProfile from "../components/Extras/MobileProfile";
-import Navbar from "../components/Home/Navbar";
 import PostBrowser from "../components/Post/PostBrowser";
 import Profile from "../components/Profile/Profile";
 
@@ -84,7 +80,6 @@ const ProfileView = () => {
 
   return (
     <Layout>
-      <Navbar />
       <Content style={{ padding: "24px 48px", minHeight: "100vh" }}>
         <Row gutter={24}>
           <Col xs={24} md={16}>

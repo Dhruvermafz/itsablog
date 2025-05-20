@@ -3,9 +3,7 @@ import { Layout, Row, Col } from "antd";
 import GoBack from "../components/Extras/GoBack";
 import GridLayout from "../components/Extras/GridLayout";
 import Loading from "../components/Home/Loading";
-import Navbar from "../components/Home/Navbar";
 import PostCard from "../components/Post/PostCard";
-import Sidebar from "../components/Home/Sidebar";
 import { useParams } from "react-router-dom";
 import { getPost } from "../api/posts";
 import Comments from "../components/Comments/Comments";
@@ -39,7 +37,6 @@ const PostView = () => {
 
   return (
     <Layout>
-      <Navbar />
       <GoBack />
       <Content>
         <GridLayout

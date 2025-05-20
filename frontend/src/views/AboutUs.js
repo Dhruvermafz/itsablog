@@ -1,13 +1,11 @@
 import React from "react";
 import { Typography, Card, Divider } from "antd";
-import Navbar from "../components/Home/Navbar";
 
 const { Title, Paragraph, Link } = Typography;
 
 const AboutPage = () => {
   return (
     <div style={{ padding: "24px", maxWidth: "1000px", margin: "0 auto" }}>
-      <Navbar />
       <Card
         bordered={false}
         style={{ marginTop: "24px", boxShadow: "0 2px 8px rgba(0,0,0,0.05)" }}

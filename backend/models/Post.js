@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 const CustomFilter = require("../util/filter");
 const PostLike = require("./PostLike");
-const PostComment = require("./PostComment"); // If you want to track comments in a separate model
 
 const PostSchema = new mongoose.Schema(
   {
@@ -80,7 +79,7 @@ PostSchema.pre("save", function (next) {
 PostSchema.pre("remove", async function (next) {
   console.log(this._id);
   await PostLike.deleteMany({ postId: this._id });
-  await PostComment.deleteMany({ postId: this._id }); // Assuming you have a separate PostComment model
+
   next();
 });
 

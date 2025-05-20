@@ -6,6 +6,7 @@ import ArticleCard from "./ArticleCard";
 import WriterSpotlight from "./WriterSpotlight";
 import AdminControls from "./AdminControls";
 import styles from "./NewsRoom.module.css";
+import Navbar from "../Home/Navbar";
 
 const { Content } = Layout;
 const { Title } = Typography;
@@ -25,30 +26,33 @@ const NewsroomList = () => {
   ];
 
   return (
-    <Layout className={styles.newsroom}>
-      <Content className={styles.content}>
-        <Title level={2} className={styles.title}>
-          Newsroom
-        </Title>
+    <>
+      <Navbar />
+      <Layout className={styles.newsroom}>
+        <Content className={styles.content}>
+          <Title level={2} className={styles.title}>
+            Newsroom
+          </Title>
 
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={6}>
-            <NewsroomFilters />
-            <WriterSpotlight />
-          </Col>
-          <Col xs={24} md={18}>
-            <AdminControls />
-            <Row gutter={[16, 16]}>
-              {articles.map((article) => (
-                <Col xs={24} sm={12} md={8} key={article.id}>
-                  <ArticleCard article={article} />
-                </Col>
-              ))}
-            </Row>
-          </Col>
-        </Row>
-      </Content>
-    </Layout>
+          <Row gutter={[16, 16]}>
+            <Col xs={24} md={6}>
+              <NewsroomFilters />
+              <WriterSpotlight />
+            </Col>
+            <Col xs={24} md={18}>
+              <AdminControls />
+              <Row gutter={[16, 16]}>
+                {articles.map((article) => (
+                  <Col xs={24} sm={12} md={8} key={article.id}>
+                    <ArticleCard article={article} />
+                  </Col>
+                ))}
+              </Row>
+            </Col>
+          </Row>
+        </Content>
+      </Layout>
+    </>
   );
 };
 

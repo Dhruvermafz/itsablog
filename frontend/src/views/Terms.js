@@ -6,7 +6,6 @@ import {
   UserOutlined,
 } from "@ant-design/icons";
 import "../css/terms.css";
-import Navbar from "../components/Home/Navbar";
 
 const { Title, Paragraph, Text } = Typography;
 const { Content } = Layout;
@@ -14,7 +13,6 @@ const { Content } = Layout;
 const TermsAndConditions = () => {
   return (
     <>
-      <Navbar />
       <Layout className="terms-layout">
         <Content className="terms-container">
           <div className="terms-header">

@@ -50,6 +50,12 @@ export const userApi = createApi({
     getFollowing: builder.query({
       query: (id) => `/following/${id}`,
     }),
+    deleteUser: builder.mutation({
+      query: (id) => ({
+        url: `/delete/${id}`,
+        method: "DELETE",
+      }),
+    }),
   }),
 });
 
@@ -63,4 +69,5 @@ export const {
   useUnfollowMutation,
   useGetFollowersQuery,
   useGetFollowingQuery,
+  useDeleteUserMutation,
 } = userApi;

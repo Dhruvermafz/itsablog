@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Layout, Row, Col, Card } from "antd";
 import Messages from "../components/Messages/Messages";
-import Navbar from "../components/Home/Navbar";
 import UserMessengerEntries from "../components/UserModal/UserMessengerEntries";
 import { getConversations } from "../api/messages";
 import { isLoggedIn } from "../helpers/authHelper";
@@ -59,7 +58,6 @@ const MessengerView = () => {
 
   return (
     <Layout style={{ minHeight: "100vh" }}>
-      <Navbar />
       <Content style={{ padding: "16px" }}>
         <Card bodyStyle={{ padding: 0 }}>
           <Row style={{ height: "calc(100vh - 110px)" }}>
