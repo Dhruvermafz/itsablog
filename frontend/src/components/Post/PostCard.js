@@ -1,5 +1,4 @@
 import React, { useState } from "react";
-
 import {
   Button,
   Card,
@@ -7,19 +6,16 @@ import {
   Space,
   Typography,
   Menu,
-  Modal,
-  message,
   Popconfirm,
+  message,
 } from "antd";
 import { MdCancel } from "react-icons/md";
 import {
   EditOutlined,
   DeleteOutlined,
   LikeOutlined,
-  LikeFilled,
-  MoreOutlined,
   MessageOutlined,
-  MessageFilled,
+  MoreOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 import { deletePost, likePost, unlikePost, updatePost } from "../../api/posts";
@@ -32,54 +28,60 @@ import ContentUpdateEditor from "../Content/ContentUpdateEditor";
 import Markdown from "../Markdown/Markdown";
 import UserLikePreview from "../UserModal/UserLikePreview";
 import { Link } from "react-router-dom";
+import "./postCard.css"; // Separate CSS file for styling
 
-const PostCard = (props) => {
-  const { preview, removePost } = props;
+const { Title, Text } = Typography;
+
+const PostCard = ({ post, preview, removePost }) => {
   const [loading, setLoading] = useState(false);
-  const history = useNavigate();
+  const [editing, setEditing] = useState(false);
+  const [visible, setVisible] = useState(false); // State for Popover visibility
+  const navigate = useNavigate();
   const user = isLoggedIn();
 
-  const [anchorEl, setAnchorEl] = useState(null);
-  const [editing, setEditing] = useState(false);
-  const [confirmDelete, setConfirmDelete] = useState(false);
-  const [post, setPost] = useState(props.post);
-  const [likeCount, setLikeCount] = useState(props.post.likeCount);
+  const [currentPost, setCurrentPost] = useState(post);
+  const [likeCount, setLikeCount] = useState(post.likeCount);
 
-  let maxHeight = null;
-  if (preview === "primary") {
-    maxHeight = 250;
-  }
+  // Determine maxHeight based on preview type
+  const maxHeight = preview === "primary" ? 250 : null;
 
   const handleDeletePost = async (e) => {
     e.stopPropagation();
-    if (!confirmDelete) {
-      setConfirmDelete(true);
-    } else {
-      setLoading(true);
-      await deletePost(post._id, isLoggedIn());
-      setLoading(false);
+    setLoading(true);
+    try {
+      await deletePost(currentPost._id, user);
+      message.success("Post deleted successfully!");
       if (preview) {
-        removePost(post);
+        removePost(currentPost);
       } else {
-        history("/");
+        navigate("/");
       }
+    } catch (error) {
+      message.error("Failed to delete post. Please try again.");
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleEditPost = (e) => {
     e.stopPropagation();
-    history(`/blog/edit/${post._id}`); // Navigate to edit post page with post ID
+    setVisible(false); // Close Popover
+    navigate(`/blog/edit/${currentPost._id}`);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const formData = new FormData(e.target);
-    const content = formData.get("content"); // Fetch content correctly
+    const content = formData.get("content");
 
     setLoading(true);
     try {
-      const updatedPost = await updatePost(post._id, isLoggedIn(), { content });
-      setPost({ ...post, content: updatedPost.content, edited: true }); // Ensure proper re-render
+      const updatedPost = await updatePost(currentPost._id, user, { content });
+      setCurrentPost({
+        ...currentPost,
+        content: updatedPost.content,
+        edited: true,
+      });
       message.success("Post updated successfully!");
       setEditing(false);
     } catch (error) {
@@ -90,128 +92,125 @@ const PostCard = (props) => {
   };
 
   const handleLike = async (liked) => {
-    if (liked) {
-      setLikeCount((prevCount) => prevCount + 1);
-      await likePost(post._id, user);
-    } else {
-      setLikeCount((prevCount) => prevCount - 1);
-      await unlikePost(post._id, user);
+    try {
+      if (liked) {
+        setLikeCount((prev) => prev + 1);
+        await likePost(currentPost._id, user);
+      } else {
+        setLikeCount((prev) => prev - 1);
+        await unlikePost(currentPost._id, user);
+      }
+    } catch (error) {
+      message.error("Failed to update like. Please try again.");
+      setLikeCount((prev) => (liked ? prev - 1 : prev + 1)); // Revert on error
     }
   };
 
-  const isAuthor = user?.username === post?.poster?.username;
+  const handlePopoverVisibleChange = (newVisible) => {
+    setVisible(newVisible);
+  };
+
+  const isAuthor = user?.username === currentPost?.poster?.username;
+
+  const menuContent = (
+    <Menu className="post-menu">
+      <Menu.Item key="edit" icon={<EditOutlined />} onClick={handleEditPost}>
+        Edit Post
+      </Menu.Item>
+      <Menu.Item key="delete" icon={<DeleteOutlined />} danger>
+        <Popconfirm
+          title="Are you sure you want to delete this post?"
+          onConfirm={handleDeletePost}
+          okText="Yes"
+          cancelText="No"
+          onCancel={() => setVisible(false)}
+        >
+          Delete Post
+        </Popconfirm>
+      </Menu.Item>
+    </Menu>
+  );
 
   return (
-    <PostContentBox clickable={preview} post={post} editing={editing}>
-      <HorizontalStack justifyContent="space-between">
+    <PostContentBox
+      clickable={preview}
+      post={currentPost}
+      className="post-card"
+    >
+      <HorizontalStack justifyContent="space-between" className="post-header">
         <ContentDetails
-          username={post?.poster?.username}
-          createdAt={post?.createdAt}
-          edited={post?.edited}
+          username={currentPost?.poster?.username}
+          createdAt={currentPost?.createdAt}
+          edited={currentPost?.edited}
           preview={preview === "secondary"}
         />
-        <Space>
-          {user && (isAuthor || user.isAdmin) && preview !== "secondary" && (
-            <div>
-              <Popover
-                placement="bottomRight"
-                content={
-                  <Menu>
-                    <Menu.Item
-                      icon={<EditOutlined />}
-                      onClick={(e) => handleEditPost(e)}
-                    >
-                      Edit
-                    </Menu.Item>
-
-                    <Menu.Item
-                      icon={<DeleteOutlined />}
-                      style={{ color: "red" }}
-                    >
-                      <Popconfirm
-                        title="Are you sure you want to delete this post?"
-                        onConfirm={handleDeletePost}
-                        okText="Yes"
-                        cancelText="No"
-                      >
-                        <a href="#">Delete</a>
-                      </Popconfirm>
-                    </Menu.Item>
-                  </Menu>
-                }
-                trigger="click"
-              >
-                <Button type="text" icon={<MoreOutlined />} />
-              </Popover>
-            </div>
-          )}
-        </Space>
+        {user && (isAuthor || user.isAdmin) && preview !== "secondary" && (
+          <Popover
+            content={menuContent}
+            trigger="click"
+            open={visible}
+            onOpenChange={handlePopoverVisibleChange}
+            placement="bottomRight"
+            overlayClassName="post-menu-popover"
+          >
+            <Button
+              type="text"
+              icon={<MoreOutlined />}
+              aria-label="Post options"
+              className="more-button"
+              disabled={loading}
+            />
+          </Popover>
+        )}
       </HorizontalStack>
 
-      <Link to={`/blog/${post._id}`}>
-        <Typography.Title
-          level={5}
-          style={{
-            marginBottom: "8px",
-            maxHeight: "125px",
-            overflow: "hidden",
-          }}
-          className="title"
-        >
-          {post?.title}
-        </Typography.Title>
+      <Link to={`/blog/${currentPost._id}`} className="post-title-link">
+        <Title level={5} className="post-title">
+          {currentPost?.title}
+        </Title>
       </Link>
 
       {preview !== "secondary" &&
         (editing ? (
           <ContentUpdateEditor
             handleSubmit={handleSubmit}
-            originalContent={post?.content}
+            originalContent={currentPost?.content}
+            loading={loading}
           />
         ) : (
           <div
-            style={{ maxHeight: maxHeight, overflow: "hidden" }}
-            className="content"
+            className="post-content"
+            style={{ maxHeight, overflow: "hidden" }}
           >
-            <Markdown content={post?.content} />
+            <Markdown content={currentPost?.content} />
           </div>
         ))}
 
-      <HorizontalStack
-        style={{ marginTop: "16px" }}
-        justifyContent="space-between"
-      >
-        <HorizontalStack>
+      <HorizontalStack justifyContent="space-between" className="post-footer">
+        <HorizontalStack className="post-actions">
           <LikeBox
             likeCount={likeCount}
-            liked={post?.liked}
+            liked={currentPost?.liked}
             onLike={handleLike}
+            disabled={loading || !user}
           />
-          <Space
-            size={0}
-            direction="vertical"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
+          <Space direction="vertical" className="comment-section">
             <Button
               type="text"
               icon={<MessageOutlined />}
-              onClick={() => history(`/blog/${post._id}`)}
+              onClick={() => navigate(`/blog/${currentPost._id}`)}
+              aria-label="View comments"
+              disabled={loading}
             />
-            <Typography.Text strong style={{ color: "text.secondary" }}>
-              {post?.commentCount}
-            </Typography.Text>
+            <Text strong className="comment-count">
+              {currentPost?.commentCount}
+            </Text>
           </Space>
         </HorizontalStack>
-        <Space>
-          <UserLikePreview
-            postId={post?._id}
-            userLikePreview={post?.userLikePreview}
-          />
-        </Space>
+        <UserLikePreview
+          postId={currentPost?._id}
+          userLikePreview={currentPost?.userLikePreview}
+        />
       </HorizontalStack>
     </PostContentBox>
   );

@@ -1,7 +1,6 @@
 import React from "react";
 import { Typography } from "antd";
 import ReactMarkdown from "react-markdown";
-import "./markdown.css";
 
 const { Paragraph } = Typography;
 

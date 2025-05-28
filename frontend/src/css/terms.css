@@ -1,60 +1,117 @@
-/* TermsAndConditions.css */
-
 .terms-layout {
-  background-color: #f9f9fb;
+  background: #f5f5f5;
   min-height: 100vh;
-  padding-top: 60px;
+  padding: 1.5rem;
 }
 
 .terms-container {
-  max-width: 800px;
+  max-width: 1000px;
   margin: 0 auto;
-  background: #ffffff;
-  padding: 40px 32px;
-  border-radius: 14px;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.05);
+  padding: 1.5rem;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .terms-header {
   text-align: center;
-  margin-bottom: 32px;
+  margin-bottom: 1.5rem;
 }
 
-.terms-header .ant-typography {
-  margin-top: 8px;
+.header-icon {
+  font-size: 2rem;
+  color: #1890ff;
+  margin-bottom: 0.5rem;
+}
+
+.terms-title {
+  margin-bottom: 0.25rem;
+}
+
+.terms-subtitle {
+  font-size: 0.9rem;
+  color: #595959;
 }
 
 .terms-content {
   font-size: 1rem;
-  line-height: 1.75;
-  color: #333;
+  line-height: 1.6;
 }
 
-.terms-content h4 {
-  margin-top: 32px;
+.section-title {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.intro-text,
+.closing-text {
+  font-size: 1.1rem;
+  color: #1f1f1f;
+}
+
+.terms-content ul {
+  margin: 0.5rem 0;
+  padding-left: 1.5rem;
 }
 
 .terms-content a {
-  color: #4a90e2;
+  color: #1890ff;
+  transition: color 0.2s ease;
 }
 
 .terms-content a:hover {
-  text-decoration: underline;
+  color: #40a9ff;
+}
+
+.contact-button {
+  display: block;
+  margin: 1.5rem auto;
+  border-radius: 8px;
+  padding: 0.5rem 2rem;
+  font-weight: 500;
+}
+
+.terms-tabs .ant-tabs-nav {
+  margin-bottom: 1.5rem;
+}
+
+.terms-tabs .ant-tabs-tab {
+  font-size: 1.1rem;
+  padding: 0.5rem 1rem;
+}
+
+.terms-tabs .ant-tabs-tab-active {
+  font-weight: 500;
 }
 
 @media (max-width: 768px) {
+  .terms-layout {
+    padding: 1rem;
+  }
+
   .terms-container {
-    padding: 24px 16px;
+    padding: 1rem;
   }
 
-  .terms-content {
-    font-size: 0.95rem;
+  .terms-title {
+    font-size: 1.75rem;
   }
 
-  .terms-header {
-    margin-bottom: 24px;
+  .intro-text,
+  .closing-text {
+    font-size: 1rem;
+  }
+
+  .terms-tabs .ant-tabs-tab {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 576px) {
+  .contact-button {
+    width: 100%;
   }
 }

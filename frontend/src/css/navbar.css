@@ -1,48 +1,114 @@
-/* Navbar Styling */
-header {
-  background-color: #ffffff;
-  padding: 0 16px;
+/* navbar.css */
+.navbar {
+  background: #fff;
+  padding: 0 1rem;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
   border-radius: 0 0 8px 8px;
-  z-index: 10;
   position: sticky;
   top: 0;
+  z-index: 10;
 }
 
-.banner img {
-  vertical-align: middle;
+.navbar-container {
+  padding: 0.5rem 0;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
-.banner strong {
+.banner {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.banner-logo {
+  height: 2rem;
+  margin-right: 0.5rem;
+  transition: transform 0.2s ease;
+}
+
+.banner-logo:hover {
+  transform: scale(1.1);
+}
+
+.banner-title {
+  margin: 0;
+  display: flex;
+  align-items: center;
+}
+
+.banner-title strong {
   font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
   color: #1f1f1f;
   letter-spacing: 0.5px;
 }
 
-.ant-input {
-  border-radius: 8px;
+.search-form,
+.mobile-search-form {
+  max-width: 400px;
+  margin: 0.5rem 0;
 }
 
-.ant-btn {
+.search-input {
+  border-radius: 8px;
+  transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.search-input:hover,
+.search-input:focus {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+.navbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.search-toggle,
+.messenger-btn,
+.action-btn,
+.user-avatar {
+  transition: background-color 0.2s ease, transform 0.2s ease;
+}
+
+.search-toggle:hover,
+.messenger-btn:hover,
+.action-btn:hover,
+.user-avatar:hover {
+  background-color: #f0f0f0;
+  transform: translateY(-1px);
+}
+
+.action-btn {
   border-radius: 8px;
   font-weight: 500;
 }
 
-.ant-btn:hover {
-  background-color: #f0f0f0;
-}
-
-.ant-dropdown-menu {
+.add-menu,
+.user-menu .ant-popover-inner-content {
   border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-/* Responsive Input on Mobile */
 @media (max-width: 600px) {
-  form {
+  .mobile-search-form,
+  .search-input {
     width: 100%;
   }
 
-  .ant-input {
-    width: 100%;
+  .navbar-actions {
+    gap: 0.25rem;
+  }
+
+  .banner-title {
+    font-size: 1.25rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .banner-title strong {
+    display: none;
   }
 }

@@ -5,8 +5,6 @@ import Router from "./router";
 import Footer from "./components/Home/Footer"; // Optional
 import Navbar from "./components/Home/Navbar";
 import { getAntdTheme } from "./theme";
-
-import "antd/dist/reset.css"; // Ant Design v5 reset
 import "./index.css"; // Your global CSS styles
 
 function App() {

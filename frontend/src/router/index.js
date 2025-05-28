@@ -26,7 +26,6 @@ import AboutPage from "../views/AboutUs";
 import ForgotPassword from "../views/FogotPassword";
 import PasswordReset from "../views/PasswordReset";
 import Error500 from "../views/Error500";
-import PrivacyView from "../views/PrivacyView";
 import TermsAndConditions from "../views/Terms";
 import AddBookReview from "../components/Books/AddBookReviews";
 import CategoryList from "../components/Categories/CategoryList";
@@ -56,14 +55,7 @@ function Router() {
             </PrivateRoute>
           }
         />
-        <Route
-          path={routes.PRIVACY}
-          element={
-            <PrivateRoute>
-              <PrivacyView />
-            </PrivateRoute>
-          }
-        />
+
         <Route path={routes.ADMIN_DASHBOARD_HOME} element={<DashboardHome />} />
         <Route path={routes.ADMIN_MANAGE_USERS} element={<ManageUsers />} />
         <Route path={routes.ADMIN_MANAGE_POSTS} element={<ManagePosts />} />

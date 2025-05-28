@@ -12,7 +12,7 @@ import {
   Modal,
 } from "antd";
 import { DownOutlined } from "@ant-design/icons";
-
+import { useNavigate } from "react-router-dom";
 import UserAvatar from "../UserModal/UserAvatar";
 import NavLinks from "./NavLinks";
 import icon from "../../static/img/icon.png";
@@ -26,7 +26,8 @@ const Navbar = () => {
   const [searchIcon, setSearchIcon] = useState(false);
   const [width, setWindowWidth] = useState(window.innerWidth);
   const [showBookReviewModal, setShowBookReviewModal] = useState(false);
-  const [showAddBlogModal, setShowAddBlogModal] = useState(false); // placeholder if you have this modal too
+  const [showAddBlogModal, setShowAddBlogModal] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const updateDimensions = () => setWindowWidth(window.innerWidth);
@@ -43,7 +44,11 @@ const Navbar = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("Search submitted:", search);
+    if (search.trim()) {
+      navigate(`/search?q=${encodeURIComponent(search)}`);
+      setSearch("");
+      setSearchIcon(false);
+    }
   };
 
   const handleSearchIcon = () => {
@@ -59,136 +64,152 @@ const Navbar = () => {
   };
 
   const addMenu = (
-    <Menu onClick={handleMenuClick}>
-      <Menu.Item key="addBlog">Add Blog</Menu.Item>
-      <Menu.Item key="addReview">Add Book Review</Menu.Item>
+    <Menu onClick={handleMenuClick} className="add-menu">
+      <Menu.Item key="addBlog" icon={<AiFillHome />}>
+        Add Blog
+      </Menu.Item>
+      <Menu.Item key="addReview" icon={<AiFillHome />}>
+        Add Book Review
+      </Menu.Item>
     </Menu>
   );
 
   return (
-    <header>
-      <div style={{ marginBottom: 16 }}>
-        <Row align="middle" justify="space-between" style={{ paddingTop: 16 }}>
-          {/* Logo */}
-          <Col>
-            <div className="banner">
-              {!mobile && (
-                <Typography.Title
-                  level={navbarWidth ? 5 : 3}
-                  style={{ margin: 0 }}
-                >
-                  <img
-                    src={icon}
-                    alt="icon"
-                    style={{ height: 32, marginRight: 8 }}
-                  />
-                  <strong>ItsABlog</strong>
-                </Typography.Title>
-              )}
-            </div>
-          </Col>
+    <header className="navbar">
+      <Row align="middle" justify="space-between" className="navbar-container">
+        {/* Logo */}
+        <Col>
+          <div
+            className="banner"
+            onClick={() => navigate("/")}
+            role="button"
+            tabIndex={0}
+            onKeyDown={(e) => e.key === "Enter" && navigate("/")}
+          >
+            <Typography.Title
+              level={navbarWidth ? 5 : 3}
+              className="banner-title"
+            >
+              <img src={icon} alt="ItsABlog Logo" className="banner-logo" />
+              {!mobile && <strong>ItsABlog</strong>}
+            </Typography.Title>
+          </div>
+        </Col>
 
-          {/* Desktop Search */}
-          <Col>
-            {!navbarWidth && (
-              <form onSubmit={handleSubmit} style={{ display: "inline-block" }}>
-                <Input
-                  size="middle"
-                  placeholder="Search"
-                  value={search}
-                  onChange={handleChange}
-                  style={{ maxWidth: 300 }}
-                />
-              </form>
-            )}
-          </Col>
+        {/* Desktop Search */}
+        <Col flex={navbarWidth ? "none" : "auto"}>
+          {!navbarWidth && (
+            <form onSubmit={handleSubmit} className="search-form">
+              <Input
+                size="middle"
+                placeholder="Search blogs or reviews..."
+                value={search}
+                onChange={handleChange}
+                prefix={<AiOutlineSearch />}
+                aria-label="Search blogs or reviews"
+                className="search-input"
+              />
+            </form>
+          )}
+        </Col>
 
-          {/* Add Dropdown */}
-          <Col>
-            {user && (
-              <Dropdown overlay={addMenu} trigger={["click"]}>
-                <Button>
-                  Add <DownOutlined />
-                </Button>
-              </Dropdown>
-            )}
-          </Col>
-
-          {/* Right Icons / Actions */}
-          <Col>
-            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
-              {mobile && (
-                <Button
-                  type="text"
-                  icon={<AiOutlineSearch />}
-                  onClick={handleSearchIcon}
-                />
-              )}
-
+        {/* Right Actions */}
+        <Col>
+          <div className="navbar-actions">
+            {mobile && (
               <Button
                 type="text"
-                icon={<AiFillHome />}
-                onClick={() => console.log("Go Home")}
+                icon={<AiOutlineSearch />}
+                onClick={handleSearchIcon}
+                aria-label="Toggle search"
+                className="search-toggle"
               />
+            )}
 
-              {user ? (
-                <>
-                  <Button
-                    type="text"
-                    icon={<AiFillMessage />}
-                    onClick={() => console.log("Open Messenger")}
-                  />
-                  <Popover
-                    content={<NavLinks />}
-                    trigger="click"
+            {user ? (
+              <>
+                <Button
+                  type="text"
+                  icon={<AiFillMessage />}
+                  onClick={() => navigate("/messenger")}
+                  aria-label="Open messenger"
+                  className="messenger-btn"
+                />
+                {user && (
+                  <Dropdown
+                    overlay={addMenu}
+                    trigger={["click"]}
                     placement="bottomRight"
                   >
-                    <div style={{ cursor: "pointer" }}>
-                      <UserAvatar
-                        width={30}
-                        height={30}
-                        username={user.username}
-                      />
-                    </div>
-                  </Popover>
-                </>
-              ) : (
-                <>
-                  <Button onClick={() => console.log("Sign Up modal")}>
-                    Sign Up
-                  </Button>
-                  <Button onClick={() => console.log("Login modal")}>
-                    Login
-                  </Button>
-                </>
-              )}
-            </div>
-          </Col>
-        </Row>
+                    <Button aria-label="Add content options">
+                      Add <DownOutlined />
+                    </Button>
+                  </Dropdown>
+                )}
+                <Popover
+                  content={<NavLinks />}
+                  trigger="click"
+                  placement="bottomRight"
+                  overlayClassName="user-menu"
+                >
+                  <div
+                    role="button"
+                    tabIndex={0}
+                    className="user-avatar"
+                    aria-label={`User menu for ${user.username}`}
+                  >
+                    <UserAvatar
+                      width={32}
+                      height={32}
+                      username={user.username}
+                    />
+                  </div>
+                </Popover>
+              </>
+            ) : (
+              <>
+                <Button
+                  onClick={() => navigate("/signup")}
+                  className="action-btn"
+                >
+                  Sign Up
+                </Button>
+                <Button
+                  type="primary"
+                  onClick={() => navigate("/login")}
+                  className="action-btn"
+                >
+                  Login
+                </Button>
+              </>
+            )}
+          </div>
+        </Col>
+      </Row>
 
-        {/* Mobile Search Input */}
-        {navbarWidth && searchIcon && (
-          <form onSubmit={handleSubmit} style={{ marginTop: 16 }}>
-            <Input
-              size="middle"
-              placeholder="Search"
-              value={search}
-              onChange={handleChange}
-            />
-          </form>
-        )}
-      </div>
+      {/* Mobile Search Input */}
+      {navbarWidth && searchIcon && (
+        <form onSubmit={handleSubmit} className="mobile-search-form">
+          <Input
+            size="middle"
+            placeholder="Search blogs or reviews..."
+            value={search}
+            onChange={handleChange}
+            prefix={<AiOutlineSearch />}
+            aria-label="Search blogs or reviews"
+            className="search-input"
+          />
+        </form>
+      )}
 
       {/* Modals */}
       <AddBookReviewModal
-        visible={showBookReviewModal}
-        onClose={() => setShowBookReviewModal(false)}
+        open={showBookReviewModal}
+        onCancel={() => setShowBookReviewModal(false)}
       />
-
-      {/* Optional if you have an AddBlogModal */}
       {/* <AddBlogModal
-        visible={showAddBlogModal}
-        onClose={() => setShowAddBlogModal(false)}
+        open={showAddBlogModal}
+        onCancel={() => setShowAddBlogModal(false)}
       /> */}
     </header>
   );

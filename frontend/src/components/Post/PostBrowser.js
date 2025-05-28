@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from "react";
-import { Player } from "@lottiefiles/react-lottie-player";
 import { Button, Card, Pagination, Typography, Spin, Row, Col } from "antd";
 import { useSearchParams } from "react-router-dom";
 import { getPosts, getUserLikedPosts } from "../../api/posts";
@@ -11,7 +10,7 @@ import HorizontalStack from "../util/HorizontalStack";
 
 const { Title, Text } = Typography;
 
-const PostBrowser = (props) => {
+const PostBrowser = ({ contentType, createPost, profileUser }) => {
   const [posts, setPosts] = useState([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -19,56 +18,51 @@ const PostBrowser = (props) => {
   const [sortBy, setSortBy] = useState("-createdAt");
   const [count, setCount] = useState(0);
   const user = isLoggedIn();
-
-  const [search] = useSearchParams();
-  const searchExists =
-    search && search.get("search") && search.get("search").length > 0;
+  const [searchParams] = useSearchParams();
+  const searchQuery = searchParams.get("search");
+  const searchExists = searchQuery && searchQuery.length > 0;
 
   const fetchPosts = async (newPage = 1) => {
     setLoading(true);
     setPage(newPage);
 
-    let query = {
+    const query = {
       page: newPage,
       sortBy,
+      ...(profileUser && { author: profileUser.username }),
+      ...(searchExists && { search: searchQuery }),
     };
 
-    let data;
+    try {
+      let data;
+      if (contentType === "posts") {
+        data = await getPosts(user?.token, query);
+      } else if (contentType === "liked") {
+        data = await getUserLikedPosts(profileUser._id, user?.token, query);
+      }
 
-    if (props.contentType === "posts") {
-      if (props.profileUser) query.author = props.profileUser.username;
-      if (searchExists) query.search = search.get("search");
-
-      data = await getPosts(user && user.token, query);
-    } else if (props.contentType === "liked") {
-      data = await getUserLikedPosts(
-        props.profileUser._id,
-        user && user.token,
-        query
-      );
-    }
-
-    setLoading(false);
-    if (!data.error) {
-      setPosts(data.data);
-      setCount(data.count);
-      setTotalPages(Math.ceil(data.count / 10));
+      if (!data.error) {
+        setPosts(data.data);
+        setCount(data.count);
+        setTotalPages(Math.ceil(data.count / 10));
+      } else {
+        setPosts([]);
+        setCount(0);
+        setTotalPages(1);
+      }
+    } catch (error) {
+      console.error("Failed to fetch posts:", error);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
     fetchPosts();
-  }, [sortBy, search]);
+  }, [sortBy, searchParams, profileUser, contentType]);
 
-  const handleSortBy = (e) => {
-    const newSortName = e.target.value;
-    let newSortBy;
-
-    Object.keys(sorts).forEach((sortName) => {
-      if (sorts[sortName] === newSortName) newSortBy = sortName;
-    });
-
-    setSortBy(newSortBy);
+  const handleSortBy = (value) => {
+    setSortBy(value);
   };
 
   const handlePageChange = (value) => {
@@ -78,13 +72,11 @@ const PostBrowser = (props) => {
 
   const removePost = (removedPost) => {
     setPosts(posts.filter((post) => post._id !== removedPost._id));
+    setCount((prev) => prev - 1);
   };
 
   const handleBackToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth",
-    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
   const contentTypeSorts = {
@@ -100,69 +92,77 @@ const PostBrowser = (props) => {
     },
   };
 
-  const sorts = contentTypeSorts[props.contentType];
+  const sorts = contentTypeSorts[contentType] || contentTypeSorts.posts;
 
   return (
-    <>
-      <Card>
-        <HorizontalStack justifyContent="space-between">
-          {props.createPost && <CreatePost />}
-          <SortBySelect onSortBy={handleSortBy} sortBy={sortBy} sorts={sorts} />
+    <div className="post-browser">
+      <Card className="control-card">
+        <HorizontalStack justifyContent="space-between" className="controls">
+          {createPost && <CreatePost />}
+          <SortBySelect
+            onSortBy={handleSortBy}
+            sortBy={sortBy}
+            sorts={sorts}
+            className="sort-select"
+          />
         </HorizontalStack>
       </Card>
 
       {searchExists && (
-        <div style={{ marginBottom: "20px" }}>
-          <Title level={5}>Showing results for "{search.get("search")}"</Title>
+        <div className="search-results">
+          <Title level={5}>Showing results for "{searchQuery}"</Title>
           <Text type="secondary">{count} results found</Text>
         </div>
       )}
 
-      {posts.map((post) => (
-        <PostCard
-          preview="primary"
-          key={post._id}
-          post={post}
-          removePost={removePost}
-        />
-      ))}
-
       {loading && (
-        <div style={{ textAlign: "center", marginTop: "20px" }}>
-          <Spin />
+        <div className="loading-container">
+          <Spin size="large" />
         </div>
       )}
 
       {!loading && posts.length === 0 && (
-        <Row justify="center" style={{ padding: "20px 0" }}>
+        <Row justify="center" className="no-posts">
           <Col>
             <Title level={4} type="secondary">
               No posts available
             </Title>
-            <Button type="link" size="small" onClick={handleBackToTop}>
+            <Button type="link" onClick={handleBackToTop}>
               Back to top
             </Button>
           </Col>
         </Row>
       )}
 
+      <div className="posts-grid">
+        {posts.map((post) => (
+          <PostCard
+            preview="primary"
+            key={post._id}
+            post={post}
+            removePost={removePost}
+          />
+        ))}
+      </div>
+
       {totalPages > 1 && (
-        <Row justify="center" style={{ paddingTop: "20px" }}>
+        <Row justify="center" className="pagination">
           <Col>
             <Pagination
               current={page}
-              total={totalPages * 10}
+              total={count}
               onChange={handlePageChange}
               pageSize={10}
               showSizeChanger={false}
+              showLessItems
             />
-            <Button type="link" size="small" onClick={handleBackToTop}>
+            <Button type="link" onClick={handleBackToTop}>
               Back to top
             </Button>
           </Col>
         </Row>
       )}
-    </>
+    </div>
   );
 };
 
