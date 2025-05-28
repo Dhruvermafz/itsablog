@@ -33,6 +33,7 @@ import UserOnboarding from "../components/Onboarding/Onboarding";
 import GroupFeed from "../components/Groups/GroupFeed";
 import NewsroomList from "../components/NewsRoom/NewsRoomList";
 import GroupPage from "../components/Groups/GroupPage";
+import GroupCreate from "../components/Groups/CreateGroups";
 function Router() {
   return (
     <>
@@ -55,7 +56,8 @@ function Router() {
             </PrivateRoute>
           }
         />
-
+        <Route path={routes.GROUPS} element={<GroupFeed />} />
+        <Route path={routes.NEWSROOM} element={<NewsroomList />} />
         <Route path={routes.ADMIN_DASHBOARD_HOME} element={<DashboardHome />} />
         <Route path={routes.ADMIN_MANAGE_USERS} element={<ManageUsers />} />
         <Route path={routes.ADMIN_MANAGE_POSTS} element={<ManagePosts />} />
@@ -66,8 +68,9 @@ function Router() {
         />
         <Route path={routes.ADMIN_MANAGE_ROLES} element={<RoleRequests />} />
         <Route path={routes.ADMIN_MANAGE_REPORTS} element={<ReportedPosts />} />
-        <Route path={routes.GROUPS} element={<GroupFeed />} />
-        <Route path={routes.NEWSROOM} element={<NewsroomList />} />
+        <Route path={routes.GROUP_LIST} element={<GroupFeed />} />
+        <Route path={routes.CREATE_GROUP} element={<GroupCreate />} />
+        <Route path={routes.NEWSROOM_LIST} element={<NewsroomList />} />
         <Route path={routes.GROUP_PAGE} element={<GroupPage />} />
         <Route path={routes.ONBOARDING} element={<UserOnboarding />} />
         <Route path={routes.CATEGORY} element={<CategoryList />} />
@@ -77,7 +80,7 @@ function Router() {
         <Route path={routes.SIGNUP} element={<SignupView />} />
         <Route path={routes.SETTINGS} element={<SettingsView />} />
         <Route path={routes.Error404} element={<Error404 />} />
-        <Route element={<Error500 />} />
+        <Route path="*" element={<Error500 />} />
         <Route path={routes.ABOUT} element={<AboutPage />} />
         <Route path={routes.PASSWORD_RESET} element={<PasswordReset />} />
         <Route path={routes.FORGOT_PASSWORD} element={<ForgotPassword />} />

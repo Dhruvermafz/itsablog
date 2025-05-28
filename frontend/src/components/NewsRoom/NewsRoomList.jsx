@@ -27,7 +27,6 @@ const NewsroomList = () => {
 
   return (
     <>
-      <Navbar />
       <Layout className={styles.newsroom}>
         <Content className={styles.content}>
           <Title level={2} className={styles.title}>
