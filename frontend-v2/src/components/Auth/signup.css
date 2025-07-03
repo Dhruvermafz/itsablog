@@ -1,0 +1,100 @@
+/* Layout Wrapper */
+.Auth-right-signup {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  min-height: 80vh;
+}
+
+/* Notification Box */
+.portal-notif {
+  border: 1.5px solid var(--border-color);
+  background-color: #f9fafb;
+  padding: 16px 24px;
+  border-radius: 12px;
+  width: 85%;
+  margin: 0 auto 20px;
+  box-shadow: 0px 3px 8px rgba(0, 0, 0, 0.03);
+  font-size: 15px;
+  text-align: center;
+  color: var(--muted-text);
+}
+
+/* Signup Form Wrapper */
+.portal {
+  background-color: #ffffff;
+  border: 2px solid var(--border-color);
+  border-radius: 16px;
+  padding: 28px 36px;
+  width: 85%;
+  margin: 0 auto;
+  box-shadow: 0px 8px 16px rgba(0, 0, 0, 0.04);
+  transition: box-shadow 0.2s ease-in-out;
+}
+
+.portal:hover {
+  box-shadow: 0px 12px 28px rgba(0, 0, 0, 0.06);
+}
+
+/* Heading Style */
+.portal-head {
+  font-size: 28px;
+  font-weight: 800;
+  text-align: center;
+  color: var(--primary-color);
+  margin: 0 0 20px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--border-color);
+}
+
+/* Form Link */
+.portal-link {
+  display: block;
+  text-align: center;
+  margin-bottom: 16px;
+  font-size: 14px;
+  color: var(--muted-text);
+  text-decoration: underline;
+}
+
+.portal-link:hover {
+  color: var(--primary-color);
+}
+
+/* Submit Button */
+.portal-submit {
+  width: 100%;
+  font-weight: 600;
+  padding: 12px 0;
+  background-color: var(--primary-color);
+  color: white;
+  border-radius: 8px;
+  margin-top: 10px;
+}
+
+.portal-submit:hover {
+  background-color: #6b47e0;
+}
+
+/* Error Alert */
+.portal-error {
+  margin-top: 16px;
+}
+
+/* Responsive Design */
+@media only screen and (max-width: 600px) {
+  .Auth-right-signup {
+    padding: 20px 10px;
+  }
+
+  .portal,
+  .portal-notif {
+    width: 100%;
+    padding: 20px;
+  }
+
+  .portal-head {
+    font-size: 24px;
+  }
+}

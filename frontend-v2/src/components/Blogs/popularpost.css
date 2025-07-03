@@ -1,0 +1,161 @@
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 40px 20px;
+}
+
+.archive-header {
+  padding: 50px 0;
+  text-align: center;
+}
+
+.border-line {
+  border-bottom: 1px solid #ddd;
+  margin: 30px 0 50px;
+}
+
+.post-list {
+  margin-bottom: 30px;
+}
+
+.blog-post-card {
+  margin-bottom: 40px;
+  border-radius: 5px;
+  overflow: hidden;
+}
+
+.post-thumb {
+  position: relative;
+}
+
+.img-hover-slide {
+  background-size: cover;
+  background-position: center;
+  height: 200px;
+  border-radius: 5px;
+}
+
+.social-share {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.social-share li {
+  margin-bottom: 5px;
+}
+
+.social-share a {
+  color: #fff;
+  font-size: 18px;
+  background: rgba(0, 0, 0, 0.5);
+  padding: 5px;
+  border-radius: 50%;
+}
+
+.post-content {
+  padding: 20px;
+}
+
+.post-title {
+  margin-bottom: 20px;
+}
+
+.post-format-icon {
+  margin-left: 8px;
+}
+
+.entry-meta {
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.widget-area {
+  padding: 20px;
+}
+
+.author-widget,
+.popular-posts-widget,
+.instagram-widget {
+  margin-bottom: 50px;
+  border-radius: 5px;
+}
+
+.author-img {
+  width: 100%;
+  max-width: 150px;
+  border-radius: 50%;
+  margin-bottom: 20px;
+}
+
+.social-network {
+  list-style: none;
+  padding: 0;
+  margin: 10px 0 0;
+}
+
+.social-network li {
+  display: inline-block;
+  margin-right: 10px;
+}
+
+.social-network a {
+  font-size: 18px;
+  color: #555;
+}
+
+.social-network a:hover {
+  color: #1890ff;
+}
+
+.post-item {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  border: 1px solid #eee;
+  border-radius: 5px;
+  margin-bottom: 20px;
+}
+
+.post-content {
+  flex: 1;
+}
+
+.post-thumb img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 5px;
+}
+
+.insta-feed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  list-style: none;
+  padding: 0;
+}
+
+.insta-feed li {
+  flex: 0 0 30%;
+}
+
+.insta-img {
+  width: 100%;
+  border-radius: 5px;
+}
+
+.pagination {
+  margin-top: 30px;
+  text-align: center;
+}
+
+@media (max-width: 768px) {
+  .post-list,
+  .widget-area {
+    padding: 0;
+  }
+}

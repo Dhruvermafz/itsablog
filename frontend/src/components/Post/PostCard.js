@@ -64,7 +64,6 @@ const PostCard = ({ post, preview, removePost }) => {
   };
 
   const handleEditPost = (e) => {
-    e.stopPropagation();
     setVisible(false); // Close Popover
     navigate(`/blog/edit/${currentPost._id}`);
   };

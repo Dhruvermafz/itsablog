@@ -1,0 +1,179 @@
+/* Blog Portal Wrapper */
+.blog-portal-wrapper {
+  max-width: 900px;
+  margin: 2rem auto;
+  padding: 0 1rem;
+}
+
+/* Blog Portal Card */
+.blog-portal {
+  padding: 2rem;
+  background: #ffffff;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Header Styling */
+.blog-portal-head {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+/* Horizontal Stack for User Avatar and Header */
+.horizontal-stack {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+/* Markdown Help Link */
+.blog-portal .ant-typography a {
+  color: #1890ff;
+  font-size: 0.9rem;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.blog-portal .ant-typography a:hover {
+  color: #40a9ff;
+  text-decoration: underline;
+}
+
+/* Form Styling */
+.blog-portal form {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Ant Design Input */
+.blog-portal .ant-input {
+  border-radius: 8px;
+  padding: 0.75rem;
+  font-size: 1rem;
+  border: 1px solid #d9d9d9;
+  transition: border-color 0.3s, box-shadow 0.3s;
+}
+
+.blog-portal .ant-input:focus,
+.blog-portal .ant-input:hover {
+  border-color: #1890ff;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Rich Text Editor (react-draft-wysiwyg) */
+.richWrapper {
+  border: 1px solid #d9d9d9;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.richToolbar {
+  background: #fafafa;
+  border-bottom: 1px solid #d9d9d9;
+  padding: 0.5rem;
+  border-radius: 8px 8px 0 0;
+}
+
+.richEditor {
+  min-height: 300px;
+  padding: 1rem;
+  font-size: 1rem;
+  color: #333;
+  background: #fff;
+  border-radius: 0 0 8px 8px;
+}
+
+.richEditor:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+}
+
+/* Placeholder Styling for Editor */
+.richEditor .public-DraftEditorPlaceholder-root {
+  color: #bfbfbf;
+  font-style: italic;
+}
+
+/* Ant Design Button */
+.blog-portal .ant-btn-primary {
+  border-radius: 8px;
+  padding: 0.75rem 1.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  height: auto;
+  background: #1890ff;
+  border: none;
+  transition: background 0.3s, transform 0.2s;
+}
+
+.blog-portal .ant-btn-primary:hover,
+.blog-portal .ant-btn-primary:focus {
+  background: #40a9ff;
+  transform: translateY(-2px);
+}
+
+.blog-portal .ant-btn-primary:active {
+  transform: translateY(0);
+}
+
+.blog-portal .ant-btn-primary[disabled] {
+  background: #d9d9d9;
+  cursor: not-allowed;
+}
+
+/* Error Alert */
+.error-alert {
+  margin-top: 1rem;
+  padding: 0.75rem;
+  background: #fff1f0;
+  border: 1px solid #ffa39e;
+  border-radius: 8px;
+  color: #cf1322;
+  font-size: 0.9rem;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .blog-portal-wrapper {
+    margin: 1rem;
+    padding: 0 0.5rem;
+  }
+
+  .blog-portal {
+    padding: 1.5rem;
+  }
+
+  .blog-portal-head {
+    font-size: 1.25rem;
+  }
+
+  .richEditor {
+    min-height: 200px;
+  }
+
+  .blog-portal .ant-btn-primary {
+    padding: 0.5rem 1rem;
+    font-size: 0.9rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .horizontal-stack {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .blog-portal-head {
+    font-size: 1.1rem;
+  }
+
+  .blog-portal .ant-input,
+  .blog-portal .ant-btn-primary {
+    font-size: 0.85rem;
+  }
+}

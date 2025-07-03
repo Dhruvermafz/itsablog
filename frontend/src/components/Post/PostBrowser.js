@@ -29,7 +29,8 @@ const PostBrowser = ({ contentType, createPost, profileUser }) => {
     const query = {
       page: newPage,
       sortBy,
-      ...(profileUser && { author: profileUser.username }),
+      ...(typeof profileUser === "object" &&
+        profileUser !== null && { author: profileUser.username }),
       ...(searchExists && { search: searchQuery }),
     };
 

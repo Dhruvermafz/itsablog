@@ -1,0 +1,111 @@
+/* Import styles from ProductDetails */
+
+.category-page {
+  padding: 24px 0;
+}
+
+.archive-header {
+  margin-bottom: 32px;
+}
+
+.border-line {
+  border-bottom: 2px solid #e31e24;
+  margin: 16px 0;
+}
+
+.post-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.shop-section__pagination {
+  margin-top: 24px;
+  text-align: center;
+}
+
+.shop-section__pagination .ant-pagination-item a,
+.shop-section__pagination .ant-pagination-prev button,
+.shop-section__pagination .ant-pagination-next button {
+  color: #0e1218;
+  transition: all 0.3s ease;
+}
+
+.shop-section__pagination .ant-pagination-item-active a {
+  color: #e31e24;
+  border-color: #e31e24;
+}
+
+.shop-section__pagination .ant-pagination-item:hover a,
+.shop-section__pagination .ant-pagination-prev:hover button,
+.shop-section__pagination .ant-pagination-next button:hover {
+  color: #e31e24;
+  border-color: #e31e24;
+}
+
+.shop-section__filters-select {
+  min-width: 200px;
+}
+
+.widget-area {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.popular-posts-widget .popular-post-item {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.popular-post-img {
+  width: 80px;
+  height: 80px;
+  object-fit: cover;
+  border-radius: 6px;
+}
+
+.categories-tags-manager {
+  padding: 16px;
+}
+
+.manager-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+
+.manager-section {
+  padding: 16px;
+  background: #f7f7f7;
+  border-radius: 6px;
+}
+
+.manager-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.manager-modal .ant-modal-content {
+  border-radius: 10px;
+}
+
+@media (max-width: 576px) {
+  .archive-header {
+    text-align: center;
+  }
+
+  .shop-section__filters-select {
+    width: 100%;
+  }
+
+  .popular-post-img {
+    width: 60px;
+    height: 60px;
+  }
+}

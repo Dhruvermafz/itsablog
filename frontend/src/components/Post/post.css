@@ -1,0 +1,30 @@
+.blog-portal {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.richWrapper {
+  border: 1px solid #d9d9d9;
+  border-radius: 4px;
+}
+
+.richEditor {
+  min-height: 200px;
+  padding: 10px;
+}
+
+.richToolbar {
+  border-bottom: 1px solid #d9d9d9;
+  background: #fafafa;
+}
+
+@media (max-width: 768px) {
+  .blog-portal-wrapper {
+    padding: 10px;
+  }
+
+  .richEditor {
+    min-height: 150px;
+  }
+}

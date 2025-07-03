@@ -49,6 +49,14 @@ function Router() {
           }
         />
         <Route
+          path={routes.EDIT_BLOG(":id")}
+          element={
+            <PrivateRoute>
+              <CreatePostView />
+            </PrivateRoute>
+          }
+        />
+        <Route
           path={routes.MESSANGER}
           element={
             <PrivateRoute>
