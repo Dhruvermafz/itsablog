@@ -203,41 +203,49 @@ const getUserLikedPosts = async (req, res) => {
 const getPosts = async (req, res) => {
   try {
     const { userId } = req.body;
+    let { page, sortBy, author, search } = req.query;
 
-    let { page, sortBy, author, search, liked } = req.query;
+    // Default values
+    page = parseInt(page, 10) || 1;
+    if (page < 1) page = 1;
+    const pageSize = 10; // Fixed page size
+    sortBy = sortBy || "-createdAt";
 
-    if (!sortBy) sortBy = "-createdAt";
-    if (!page) page = 1;
+    // Build MongoDB query
+    const query = {};
+    if (author) {
+      const user = await User.findOne({ username: author }).select("_id");
+      if (user) {
+        query.poster = user._id;
+      } else {
+        query.poster = null; // No posts if author not found
+      }
+    }
+    if (search) {
+      query.title = { $regex: search, $options: "i" }; // Case-insensitive search
+    }
 
-    let posts = await Post.find()
+    // Fetch total count of matching posts
+    const count = await Post.countDocuments(query);
+
+    // Fetch paginated posts
+    let posts = await Post.find(query)
       .populate("poster", "-password")
       .sort(sortBy)
+      .skip((page - 1) * pageSize)
+      .limit(pageSize)
       .lean();
 
-    if (author) {
-      posts = posts.filter((post) => post.poster.username == author);
-    }
-
-    if (search) {
-      posts = posts.filter((post) =>
-        post.title.toLowerCase().includes(search.toLowerCase())
-      );
-    }
-
-    const count = posts.length;
-
-    posts = paginate(posts, 10, page);
-
     if (userId) {
-      await setLiked(posts, userId);
+      await setLiked(posts, userId); // Assuming this sets a 'liked' flag
     }
 
-    await enrichWithUserLikePreview(posts);
+    await enrichWithUserLikePreview(posts); // Assuming this adds like preview data
 
     return res.json({ data: posts, count });
   } catch (err) {
     console.log(err.message);
-    return res.status(400).json({ error: err.message });
+    return res.status(400).json, { error: err.message };
   }
 };
 

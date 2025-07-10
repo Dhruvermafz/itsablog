@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define the admin API service
 export const adminApi = createApi({
   reducerPath: "adminApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/admin" }), // Change this to your API base URL
   endpoints: (builder) => ({
     getTotalUsers: builder.query({
       query: () => "/get_total_users",

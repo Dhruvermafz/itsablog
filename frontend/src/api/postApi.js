@@ -3,10 +3,10 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define API service for posts
 export const postApi = createApi({
   reducerPath: "postApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/posts" }), // Change this to your API base URL
   endpoints: (builder) => ({
     getPosts: builder.query({
-      query: () => "/",
+      query: ({ page = 1 }) => `?page=${page}`,
     }),
     createPost: builder.mutation({
       query: (postData) => ({

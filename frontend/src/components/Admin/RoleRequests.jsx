@@ -1,6 +1,6 @@
 import React from "react";
-import { Table, Button, Tag } from "antd";
-
+import { Table, Button, Tag, Layout } from "antd";
+import Sidebar from "./Sidebar";
 const requests = [
   {
     id: 1,
@@ -41,10 +41,11 @@ const RoleRequests = () => {
   ];
 
   return (
-    <div>
+    <Layout style={{ minHeight: "100vh" }}>
+      <Sidebar />
       <h2>Role Change Requests</h2>
       <Table columns={columns} dataSource={requests} rowKey="id" />
-    </div>
+    </Layout>
   );
 };
 

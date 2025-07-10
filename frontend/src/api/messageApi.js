@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define API service for messages
 export const messageApi = createApi({
   reducerPath: "messageApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/messages" }), // Change this to your API base URL
   endpoints: (builder) => ({
     getConversations: builder.query({
       query: () => "/conversations",

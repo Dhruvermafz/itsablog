@@ -24,15 +24,16 @@ export const routes = {
   TERMS: "/terms-and-conditions",
   PRIVACY: "/privacy",
   GROUP_LIST: "/groups",
+  GROUP_PAGE: "/groups/:id",
   CREATE_GROUP: "/groups/create",
   NEWSROOM_LIST: "/newsroom",
+
   ADMIN_DASHBOARD_HOME: "/admin/dashboard/",
   ADMIN_MANAGE_USERS: "/admin/users/",
   ADMIN_MANAGE_POSTS: "/admin/posts/",
   ADMIN_MANAGE_CATEGORIES: "/admin/categories/",
   ADMIN_MANAGE_ROLES: "/admin/roles/",
   ADMIN_MANAGE_REPORTS: "/admin/reports/",
-  GROUP_PAGE: "/groups/:id",
   GROUPS: "/admin/groups",
   NEWSROOM: "/admin/newsroom",
 };

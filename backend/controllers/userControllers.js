@@ -242,7 +242,16 @@ const getRandomIndices = (size, sourceSize) => {
   }
   return randomIndices;
 };
+const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().select("-password");
 
+    return res.status(200).json({ data: users });
+  } catch (err) {
+    console.log(err);
+    return res.status(400).json({ error: err.message });
+  }
+};
 module.exports = {
   register,
   login,
@@ -253,4 +262,5 @@ module.exports = {
   getUser,
   getRandomUsers,
   updateUser,
+  getAllUsers,
 };

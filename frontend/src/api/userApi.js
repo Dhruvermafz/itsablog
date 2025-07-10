@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define API service
 export const userApi = createApi({
   reducerPath: "userApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/users" }), // Change this to your API base URL
   endpoints: (builder) => ({
     register: builder.mutation({
       query: (userData) => ({
@@ -21,6 +21,9 @@ export const userApi = createApi({
     }),
     getRandomUsers: builder.query({
       query: () => "/random",
+    }),
+    getAllUsers: builder.query({
+      query: () => "/all",
     }),
     getUser: builder.query({
       query: (username) => `/${username}`,
@@ -69,5 +72,6 @@ export const {
   useUnfollowMutation,
   useGetFollowersQuery,
   useGetFollowingQuery,
+  useGetAllUsersQuery,
   useDeleteUserMutation,
 } = userApi;

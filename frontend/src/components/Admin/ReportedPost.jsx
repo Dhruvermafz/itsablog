@@ -1,6 +1,6 @@
 import React from "react";
-import { Table, Button, Tag } from "antd";
-
+import { Table, Button, Tag, Layout } from "antd";
+import Sidebar from "./Sidebar";
 const data = [
   {
     id: 1,
@@ -37,10 +37,11 @@ const ReportedPosts = () => {
   ];
 
   return (
-    <div>
+    <Layout style={{ minHeight: "100vh" }}>
+      <Sidebar />
       <h2>Reported Posts</h2>
       <Table columns={columns} dataSource={data} rowKey="id" />
-    </div>
+    </Layout>
   );
 };
 

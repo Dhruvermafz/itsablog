@@ -3,7 +3,7 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define the comment API service
 export const commentApi = createApi({
   reducerPath: "commentApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/comment" }), // Change this to your API base URL
   endpoints: (builder) => ({
     createComment: builder.mutation({
       query: ({ id, content }) => ({
