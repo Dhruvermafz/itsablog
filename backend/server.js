@@ -68,7 +68,7 @@ app.use("/api/posts", posts);
 app.use("/api/users", users);
 app.use("/api/comments", comments);
 app.use("/api/messages", messages);
-app.use("/email", email);
+app.use("/api/email", email);
 app.use("/api/category", category);
 app.use("/api/notify", notify);
 app.use("/api/groups", groups);
