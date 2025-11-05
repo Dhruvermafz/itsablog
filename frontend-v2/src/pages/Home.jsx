@@ -9,12 +9,13 @@ import {
   useDeletePostMutation,
 } from "../api/postApi";
 import { useGetCategoriesQuery } from "../api/categoriesApi";
-import { useGetRandomUsersQuery, useGetUsersQuery } from "../api/userApi";
+import { useGetUsersQuery } from "../api/userApi";
 import { isLoggedIn } from "../helpers/authHelper";
 import { FaArrowUp } from "react-icons/fa";
 import Avatar from "react-avatar";
 import UserCard from "../components/User/UserCard";
 import PostCard from "../components/Blogs/PostCard";
+
 const { Option } = Select;
 
 const Home = ({ profileUser = null, contentType = "posts" }) => {
@@ -33,14 +34,13 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
    * ------------------------------------------------- */
 
   const {
-    data = { data: [], count: 0 },
+    data: categoriesData = { data: [], count: 0 },
     isLoading: categoriesLoading,
-
-    error,
+    error: categoriesError,
   } = useGetCategoriesQuery();
 
-  // Extract the actual array
-  const categories = data.data || [];
+  const categories = categoriesData.data || [];
+
   const query = {
     page,
     sortBy,
@@ -68,10 +68,7 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
     data: allUsersData,
     isLoading: allUsersLoading,
     isError: allUsersError,
-  } = useGetUsersQuery({ limit: 100 });
-
-  const { data: rawRandomUsers, isLoading: usersLoading } =
-    useGetRandomUsersQuery();
+  } = useGetUsersQuery({ limit: 200 });
 
   /* -------------------------------------------------
    *  DERIVED STATE
@@ -107,23 +104,35 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
   }, [allUsersData, allUsersLoading, allUsersError]);
 
   /* -------------------------------------------------
-   *  RANDOM USERS (exclude self)
+   *  RANDOM USERS – Derived from allUsersData
    * ------------------------------------------------- */
   useEffect(() => {
-    if (rawRandomUsers && user?._id) {
-      const filtered = rawRandomUsers
-        .filter((u) => u._id !== user._id)
-        .slice(0, 3);
-      setRandomUsers(filtered);
-    } else {
-      setRandomUsers(rawRandomUsers?.slice(0, 3) || []);
+    if (!allUsersData?.data || allUsersData.data.length === 0) {
+      setRandomUsers([]);
+      return;
     }
-  }, [rawRandomUsers, user?._id]);
+
+    const pool = allUsersData.data.filter(
+      (u) => !user?._id || u._id !== user._id
+    );
+    if (pool.length === 0) {
+      setRandomUsers([]);
+      return;
+    }
+
+    const shuffled = [...pool];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    setRandomUsers(shuffled.slice(0, 3));
+  }, [allUsersData?.data, user?._id]);
 
   /* -------------------------------------------------
    *  MUTATIONS
    * ------------------------------------------------- */
-  const [savePost, { isLoading: savePostLoading }] = useSavePostMutation();
+  const [savePost] = useSavePostMutation();
   const [deletePost] = useDeletePostMutation();
 
   const handleSavePost = async (postId) => {
@@ -151,14 +160,17 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
     setSortBy(v);
     setPage(1);
   };
+
   const handleCategoryChange = (v) => {
     setCategory(v || null);
     setPage(1);
   };
+
   const handlePageChange = (p) => {
     setPage(p);
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
+
   const handleBackToTop = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
@@ -181,19 +193,44 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
       <div className="flex flex-col lg:flex-row gap-6">
         {/* ---------- LEFT: POSTS ---------- */}
         <div className="lg:w-2/5">
-          {/* POST LIST – USING PostCard */}
+          {/* Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 mb-6">
+            <Select
+              placeholder="Sort by"
+              style={{ width: "100%", maxWidth: 200 }}
+              onChange={handleSortBy}
+              value={sortBy}
+            >
+              {Object.entries(sorts).map(([value, label]) => (
+                <Option key={value} value={value}>
+                  {label}
+                </Option>
+              ))}
+            </Select>
+
+            <Select
+              allowClear
+              placeholder="Filter by category"
+              style={{ width: "100%", maxWidth: 200 }}
+              onChange={handleCategoryChange}
+              value={category}
+            >
+              {categories.map((cat) => (
+                <Option key={cat._id} value={cat._id}>
+                  {cat.name}
+                </Option>
+              ))}
+            </Select>
+          </div>
+
+          {/* POST LIST */}
           <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:gap-6">
             {posts.length > 0 ? (
               posts.map((post) => (
                 <PostCard
                   key={post._id}
                   post={post}
-                  preview="primary" // keep the “primary” preview style
-                  removePost={(removed) => {
-                    // optimistic UI update when deleting from a list
-                    // (optional – you can also refetch)
-                  }}
-                  // you can pass extra callbacks if you need them
+                  preview="primary"
                   onSave={handleSavePost}
                   onDelete={handleDeletePost}
                 />
@@ -227,6 +264,18 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
               </div>
             </div>
           )}
+
+          {/* Back to Top */}
+          {page > 1 && (
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={handleBackToTop}
+                className="btn btn-circle bg-primary text-white hover:bg-primary-focus"
+              >
+                <FaArrowUp />
+              </button>
+            </div>
+          )}
         </div>
 
         {/* ---------- RIGHT: SIDEBAR ---------- */}
@@ -237,7 +286,9 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
               Top Author This Month
             </h3>
             {allUsersLoading ? (
-              <Spin />
+              <div className="flex justify-center py-4">
+                <Spin />
+              </div>
             ) : topAuthor ? (
               <>
                 <UserCard
@@ -261,14 +312,16 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
             )}
           </div>
 
-          {/* Random Writers */}
+          {/* Connect with New Writers */}
           <div className="card bg-white dark:bg-navy-700 rounded-lg shadow-md p-5">
             <h3 className="text-lg font-semibold text-slate-700 dark:text-navy-100">
               Connect with New Writers
             </h3>
             <div className="mt-4 space-y-3">
-              {usersLoading ? (
-                <Spin />
+              {allUsersLoading ? (
+                <div className="flex justify-center py-4">
+                  <Spin />
+                </div>
               ) : randomUsers.length > 0 ? (
                 randomUsers.map((u) => (
                   <UserCard
@@ -291,6 +344,47 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
               className="btn mt-4 w-full bg-slate-200 font-medium text-slate-700 hover:bg-slate-300 dark:bg-navy-500 dark:text-navy-100 dark:hover:bg-navy-400"
             >
               See More Writers
+            </Link>
+          </div>
+
+          {/* NEW: Explore Categories */}
+          <div className="card bg-white dark:bg-navy-700 rounded-lg shadow-md p-5">
+            <h3 className="text-lg font-semibold text-slate-700 dark:text-navy-100">
+              Explore Categories
+            </h3>
+            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {categoriesLoading ? (
+                <div className="col-span-full flex justify-center py-4">
+                  <Spin />
+                </div>
+              ) : categories.length > 0 ? (
+                categories.map((cat) => (
+                  <Link
+                    key={cat._id}
+                    to={`/category/${cat.slug}`}
+                    className="group flex flex-col items-center p-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-navy-600 dark:hover:bg-navy-500 transition-colors"
+                  >
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
+                      <span className="text-primary font-bold text-sm">
+                        {cat.name.charAt(0).toUpperCase()}
+                      </span>
+                    </div>
+                    <span className="text-xs font-medium text-slate-700 dark:text-navy-100 group-hover:text-primary dark:group-hover:text-accent">
+                      {cat.name}
+                    </span>
+                  </Link>
+                ))
+              ) : (
+                <p className="col-span-full text-sm text-slate-600 dark:text-navy-200 text-center">
+                  No categories available.
+                </p>
+              )}
+            </div>
+            <Link
+              to="/categories"
+              className="btn mt-4 w-full bg-slate-200 font-medium text-slate-700 hover:bg-slate-300 dark:bg-navy-500 dark:text-navy-100 dark:hover:bg-navy-400"
+            >
+              View All Categories
             </Link>
           </div>
         </div>
