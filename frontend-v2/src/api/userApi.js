@@ -1,14 +1,17 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Define API service
 export const userApi = createApi({
   reducerPath: "userApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://yourapiurl.com/api", // Replace with your actual API base URL
+    baseUrl: "http://localhost:5000/api/users",
     prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth.token; // Assuming token is stored in Redux
-      if (token) {
-        headers.set("Authorization", `Bearer ${token}`);
+      const user = localStorage.getItem("user");
+      if (user) {
+        const parsedUser = JSON.parse(user); // Parse the user string
+        const token = parsedUser?.token;
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
       }
       return headers;
     },
@@ -27,6 +30,9 @@ export const userApi = createApi({
         method: "POST",
         body: userData,
       }),
+    }),
+    getUsers: builder.query({
+      query: () => "/all",
     }),
     getRandomUsers: builder.query({
       query: () => "/random",
@@ -66,22 +72,36 @@ export const userApi = createApi({
       }),
     }),
     getProfile: builder.query({
-      query: ({ userId, page, pageSize }) => ({
-        url: `/profile/${userId}`,
+      query: ({ username, page, pageSize }) => ({
+        url: `/profile/${username}`,
         params: { page, pageSize },
       }),
     }),
-    // Add logout endpoint
     logout: builder.mutation({
       query: () => ({
         url: "/logout",
-        method: "POST", // Adjust method based on your backend (POST, DELETE, etc.)
+        method: "POST",
+      }),
+    }),
+    requestWriterRole: builder.mutation({
+      query: (data) => ({
+        url: "/request-writer",
+        method: "POST",
+        body: data,
+      }),
+    }),
+    handleWriterRoleRequest: builder.mutation({
+      query: (data) => ({
+        url: "/handle-writer-request",
+        method: "POST",
+        body: data,
       }),
     }),
   }),
 });
 
 export const {
+  useGetUsersQuery,
   useRegisterMutation,
   useLoginMutation,
   useGetRandomUsersQuery,
@@ -93,5 +113,7 @@ export const {
   useGetFollowingQuery,
   useDeleteUserMutation,
   useGetProfileQuery,
-  useLogoutMutation, // Export the new hook
+  useLogoutMutation,
+  useRequestWriterRoleMutation,
+  useHandleWriterRoleRequestMutation,
 } = userApi;

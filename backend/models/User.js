@@ -53,6 +53,11 @@ const UserSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    // Add to UserSchema in models/User.js
+    isAgency: {
+      type: Boolean,
+      default: false,
+    },
     categories: [
       {
         type: String, // Stores category slugs (e.g., "literature", "politics", etc.)

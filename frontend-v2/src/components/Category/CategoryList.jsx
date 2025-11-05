@@ -1,511 +1,241 @@
-import React, { useState, useEffect, useCallback } from "react";
-import { useParams, useNavigate, useLocation } from "react-router-dom";
+import React, { useMemo, useState } from "react";
+import { Card, Input, Skeleton, Space, Typography, Empty, message } from "antd";
+import { SearchOutlined } from "@ant-design/icons";
+import { useNavigate } from "react-router-dom";
+
 import {
-  Breadcrumb,
-  Button,
-  Modal,
-  Form,
-  Input,
-  message,
-  Row,
-  Col,
-  Pagination,
-  Spin,
-  Typography,
-  Select,
-  Tag,
-} from "antd";
-import BlogPostCard from "../Blogs/BlogPostCard";
-import AuthorWidget from "../Blogs/AuthorWidget";
-import InstagramWidget from "../Blogs/InstagramWidget";
-import debounce from "lodash/debounce";
-import "./categorypage.css";
+  useGetCategoriesQuery,
+  useDeleteCategoryMutation,
+  useUpdateCategoryMutation,
+  useCreateCategoryMutation,
+} from "../../api/categoriesApi";
 
 const { Title } = Typography;
+const { Search } = Input;
 
-const CategoriesTagsManager = ({
-  categories,
-  setCategories,
-  tags,
-  setTags,
-}) => {
-  const [form] = Form.useForm();
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [itemType, setItemType] = useState("category"); // "category" or "tag"
-  const [loading, setLoading] = useState(false);
-
-  const showModal = (type, item = null) => {
-    setItemType(type);
-    setEditingItem(item);
-    setIsModalVisible(true);
-    if (item) {
-      form.setFieldsValue({ name: item.name });
-    } else {
-      form.resetFields();
-    }
-  };
-
-  const handleCancel = () => {
-    setIsModalVisible(false);
-    setEditingItem(null);
-  };
-
-  const handleFinish = async (values) => {
-    setLoading(true);
-    try {
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      if (itemType === "category") {
-        if (editingItem) {
-          setCategories((prev) =>
-            prev.map((cat) =>
-              cat.id === editingItem.id ? { ...cat, name: values.name } : cat
-            )
-          );
-          message.success("Category updated!");
-        } else {
-          const newCategory = { id: Date.now(), name: values.name };
-          setCategories((prev) => [...prev, newCategory]);
-          message.success("Category added!");
-        }
-      } else {
-        if (editingItem) {
-          setTags((prev) =>
-            prev.map((tag) =>
-              tag.id === editingItem.id ? { ...tag, name: values.name } : tag
-            )
-          );
-          message.success("Tag updated!");
-        } else {
-          const newTag = { id: Date.now(), name: values.name };
-          setTags((prev) => [...prev, newTag]);
-          message.success("Tag added!");
-        }
-      }
-    } catch {
-      message.error(`Failed to ${editingItem ? "update" : "add"} ${itemType}.`);
-    } finally {
-      setLoading(false);
-      handleCancel();
-    }
-  };
-
-  const handleDelete = async (type, id) => {
-    setLoading(true);
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500));
-      if (type === "category") {
-        setCategories((prev) => prev.filter((cat) => cat.id !== id));
-        message.success("Category deleted.");
-      } else {
-        setTags((prev) => prev.filter((tag) => tag.id !== id));
-        message.success("Tag deleted.");
-      }
-    } catch {
-      message.error(`Failed to delete ${type}.`);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <div className="categories-tags-manager">
-      <Spin spinning={loading}>
-        <div className="manager-header">
-          <Title level={4} className="blog-section-box-content__title">
-            Manage Categories & Tags
-          </Title>
-          <div>
-            <Button
-              className="btn btn-primary"
-              onClick={() => showModal("category")}
-              style={{ marginRight: 8 }}
-            >
-              Add Category
-            </Button>
-            <Button
-              className="btn btn-primary"
-              onClick={() => showModal("tag")}
-            >
-              Add Tag
-            </Button>
-          </div>
-        </div>
-        <Row gutter={[16, 16]}>
-          <Col xs={24} md={12}>
-            <div className="manager-section">
-              <h5 className="blog-section-box-content__subtitle">Categories</h5>
-              {categories.length > 0 ? (
-                categories.map((cat) => (
-                  <div key={cat.id} className="manager-item">
-                    <span className="blog-section-box-content__text">
-                      {cat.name}
-                    </span>
-                    <div>
-                      <Button
-                        type="link"
-                        className="card__link"
-                        onClick={() => showModal("category", cat)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="link"
-                        className="card__link"
-                        danger
-                        onClick={() => handleDelete("category", cat.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="blog-section-box-content__text">
-                  No categories available.
-                </p>
-              )}
-            </div>
-          </Col>
-          <Col xs={24} md={12}>
-            <div className="manager-section">
-              <h5 className="blog-section-box-content__subtitle">Tags</h5>
-              {tags.length > 0 ? (
-                tags.map((tag) => (
-                  <div key={tag.id} className="manager-item">
-                    <span className="blog-section-box-content__text">
-                      {tag.name}
-                    </span>
-                    <div>
-                      <Button
-                        type="link"
-                        className="card__link"
-                        onClick={() => showModal("tag", tag)}
-                      >
-                        Edit
-                      </Button>
-                      <Button
-                        type="link"
-                        className="card__link"
-                        danger
-                        onClick={() => handleDelete("tag", tag.id)}
-                      >
-                        Delete
-                      </Button>
-                    </div>
-                  </div>
-                ))
-              ) : (
-                <p className="blog-section-box-content__text">
-                  No tags available.
-                </p>
-              )}
-            </div>
-          </Col>
-        </Row>
-      </Spin>
-
-      <Modal
-        title={editingItem ? `Edit ${itemType}` : `Add ${itemType}`}
-        open={isModalVisible}
-        onCancel={handleCancel}
-        footer={null}
-        className="manager-modal"
-      >
-        <Form form={form} onFinish={handleFinish} layout="vertical">
-          <Form.Item
-            name="name"
-            label={`${itemType} Name`}
-            rules={[
-              { required: true, message: `Please enter a ${itemType} name` },
-            ]}
-          >
-            <Input placeholder={`Enter ${itemType} name`} />
-          </Form.Item>
-          <Form.Item>
-            <Button
-              type="primary"
-              htmlType="submit"
-              className="btn btn-primary"
-              loading={loading}
-            >
-              {editingItem ? "Update" : "Add"}
-            </Button>
-          </Form.Item>
-        </Form>
-      </Modal>
-    </div>
-  );
-};
-
-const CategoryPage = () => {
-  const { category } = useParams();
+const CategoriesPage = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [form] = Form.useForm();
-  const [categories, setCategories] = useState([
-    { id: 1, name: "Technology" },
-    { id: 2, name: "Health" },
-    { id: 3, name: "Education" },
-  ]);
-  const [tags, setTags] = useState([
-    { id: 1, name: "Wellness" },
-    { id: 2, name: "Fitness" },
-    { id: 3, name: "TechTrends" },
-  ]);
-  const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const [totalPosts, setTotalPosts] = useState(0);
-  const [selectedTags, setSelectedTags] = useState([]);
-  const pageSize = 8;
-  const [isModalVisible, setIsModalVisible] = useState(false);
-  // Mock data for posts
-  const mockPosts = [
-    {
-      id: 1,
-      category: "Health",
-      categoryColor: "blue",
-      title: "Helpful Tips for Working from Home as a Freelancer",
-      link: "/single",
-      image: "/images/news-13.jpg",
-      date: "7 August",
-      readTime: "11 mins read",
-      views: "3k views",
-      isFeatured: true,
-      tags: ["Wellness", "Fitness"],
-    },
-    {
-      id: 2,
-      category: "Health",
-      categoryColor: "green",
-      title: "10 Easy Ways to Be Environmentally Conscious At Home",
-      link: "/single",
-      image: "/images/news-4.jpg",
-      date: "27 Sep",
-      readTime: "10 mins read",
-      views: "22k views",
-      tags: ["Wellness"],
-    },
-    {
-      id: 3,
-      category: "Technology",
-      categoryColor: "warning",
-      title: "My Favorite Comfies to Lounge in At Home",
-      link: "/single",
-      image: "/images/news-2.jpg",
-      date: "7 August",
-      readTime: "9 mins read",
-      views: "12k views",
-      tags: ["TechTrends"],
-    },
-  ];
+  const [searchTerm, setSearchTerm] = useState("");
 
-  const popularPosts = [
-    {
-      id: 1,
-      title: "Spending Some Quality Time with Kids? It’s Possible",
-      link: "/single",
-      image: "/images/thumb-6.jpg",
-      date: "05 August",
-      views: "150 views",
-    },
-  ];
+  // ---- RTK-Query hooks -------------------------------------------------
+  // ---- RTK-Query hooks -------------------------------------------------
+  const {
+    data = { data: [], count: 0 },
+    isLoading,
+    isError,
+    error,
+  } = useGetCategoriesQuery();
 
-  const instagramImages = [
-    { src: "/images/thumb-1.jpg", link: "/assets/imgs/thumbnail-3.jpg" },
-  ];
+  // Extract the actual array
+  const categories = data.data || [];
+  // (optional) admin mutations – keep them if you want inline edit/delete
+  const [deleteCategory] = useDeleteCategoryMutation();
+  const [updateCategory] = useUpdateCategoryMutation();
+  const [createCategory] = useCreateCategoryMutation();
 
-  // Parse query params for pagination
-  useEffect(() => {
-    const params = new URLSearchParams(location.search);
-    const page = parseInt(params.get("page")) || 1;
-    setCurrentPage(page);
-  }, [location.search]);
+  // ---- Group & filter --------------------------------------------------
+  const groupedCategories = useMemo(() => {
+    const filtered = categories.filter((cat) =>
+      cat.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
 
-  // Fetch posts (mock API call)
-  const fetchPosts = useCallback(
-    debounce(() => {
-      setLoading(true);
-      setTimeout(() => {
-        let filteredPosts = mockPosts.filter(
-          (post) => post.category.toLowerCase() === category.toLowerCase()
-        );
-        if (selectedTags.length > 0) {
-          filteredPosts = filteredPosts.filter((post) =>
-            post.tags.some((tag) => selectedTags.includes(tag))
-          );
-        }
-        const startIndex = (currentPage - 1) * pageSize;
-        const endIndex = startIndex + pageSize;
-        setPosts(filteredPosts.slice(startIndex, endIndex));
-        setTotalPosts(filteredPosts.length);
-        setLoading(false);
-      }, 500);
-    }, 300),
-    [category, currentPage, selectedTags]
-  );
+    const grouped = {};
+    filtered.forEach((cat) => {
+      const letter = cat.name.charAt(0).toUpperCase();
+      if (!grouped[letter]) grouped[letter] = [];
+      grouped[letter].push(cat);
+    });
 
-  useEffect(() => {
-    fetchPosts();
-  }, [fetchPosts]);
+    return Object.keys(grouped)
+      .sort()
+      .reduce((acc, letter) => ({ ...acc, [letter]: grouped[letter] }), {});
+  }, [categories, searchTerm]);
 
-  const handlePageChange = (page) => {
-    setCurrentPage(page);
-    navigate(`/category/${category}?page=${page}`);
+  // ---- Handlers --------------------------------------------------------
+  const handleCategoryClick = (catName) => {
+    navigate(`/blogs/search?category=${encodeURIComponent(catName)}`);
   };
 
-  const handleTagChange = (value) => {
-    setSelectedTags(value);
-    setCurrentPage(1); // Reset to first page when tags change
+  // (optional) admin delete – you can hide these buttons in non-admin view
+  const handleDelete = async (slug) => {
+    if (!window.confirm("Delete this category?")) return;
+    try {
+      await deleteCategory(slug).unwrap();
+      message.success("Category deleted");
+    } catch {
+      message.error("Failed to delete category");
+    }
   };
+
+  // ------------------------------------------------------------------------
+  if (isError) {
+    return (
+      <div className="min-h-screen bg-black flex items-center justify-center">
+        <Title level={3} className="text-red-500">
+          {error?.data?.message || "Something went wrong"}
+        </Title>
+      </div>
+    );
+  }
 
   return (
-    <div className="page-wrapper">
-      <div className="content container">
-        <div className="archive-header">
-          <div className="main__breadcrumbs breadcrumbs">
-            <Breadcrumb className="breadcrumbs__list">
-              <Breadcrumb.Item>
-                <a
-                  href="/"
-                  className="breadcrumbs__list-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate("/");
-                  }}
-                >
-                  Home
-                </a>
-              </Breadcrumb.Item>
-              <Breadcrumb.Item className="breadcrumbs__list-text">
-                {category}
-              </Breadcrumb.Item>
-            </Breadcrumb>
-          </div>
-          <Title level={2} className="blog-section-box-content__title">
-            {category}
+    <div className="min-h-screen bg-black text-white p-6 md:p-8">
+      <div className="max-w-7xl mx-auto">
+        {/* ---------- Header ---------- */}
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-6 mb-10">
+          <Title
+            level={1}
+            className="text-white !text-4xl md:!text-5xl font-bold !m-0"
+          >
+            Categories
           </Title>
-          <div className="border-line"></div>
+
+          <Search
+            placeholder="Search category"
+            allowClear
+            enterButton={<SearchOutlined />}
+            size="large"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onSearch={(v) => setSearchTerm(v)}
+            className="md:w-80"
+            style={{ borderRadius: "50px" }}
+            inputStyle={{
+              backgroundColor: "#1a1a1a",
+              color: "#fff",
+              border: "none",
+            }}
+          />
         </div>
 
-        <Row gutter={[16, 16]} style={{ marginBottom: 24 }}>
-          <Col xs={24} md={12}>
-            <Form layout="inline">
-              <Form.Item label="Filter by Tags">
-                <Select
-                  mode="multiple"
-                  placeholder="Select tags"
-                  value={selectedTags}
-                  onChange={handleTagChange}
-                  className="shop-section__filters-select"
-                  allowClear
-                >
-                  {tags.map((tag) => (
-                    <Select.Option key={tag.id} value={tag.name}>
-                      {tag.name}
-                    </Select.Option>
+        {/* ---------- Loading Skeleton ---------- */}
+        {isLoading && (
+          <div className="space-y-12">
+            {["A", "B", "C"].map((letter) => (
+              <div key={letter} className="space-y-4">
+                <Skeleton active paragraph={false} title={{ width: 40 }} />
+                <Space wrap size={[16, 16]}>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <Skeleton.Button
+                      key={i}
+                      active
+                      style={{ width: 140, height: 44, borderRadius: 50 }}
+                    />
                   ))}
-                </Select>
-              </Form.Item>
-            </Form>
-          </Col>
-          <Col xs={24} md={12} style={{ textAlign: "right" }}>
-            <Button
-              className="btn btn-primary"
-              onClick={() => setIsModalVisible(true)}
-            >
-              Manage Categories & Tags
-            </Button>
-          </Col>
-        </Row>
-
-        <Spin spinning={loading}>
-          <Row gutter={[16, 16]}>
-            <Col xs={24} lg={16}>
-              <div className="post-list">
-                {posts.length > 0 ? (
-                  posts.map((post) => (
-                    <BlogPostCard key={post.id} post={post} />
-                  ))
-                ) : (
-                  <p className="blog-section-box-content__text">
-                    No posts found for this category.{" "}
-                    <a href="/blog" className="card__link">
-                      Browse all posts
-                    </a>
-                  </p>
-                )}
+                </Space>
               </div>
-              <Pagination
-                current={currentPage}
-                total={totalPosts}
-                pageSize={pageSize}
-                onChange={handlePageChange}
-                className="shop-section__pagination"
-                showSizeChanger={false}
-                showTotal={(total, range) =>
-                  `${range[0]}-${range[1]} of ${total} posts`
-                }
-              />
-            </Col>
-            <Col xs={24} lg={8}>
-              <div className="widget-area">
-                <AuthorWidget />
-                <div className="popular-posts-widget">
-                  <h5 className="blog-section-box-content__subtitle">
-                    Popular Posts
-                  </h5>
-                  {popularPosts.map((post) => (
-                    <div key={post.id} className="popular-post-item">
-                      <img
-                        src={post.image}
-                        alt={post.title}
-                        className="popular-post-img"
-                      />
-                      <div>
-                        <a
-                          href={post.link}
-                          className="card__title"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            navigate(post.link);
-                          }}
-                        >
-                          {post.title}
-                        </a>
-                        <p className="blog-section-box-content__text">
-                          {post.date} • {post.views}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-                <InstagramWidget images={instagramImages} />
-              </div>
-            </Col>
-          </Row>
-        </Spin>
+            ))}
+          </div>
+        )}
 
-        <Modal
-          title="Manage Categories & Tags"
-          open={isModalVisible}
-          onCancel={() => setIsModalVisible(false)}
-          footer={null}
-          className="manager-modal"
-          width={800}
-        >
-          <CategoriesTagsManager
-            categories={categories}
-            setCategories={setCategories}
-            tags={tags}
-            setTags={setTags}
+        {/* ---------- Categories Grid ---------- */}
+        {!isLoading && Object.keys(groupedCategories).length === 0 && (
+          <Empty
+            image={Empty.PRESENTED_IMAGE_SIMPLE}
+            description={
+              searchTerm
+                ? `No categories match "${searchTerm}"`
+                : "No categories available."
+            }
+            className="mt-20"
           />
-        </Modal>
+        )}
+
+        {!isLoading && (
+          <div className="space-y-12">
+            {Object.entries(groupedCategories).map(([letter, cats]) => (
+              <div key={letter} className="space-y-4">
+                {/* Letter */}
+                <Title
+                  level={2}
+                  className="text-white !text-3xl md:!text-4xl font-bold !m-0 pl-2"
+                >
+                  {letter}
+                </Title>
+
+                {/* Pills */}
+                <Space wrap size={[16, 16]} className="pl-2">
+                  {cats.map((cat) => (
+                    <Card
+                      key={cat.id}
+                      hoverable
+                      onClick={() => handleCategoryClick(cat.name)}
+                      className="bg-[#1a1a1a] border-none cursor-pointer transition-all duration-200 hover:bg-[#2a2a2a] hover:shadow-lg"
+                      bodyStyle={{
+                        padding: "12px 20px",
+                        borderRadius: "50px",
+                      }}
+                    >
+                      <span className="text-white font-medium text-sm md:text-base">
+                        {cat.name}
+                      </span>
+
+                      {/* ---- OPTIONAL ADMIN ACTIONS (hide with CSS if needed) ---- */}
+                      {/* <div className="float-right ml-2">
+                        <Button
+                          size="small"
+                          type="text"
+                          icon={<EditOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            // open edit modal – omitted for brevity
+                          }}
+                        />
+                        <Button
+                          size="small"
+                          type="text"
+                          danger
+                          icon={<DeleteOutlined />}
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDelete(cat.slug);
+                          }}
+                        />
+                      </div> */}
+                    </Card>
+                  ))}
+                </Space>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
+
+      {/* ---------- Custom Antd Overrides ---------- */}
+      <style jsx>{`
+        /* Search bar rounded */
+        .ant-input-group-wrapper {
+          border-radius: 50px !important;
+        }
+        .ant-input-search
+          > .ant-input-group
+          > .ant-input-group-addon:last-child {
+          background: #1a1a1a !important;
+          border: none !important;
+          border-radius: 0 50px 50px 0 !important;
+        }
+        .ant-input-search
+          > .ant-input-group
+          > .ant-input-group-addon:last-child
+          .ant-btn {
+          background: transparent !important;
+          border: none !important;
+          color: #888 !important;
+        }
+        .ant-input-search
+          > .ant-input-group
+          > .ant-input-group-addon:last-child
+          .ant-btn:hover {
+          color: #fff !important;
+        }
+
+        /* Card hover lift */
+        .ant-card-hoverable:hover {
+          transform: translateY(-2px);
+        }
+      `}</style>
     </div>
   );
 };
 
-export default CategoryPage;
+export default CategoriesPage;

@@ -1,43 +1,48 @@
 import React from "react";
-import notfound from "../../assets/images/page-not-found.png";
 const Error404 = () => {
   return (
-    <div class="container">
-      <div class="row pt-80">
-        <div class="col-lg-6 col-md-12 d-lg-block d-none pr-50">
-          <img src={notfound} alt="" />
-        </div>
-        <div class="col-lg-6 col-md-12 pl-50 text-md-center text-lg-left">
-          <h1 class="mb-30 font-weight-900 page-404">404</h1>
-          <form
-            action="#"
-            method="get"
-            class="search-form d-lg-flex open-search mb-30"
-          >
-            <i class="icon-search"></i>
-            <input
-              class="form-control"
-              name="name"
-              id="name"
-              type="text"
-              placeholder="Search..."
+    <div
+      id="root"
+      class="min-h-100vh flex grow bg-slate-50 dark:bg-navy-900"
+      x-cloak
+    >
+      <main
+        style="$store.global.isDarkModeEnabled ? {backgroundImage : `url('./images/illustrations/ufo-bg-dark.svg')`} :{backgroundImage : `url('./images/illustrations/ufo-bg.svg')`}"
+        class="grid w-full grow grid-cols-1 place-items-center bg-center"
+      >
+        <div class="max-w-[26rem] text-center">
+          <div class="w-full">
+            <img
+              class="w-full"
+              x-show="!$store.global.isDarkModeEnabled"
+              src="images/illustrations/ufo.svg"
+              alt="image"
             />
-          </form>
-          <p class="">
-            The link you clicked may be broken or the page may have been
-            removed.
-            <br /> visit the <a href="index.html">Homepage</a> or{" "}
-            <a href="page-contact.html">Contact us</a> about the problem
-          </p>
-          <div class="form-group">
-            <button type="submit" class="button button-contactForm mt-30">
-              <a class="text-white" href="index.html">
-                Home page
-              </a>
-            </button>
+            <img
+              class="w-full"
+              x-show="$store.global.isDarkModeEnabled"
+              src="images/illustrations/ufo-dark.svg"
+              alt="image"
+            />
           </div>
+          <p class="pt-4 text-7xl font-bold text-primary dark:text-accent">
+            404
+          </p>
+          <p class="pt-4 text-xl font-semibold text-slate-800 dark:text-navy-50">
+            Oops. This Page Not Found.
+          </p>
+          <p class="pt-2 text-slate-500 dark:text-navy-200">
+            This page you are looking not available
+          </p>
+
+          <a
+            href="https://lineone.piniastudio.com/"
+            class="btn mt-8 h-11 bg-primary text-base font-medium text-white hover:bg-primary-focus hover:shadow-lg hover:shadow-primary/50 focus:bg-primary-focus focus:shadow-lg focus:shadow-primary/50 active:bg-primary-focus/90 dark:bg-accent dark:hover:bg-accent-focus dark:hover:shadow-accent/50 dark:focus:bg-accent-focus dark:focus:shadow-accent/50 dark:active:bg-accent/90"
+          >
+            Back To Home
+          </a>
         </div>
-      </div>
+      </main>
     </div>
   );
 };

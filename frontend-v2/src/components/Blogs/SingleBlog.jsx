@@ -1,725 +1,639 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
+import { Card, Input, Button, Typography, Spin, message } from "antd";
+import { useEditor, EditorContent } from "@tiptap/react";
+import StarterKit from "@tiptap/starter-kit";
+import Underline from "@tiptap/extension-underline";
+import Link from "@tiptap/extension-link";
+import TextAlign from "@tiptap/extension-text-align";
+import Placeholder from "@tiptap/extension-placeholder";
+import { useNavigate, useParams } from "react-router-dom";
+import Avatar from "react-avatar";
+import {
+  useGetPostsQuery,
+  useGetPostQuery,
+  useCreatePostMutation,
+  useUpdatePostMutation,
+  useLikePostMutation,
+  useUnlikePostMutation,
+} from "../../api/postApi";
+import {
+  useGetUserQuery,
+  useFollowMutation,
+  useUnfollowMutation,
+} from "../../api/userApi";
+import {
+  useCreateCommentMutation,
+  useGetPostCommentsQuery,
+} from "../../api/commentApi";
+import ErrorAlert from "../Extras/ErrorAlert.jsx";
+import { isLoggedIn } from "../../helpers/authHelper";
+
+// Helper: Format date
+const formatDate = (dateString) => {
+  const date = new Date(dateString);
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+};
+
+// Helper: Estimate read time
+const calculateReadTime = (content) => {
+  const wordsPerMinute = 200;
+  const wordCount = content.split(/\s+/).length;
+  const minutes = Math.ceil(wordCount / wordsPerMinute);
+  return `${minutes} min read`;
+};
+
+// Custom hook for author posts
+export const useGetAuthorPostsQuery = (
+  authorId,
+  currentPostId,
+  options = {}
+) => {
+  return useGetPostsQuery(
+    {
+      poster: authorId,
+      limit: 6,
+      sortBy: "-createdAt",
+    },
+    {
+      ...options,
+      selectFromResult: ({ data, ...rest }) => ({
+        data: data?.data?.filter((p) => p._id !== currentPostId) ?? [],
+        ...rest,
+      }),
+    }
+  );
+};
 
 const SingleBlog = () => {
+  const navigate = useNavigate();
+  const { id } = useParams();
+  const [loading, setLoading] = useState(false);
+  const [formData, setFormData] = useState({ title: "", content: "" });
+  const [serverError, setServerError] = useState("");
+  const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
+  const [commentContent, setCommentContent] = useState("");
+  const user = isLoggedIn();
+
+  const isUpdateMode = !!id && window.location.pathname.includes("/edit");
+
+  // Fetch post
+  const {
+    data: post,
+    isLoading: fetchingPost,
+    error: postError,
+  } = useGetPostQuery(id, { skip: !id });
+
+  // Fetch author posts
+  const { data: authorPosts = [], isLoading: authorPostsLoading } =
+    useGetAuthorPostsQuery(post?.poster?._id, id, {
+      skip: !post?.poster?._id || !id,
+    });
+
+  const isOwnPost = user?._id === post?.poster?._id;
+
+  // Fetch related posts
+  const {
+    data: relatedPostsData,
+    isLoading: fetchingRelatedPosts,
+    error: relatedPostsError,
+  } = useGetPostsQuery(
+    {
+      category: post?.category?.slug,
+      limit: 3,
+      sortBy: "-createdAt",
+    },
+    { skip: !post?.category?.slug }
+  );
+
+  // Fetch author
+  const {
+    data: authorData,
+    isLoading: fetchingAuthor,
+    error: authorError,
+  } = useGetUserQuery(post?.poster?.username, {
+    skip: !post?.poster?.username,
+  });
+
+  // Fetch comments
+  const {
+    data: comments,
+    isLoading: commentsLoading,
+    error: commentsError,
+  } = useGetPostCommentsQuery(id, {
+    skip: !isCommentSectionOpen || !id,
+  });
+
+  // Mutations
+  const [createPost] = useCreatePostMutation();
+  const [updatePost] = useUpdatePostMutation();
+  const [createComment, { isLoading: commentLoading }] =
+    useCreateCommentMutation();
+  const [likePost] = useLikePostMutation();
+  const [unlikePost] = useUnlikePostMutation();
+  const [follow] = useFollowMutation();
+  const [unfollow] = useUnfollowMutation();
+
+  // === TIPTAP EDITOR (Edit Mode Only) ===
+  const editor = useEditor({
+    extensions: [
+      StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
+      Underline,
+      Link.configure({ openOnClick: false }),
+      TextAlign.configure({ types: ["heading", "paragraph"] }),
+      Placeholder.configure({ placeholder: "Write your post content..." }),
+    ],
+    content: "",
+    editorProps: {
+      attributes: {
+        class:
+          "prose prose-lg dark:prose-invert max-w-none min-h-[300px] p-3 focus:outline-none border rounded-lg",
+      },
+    },
+    onUpdate: ({ editor }) => {
+      setFormData((prev) => ({ ...prev, content: editor.getHTML() }));
+    },
+  });
+
+  // Populate editor in edit mode
+  useEffect(() => {
+    if (isUpdateMode && post && editor) {
+      setFormData({
+        title: post.title || "",
+        content: post.content || "",
+      });
+      editor.commands.setContent(post.content || "");
+    }
+  }, [post, isUpdateMode, editor]);
+
+  // Handle errors
+  useEffect(() => {
+    const error =
+      postError || relatedPostsError || authorError || commentsError;
+    if (error) {
+      setServerError(error?.data?.error || "Something went wrong");
+    }
+  }, [postError, relatedPostsError, authorError, commentsError]);
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!formData.title || !formData.content) {
+      message.error("Title and content are required");
+      return;
+    }
+
+    setLoading(true);
+    const postData = {
+      title: formData.title,
+      content: formData.content,
+      userId: user?._id,
+      category: post?.category?.slug || "default",
+    };
+
+    try {
+      let result;
+      if (isUpdateMode) {
+        result = await updatePost({ id, postData }).unwrap();
+      } else {
+        result = await createPost(postData).unwrap();
+      }
+      navigate(`/blog/${result._id || id}`);
+    } catch (err) {
+      setServerError(err?.data?.error || "Failed to save post");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleFollowToggle = async () => {
+    if (!user) return navigate("/login");
+    try {
+      authorData?.isFollowing
+        ? await unfollow(authorData._id).unwrap()
+        : await follow(authorData._id).unwrap();
+    } catch (err) {
+      setServerError("Failed to update follow status");
+    }
+  };
+
+  const handleCommentSubmit = async (e) => {
+    e.preventDefault();
+    if (!user) return message.error("Please log in to comment.");
+    if (!commentContent.trim())
+      return message.error("Comment cannot be empty.");
+
+    try {
+      await createComment({ id, content: commentContent }).unwrap();
+      message.success("Comment posted!");
+      setCommentContent("");
+    } catch (err) {
+      message.error("Failed to post comment");
+    }
+  };
+
+  const handleLike = async () => {
+    if (!user) return message.error("Please log in to like.");
+    try {
+      post?.liked ? await unlikePost(id).unwrap() : await likePost(id).unwrap();
+    } catch (err) {
+      message.error("Failed to update like");
+    }
+  };
+
+  // === TIPTAP TOOLBAR ===
+  const MenuBar = () => {
+    if (!editor) return null;
+    return (
+      <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50 dark:bg-navy-700">
+        {["Bold", "Italic", "Underline"].map((style) => (
+          <Button
+            key={style}
+            size="small"
+            onClick={() => editor.chain().focus()[`toggle${style}`]().run()}
+            className={
+              editor.isActive(style.toLowerCase())
+                ? "bg-primary text-white"
+                : ""
+            }
+          >
+            {style === "Bold" ? (
+              <b>B</b>
+            ) : style === "Italic" ? (
+              <i>I</i>
+            ) : (
+              <u>U</u>
+            )}
+          </Button>
+        ))}
+        {[1, 2, 3].map((level) => (
+          <Button
+            key={level}
+            size="small"
+            onClick={() =>
+              editor.chain().focus().toggleHeading({ level }).run()
+            }
+            className={
+              editor.isActive("heading", { level })
+                ? "bg-primary text-white"
+                : ""
+            }
+          >
+            H{level}
+          </Button>
+        ))}
+        {["bulletList", "orderedList"].map((list) => (
+          <Button
+            key={list}
+            size="small"
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={editor.isActive(list) ? "bg-primary text-white" : ""}
+          >
+            {list === "bulletList" ? "•" : "1."} List
+          </Button>
+        ))}
+        <Button
+          size="small"
+          onClick={() => {
+            const url = window.prompt("URL:");
+            if (url) editor.chain().focus().setLink({ href: url }).run();
+          }}
+        >
+          Link
+        </Button>
+      </div>
+    );
+  };
+
+  // === RENDER LOADING / ERROR ===
+  if (fetchingPost && id)
+    return <Spin size="large" className="flex justify-center p-10" />;
+  if (serverError) return <ErrorAlert message={serverError} />;
+
+  // === EDIT MODE (with TipTap) ===
+  if (isUpdateMode) {
+    return (
+      <div className="max-w-4xl mx-auto p-4">
+        <Card title="Edit Post">
+          <form onSubmit={handleSubmit}>
+            <Typography.Title level={5}>Title</Typography.Title>
+            <Input
+              name="title"
+              value={formData.title}
+              onChange={(e) =>
+                setFormData({ ...formData, title: e.target.value })
+              }
+              placeholder="Enter post title"
+              className="mb-4"
+            />
+
+            <Typography.Title level={5}>Content</Typography.Title>
+            <div className="border rounded-lg overflow-hidden mb-4">
+              <MenuBar />
+              <EditorContent editor={editor} className="tiptap-editor" />
+            </div>
+
+            <Button type="primary" htmlType="submit" loading={loading}>
+              Update Post
+            </Button>
+          </form>
+          {serverError && <ErrorAlert message={serverError} />}
+        </Card>
+      </div>
+    );
+  }
+
+  // === VIEW MODE (unchanged) ===
+  if (!post && id) return <div>Post not found</div>;
+
   return (
-    <div class="container single-content">
-      <div class="entry-header entry-header-style-1 mb-50 pt-50">
-        <h1 class="entry-title mb-50 font-weight-900">
-          The effect of livestock on the physiological condition of roe deer is
-          modulated by habitat quality
-        </h1>
-        <div class="row">
-          <div class="col-md-6">
-            <div class="entry-meta align-items-center meta-2 font-small color-muted">
-              <p class="mb-5">
-                <a class="author-avatar" href="#">
-                  <img class="img-circle" src="images/author-3.jpg" alt="" />
+    <div className="grid grid-cols-12 lg:gap-6">
+      {/* Main Content */}
+      <div className="col-span-12 pt-6 lg:col-span-8 lg:pb-6">
+        <div className="card p-4 lg:p-6">
+          {/* Author Header */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-3">
+              <Avatar
+                name={post.poster?.username}
+                src={authorData?.avatar}
+                size="48"
+                round={true}
+                className="mask is-squircle"
+              />
+              <div>
+                <a
+                  href={`/profile/${post.poster?.username}`}
+                  className="font-medium hover:text-primary"
+                >
+                  {post.poster?.username}
                 </a>
-                By{" "}
-                <a href="author.html">
-                  <span class="author-name font-weight-bold">
-                    Barbara Cartland
-                  </span>
-                </a>
-              </p>
-              <span class="mr-10"> 15 April 2020</span>
-              <span class="has-dot"> 8 mins read</span>
+                <div className="mt-1.5 flex items-center text-xs">
+                  <span>{formatDate(post.createdAt)}</span>
+                  <div className="mx-2 w-px h-4 bg-gray-300"></div>
+                  <span>{calculateReadTime(post.content)}</span>
+                </div>
+              </div>
+            </div>
+            <div className="flex space-x-3">
+              <button
+                onClick={handleLike}
+                className={`btn size-8 rounded-full p-0 ${
+                  post.liked ? "text-secondary" : ""
+                }`}
+              >
+                <svg
+                  className="size-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
+              {user && (isOwnPost || user.role === "admin") && (
+                <div className="inline-flex">
+                  <button className="btn size-8 rounded-full p-0">
+                    <svg
+                      className="size-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
+                    </svg>
+                  </button>
+                  <div className="popper-root">
+                    <div className="popper-box rounded-md border bg-white py-1.5 dark:bg-navy-700">
+                      <ul>
+                        <li>
+                          <a
+                            href={`/blog/${id}/edit`}
+                            className="block px-3 py-1 hover:bg-gray-100"
+                          >
+                            Edit Post
+                          </a>
+                        </li>
+                        <li>
+                          <a
+                            href="#"
+                            className="block px-3 py-1 hover:bg-gray-100"
+                          >
+                            Delete Post
+                          </a>
+                        </li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
-          <div class="col-md-6 text-right d-none d-md-inline">
-            <ul class="header-social-network d-inline-block list-inline mr-15">
-              <li class="list-inline-item text-muted">
-                <span>Share this: </span>
-              </li>
-              <li class="list-inline-item">
-                <a
-                  class="social-icon fb text-xs-center"
-                  target="_blank"
-                  href="#"
-                >
-                  <i class="elegant-icon social_facebook"></i>
-                </a>
-              </li>
-              <li class="list-inline-item">
-                <a
-                  class="social-icon tw text-xs-center"
-                  target="_blank"
-                  href="#"
-                >
-                  <i class="elegant-icon social_twitter "></i>
-                </a>
-              </li>
-              <li class="list-inline-item">
-                <a
-                  class="social-icon pt text-xs-center"
-                  target="_blank"
-                  href="#"
-                >
-                  <i class="elegant-icon social_pinterest "></i>
-                </a>
-              </li>
-            </ul>
+
+          {/* Post Content */}
+          <div className="mt-6">
+            <h1 className="text-2xl font-bold">{post.title}</h1>
+            <div className="mt-4 whitespace-pre-wrap text-base leading-relaxed">
+              {post.content.split("\n").map((p, i) => (
+                <p key={i} className="mb-4">
+                  {p}
+                </p>
+              ))}
+            </div>
           </div>
+
+          {/* Like & Comment Buttons */}
+          <div className="mt-5 flex space-x-3">
+            <button
+              onClick={handleLike}
+              className={`btn rounded-full border px-4 ${
+                post.liked ? "text-secondary" : ""
+              }`}
+            >
+              <svg
+                className="size-4.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
+              </svg>
+              <span>{post.likeCount || 0}</span>
+            </button>
+            <button
+              onClick={() => setIsCommentSectionOpen(!isCommentSectionOpen)}
+              className="btn rounded-full border px-4"
+            >
+              <svg
+                className="size-4.5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
+              </svg>
+              <span>{post.commentCount || 0}</span>
+            </button>
+          </div>
+
+          {/* Comment Section */}
+          {isCommentSectionOpen && (
+            <div className="mt-5 border-t pt-4">
+              {user ? (
+                <form onSubmit={handleCommentSubmit} className="flex mb-4">
+                  <Input
+                    placeholder="Write a comment..."
+                    value={commentContent}
+                    onChange={(e) => setCommentContent(e.target.value)}
+                    className="flex-1"
+                  />
+                  <Button
+                    type="primary"
+                    htmlType="submit"
+                    loading={commentLoading}
+                    className="ml-2"
+                  >
+                    Send
+                  </Button>
+                </form>
+              ) : (
+                <p className="mb-4">
+                  Please{" "}
+                  <a href="/login" className="text-primary">
+                    log in
+                  </a>{" "}
+                  to comment.
+                </p>
+              )}
+              {commentsLoading ? (
+                <p>Loading comments...</p>
+              ) : comments?.length > 0 ? (
+                <div className="space-y-4">
+                  {comments.map((c) => (
+                    <div key={c._id} className="flex space-x-3">
+                      <Avatar
+                        size="32"
+                        round
+                        src={c.commenter?.avatar}
+                        name={c.commenter?.username}
+                      />
+                      <div>
+                        <p className="font-medium">{c.commenter?.username}</p>
+                        <p className="text-sm">{c.content}</p>
+                        <p className="text-xs text-gray-500">
+                          {formatDate(c.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p>No comments yet.</p>
+              )}
+            </div>
+          )}
+        </div>
+
+        {/* Related Posts */}
+        <div className="mt-6">
+          <div className="flex justify-between">
+            <p className="font-medium">Related Articles</p>
+            <a href="/blog" className="text-primary text-sm">
+              View All
+            </a>
+          </div>
+          {fetchingRelatedPosts ? (
+            <p>Loading...</p>
+          ) : relatedPostsData?.data?.length > 0 ? (
+            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
+              {relatedPostsData.data.map((p) => (
+                <div key={p._id} className="card flex">
+                  <img
+                    src={p.image || "/placeholder.jpg"}
+                    className="w-32 h-32 object-cover rounded-l"
+                  />
+                  <div className="p-3 flex-1">
+                    <a
+                      href={`/blog/${p._id}`}
+                      className="font-medium hover:text-primary"
+                    >
+                      {p.title}
+                    </a>
+                    <p className="text-sm text-gray-600 line-clamp-2 mt-1">
+                      {p.content.substring(0, 100)}...
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p>No related posts.</p>
+          )}
         </div>
       </div>
 
-      <figure class="image mb-30 m-auto text-center border-radius-10">
-        <img
-          class="border-radius-10"
-          src="images/news-1.jpg"
-          alt="post-title"
-        />
-      </figure>
-
-      <article class="entry-wraper mb-50">
-        <div class="excerpt mb-30">
-          <p>
-            Gosh jaguar ostrich quail one excited dear hello and bound and the
-            and bland moral misheard roadrunner flapped lynx far that and
-            jeepers giggled far and far bald that roadrunner python inside held
-            shrewdly the manatee.
-          </p>
-        </div>
-        <div class="entry-main-content dropcap wow fadeIn animated">
-          <p>
-            Fretful human far recklessly while caterpillar well a well blubbered
-            added one a some far whispered rampantly whispered while irksome far
-            clung irrespective wailed more rosily and where saluted while black
-            dear so yikes as considering recast to some crass until.
-          </p>
-          <hr class="wp-block-separator is-style-dots" />
-          <p>
-            Thanks sniffed in hello after in foolhardy and some far purposefully
-            much one at the much conjointly leapt skimpily that quail sheep some
-            goodness <a href="#">nightingale</a> the instead exited expedient up
-            far ouch mellifluous altruistic and and lighted more instead much
-            when ferret but the.
-          </p>
-          <figure class="wp-block-gallery columns-3 wp-block-image">
-            <ul class="blocks-gallery-grid">
-              <li class="blocks-gallery-item">
-                <a href="#">
-                  <img
-                    class="border-radius-5"
-                    src="images/thumb-2.jpg"
-                    alt=""
-                  />
-                </a>
-              </li>
-              <li class="blocks-gallery-item">
-                <a href="#">
-                  <img
-                    class="border-radius-5"
-                    src="images/thumb-3.jpg"
-                    alt=""
-                  />
-                </a>
-              </li>
-              <li class="blocks-gallery-item">
-                <a href="#">
-                  <img
-                    class="border-radius-5"
-                    src="images/thumb-4.jpg"
-                    alt=""
-                  />
-                </a>
-              </li>
-            </ul>
-            <figcaption>
-              {" "}
-              <i class="ti-credit-card mr-5"></i>Image credit: Behance{" "}
-            </figcaption>
-          </figure>
-          <hr class="section-divider" />
-          <p>
-            Yet more some certainly yet alas abandonedly whispered{" "}
-            <a href="#">intriguingly</a>
-            <sup>
-              <a href="#">[2]</a>
-            </sup>{" "}
-            well extensive one howled talkative admonishingly below a rethought
-            overlaid dear gosh activated less <a href="#">however</a> hawk yet
-            oh scratched ostrich some outside crud irrespective lightheartedly
-            and much far amenably that the elephant since when.
-          </p>
-          <h2>The Guitar Legends</h2>
-          <p>
-            Furrowed this in the upset <a href="#">some across</a>
-            <sup>
-              <a href="#">[3]</a>
-            </sup>{" "}
-            tiger oh loaded house gosh whispered <a href="#">faltering alas</a>
-            <sup>
-              <a href="#">[4]</a>
-            </sup>{" "}
-            ouch cuckoo coward in scratched undid together bit fumblingly so
-            besides salamander heron during the jeepers hello fitting jauntily
-            much smoothly globefish darn blessedly far so along bluebird leopard
-            and.
-          </p>
-          <blockquote>
-            <p>
-              Integer eu faucibus <a href="#">dolor</a>
-              <sup>
-                <a href="#">[5]</a>
-              </sup>
-              . Ut venenatis tincidunt diam elementum imperdiet. Etiam accumsan
-              semper nisl eu congue. Sed aliquam magna erat, ac eleifend lacus
-              rhoncus in.
+      {/* Sidebar */}
+      <div className="col-span-12 py-6 lg:col-span-4">
+        <div className="card">
+          <img
+            src={authorData?.banner || "/banner.jpg"}
+            className="h-24 w-full object-cover rounded-t"
+          />
+          <div className="p-4 -mt-12">
+            <Avatar
+              name={authorData?.username || post.poster?.username}
+              src={authorData?.avatar}
+              size="80"
+              round
+              className="border-4 border-white"
+            />
+            <h3 className="mt-2 font-medium">
+              {authorData?.username || post.poster?.username}
+            </h3>
+            <p className="text-sm text-gray-600">
+              {authorData?.biography?.substring(0, 50)}... |{" "}
+              {authorData?.followers?.length || 0} followers
             </p>
-          </blockquote>
-          <p>
-            Fretful human far recklessly while caterpillar well a well blubbered
-            added one a some far whispered rampantly whispered while irksome far
-            clung irrespective wailed more rosily and where saluted while black
-            dear so yikes as considering recast to some crass until cow much
-            less and rakishly overdrew consistent for by responsible oh one
-            hypocritical less bastard hey oversaw zebra browbeat a well.
-          </p>
-          <h3>Getting Crypto Rich</h3>
-          <hr class="wp-block-separator is-style-wide" />
-          <div class="wp-block-image">
-            <figure class="alignleft is-resized">
-              <img class="border-radius-5" src="images/thumb-11.jpg" />
-              <figcaption>
-                {" "}
-                And far contrary smoked some contrary among stealthy{" "}
-              </figcaption>
-            </figure>
-          </div>
-          <p>
-            And far contrary smoked some contrary among stealthy engagingly
-            suspiciously a cockatoo far circa sank dully lewd slick cracked
-            llama the much gecko yikes more squirrel sniffed this and the the
-            much within uninhibited this abominable a blubbered overdid foresaw
-            through alas the pessimistic.
-          </p>
-          <p>
-            Gosh jaguar ostrich quail one excited dear hello and bound and the
-            and bland moral misheard roadrunner flapped lynx far that and
-            jeepers giggled far and far bald that roadrunner python inside held
-            shrewdly the manatee.
-          </p>
-          <hr class="section-divider" />
-          <p>
-            Thanks sniffed in hello after in foolhardy and some far purposefully
-            much one at the much conjointly leapt skimpily that quail sheep some
-            goodness nightingale the instead exited expedient up far ouch
-            mellifluous altruistic and and lighted more instead much when ferret
-            but the.
-          </p>
-
-          <div class="border-radius-10 border bg-white mb-30 p-30 wow fadeIn animated">
-            <div class="row justify-content-between">
-              <div class="col-md-5 mb-2 mb-md-0">
-                <h5 class="font-weight-bold secondfont mb-30 mt-0">
-                  Become a member
-                </h5>
-                <p class="font-small">
-                  Get the latest news right in your inbox. We never spam!
-                </p>
-              </div>
-              <div class="col-md-7">
-                <div class="row">
-                  <div class="col-md-12">
-                    <input
-                      type="text"
-                      class="form-control"
-                      placeholder="Enter your e-mail address"
-                    />
-                  </div>
-                  <div class="col-md-12 mt-2">
-                    <button type="submit" class="btn btn-primary btn-block">
-                      Subscribe
-                    </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <p>
-            Yet more some certainly yet alas abandonedly whispered intriguingly
-            well extensive one howled talkative admonishingly below a rethought
-            overlaid dear gosh activated less however hawk yet oh scratched
-            ostrich some outside crud irrespective lightheartedly and much far
-            amenably that the elephant since when.
-          </p>
-        </div>
-
-        <div class="entry-bottom mt-50 mb-30 wow fadeIn animated">
-          <div class="tags">
-            <span>Tags: </span>
-            <a href="category.html" rel="tag">
-              deer
-            </a>
-            <a href="category.html" rel="tag">
-              nature
-            </a>
-            <a href="category.html" rel="tag">
-              conserve
-            </a>
-          </div>
-        </div>
-        <div class="single-social-share clearfix wow fadeIn animated">
-          <div class="entry-meta meta-1 font-small color-grey float-left mt-10">
-            <span class="hit-count mr-15">
-              <i class="elegant-icon icon_comment_alt mr-5"></i>182 comments
-            </span>
-            <span class="hit-count mr-15">
-              <i class="elegant-icon icon_like mr-5"></i>268 likes
-            </span>
-            <span class="hit-count">
-              <i class="elegant-icon icon_star-half_alt mr-5"></i>Rate: 9/10
-            </span>
-          </div>
-          <ul class="header-social-network d-inline-block list-inline float-md-right mt-md-0 mt-4">
-            <li class="list-inline-item text-muted">
-              <span>Share this: </span>
-            </li>
-            <li class="list-inline-item">
-              <a class="social-icon fb text-xs-center" target="_blank" href="#">
-                <i class="elegant-icon social_facebook"></i>
-              </a>
-            </li>
-            <li class="list-inline-item">
-              <a class="social-icon tw text-xs-center" target="_blank" href="#">
-                <i class="elegant-icon social_twitter "></i>
-              </a>
-            </li>
-            <li class="list-inline-item">
-              <a class="social-icon pt text-xs-center" target="_blank" href="#">
-                <i class="elegant-icon social_pinterest "></i>
-              </a>
-            </li>
-          </ul>
-        </div>
-
-        <div class="author-bio p-30 mt-50 border-radius-10 bg-white wow fadeIn animated">
-          <div class="author-image mb-30">
-            <a href="author.html">
-              <img src="images/author-3.jpg" alt="" class="avatar" />
-            </a>
-          </div>
-          <div class="author-info">
-            <h4 class="font-weight-bold mb-20">
-              <span class="vcard author">
-                <span class="fn">
-                  <a
-                    href="author.html"
-                    title="Posted by Barbara Cartland"
-                    rel="author"
-                  >
-                    Barbara Cartland
-                  </a>
-                </span>
-              </span>
-            </h4>
-            <h5 class="text-muted">About author</h5>
-            <div class="author-description text-muted">
-              You should write because you love the shape of stories and
-              sentences and the creation of different words on a page.{" "}
-            </div>
-            <a href="author.html" class="author-bio-link mb-md-0 mb-3">
-              View all posts (125)
-            </a>
-            <div class="author-social">
-              <ul class="author-social-icons">
-                <li class="author-social-link-facebook">
-                  <a href="#" target="_blank">
-                    <i class="ti-facebook"></i>
-                  </a>
-                </li>
-                <li class="author-social-link-twitter">
-                  <a href="#" target="_blank">
-                    <i class="ti-twitter-alt"></i>
-                  </a>
-                </li>
-                <li class="author-social-link-pinterest">
-                  <a href="#" target="_blank">
-                    <i class="ti-pinterest"></i>
-                  </a>
-                </li>
-                <li class="author-social-link-instagram">
-                  <a href="#" target="_blank">
-                    <i class="ti-instagram"></i>
-                  </a>
-                </li>
-              </ul>
+            <p className="mt-3 text-sm">{authorData?.biography || "No bio."}</p>
+            <div className="mt-4 flex gap-2">
+              {!isOwnPost && (
+                <Button
+                  size="small"
+                  onClick={handleFollowToggle}
+                  disabled={fetchingAuthor}
+                >
+                  {authorData?.isFollowing ? "Unfollow" : "Follow"}
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        <div class="related-posts">
-          <div class="post-module-3">
-            <div class="widget-header-2 position-relative mb-30">
-              <h5 class="mt-5 mb-30">Related posts</h5>
-            </div>
-            <div class="loop-list loop-list-style-1">
-              <article class="hover-up-2 transition-normal wow fadeInUp  animated">
-                <div class="row mb-40 list-style-2">
-                  <div class="col-md-4">
-                    <div class="post-thumb position-relative border-radius-5">
-                      <div class="img-hover-slide border-radius-5 position-relative">
-                        <a class="img-link" href="single.html"></a>
-                      </div>
-                      <ul class="social-share">
-                        <li>
-                          <a href="#">
-                            <i class="elegant-icon social_share"></i>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="fb"
-                            href="#"
-                            title="Share on Facebook"
-                            target="_blank"
-                          >
-                            <i class="elegant-icon social_facebook"></i>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="tw"
-                            href="#"
-                            target="_blank"
-                            title="Tweet now"
-                          >
-                            <i class="elegant-icon social_twitter"></i>
-                          </a>
-                        </li>
-                        <li>
-                          <a class="pt" href="#" target="_blank" title="Pin it">
-                            <i class="elegant-icon social_pinterest"></i>
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                  <div class="col-md-8 align-self-center">
-                    <div class="post-content">
-                      <div class="entry-meta meta-0 font-small mb-10">
-                        <a href="category.html">
-                          <span class="post-cat text-primary">Food</span>
-                        </a>
-                      </div>
-                      <h5 class="post-title font-weight-900 mb-20">
-                        <a href="single.html">
-                          Helpful Tips for Working from Home as a Freelancer
-                        </a>
-                        <span class="post-format-icon">
-                          <i class="elegant-icon icon_star_alt"></i>
-                        </span>
-                      </h5>
-                      <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
-                        <span class="post-on">7 August</span>
-                        <span class="time-reading has-dot">11 mins read</span>
-                        <span class="post-by has-dot">3k views</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </article>
-              <article class="hover-up-2 transition-normal wow fadeInUp  animated">
-                <div class="row mb-40 list-style-2">
-                  <div class="col-md-4">
-                    <div class="post-thumb position-relative border-radius-5">
-                      <div class="img-hover-slide border-radius-5 position-relative">
-                        <a class="img-link" href="single.html"></a>
-                      </div>
-                      <ul class="social-share">
-                        <li>
-                          <a href="#">
-                            <i class="elegant-icon social_share"></i>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="fb"
-                            href="#"
-                            title="Share on Facebook"
-                            target="_blank"
-                          >
-                            <i class="elegant-icon social_facebook"></i>
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            class="tw"
-                            href="#"
-                            target="_blank"
-                            title="Tweet now"
-                          >
-                            <i class="elegant-icon social_twitter"></i>
-                          </a>
-                        </li>
-                        <li>
-                          <a class="pt" href="#" target="_blank" title="Pin it">
-                            <i class="elegant-icon social_pinterest"></i>
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                  <div class="col-md-8 align-self-center">
-                    <div class="post-content">
-                      <div class="entry-meta meta-0 font-small mb-10">
-                        <a href="category.html">
-                          <span class="post-cat text-success">Cooking</span>
-                        </a>
-                      </div>
-                      <h5 class="post-title font-weight-900 mb-20">
-                        <a href="single.html">
-                          10 Easy Ways to Be Environmentally Conscious At Home
-                        </a>
-                      </h5>
-                      <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
-                        <span class="post-on">27 Sep</span>
-                        <span class="time-reading has-dot">10 mins read</span>
-                        <span class="post-by has-dot">22k views</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </article>
-            </div>
-          </div>
-        </div>
-
-        <div class="single-more-articles border-radius-5">
-          <div class="widget-header-2 position-relative mb-30">
-            <h5 class="mt-5 mb-30">You might be interested in</h5>
-            <button class="single-more-articles-close">
-              <i class="elegant-icon icon_close"></i>
-            </button>
-          </div>
-          <div class="post-block-list post-module-1 post-module-5">
-            <ul class="list-post">
-              <li class="mb-30">
-                <div class="d-flex hover-up-2 transition-normal">
-                  <div class="post-thumb post-thumb-80 d-flex mr-15 border-radius-5 img-hover-scale overflow-hidden">
-                    <a class="color-white" href="single.html">
-                      <img src="images/thumb-1.jpg" alt="" />
-                    </a>
-                  </div>
-                  <div class="post-content media-body">
-                    <h6 class="post-title mb-15 text-limit-2-row font-medium">
-                      <a href="single.html">
-                        The Best Time to Travel to Cambodia
-                      </a>
-                    </h6>
-                    <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
-                      <span class="post-on">27 Jan</span>
-                      <span class="post-by has-dot">13k views</span>
-                    </div>
-                  </div>
-                </div>
-              </li>
-              <li class="mb-10">
-                <div class="d-flex hover-up-2 transition-normal">
-                  <div class="post-thumb post-thumb-80 d-flex mr-15 border-radius-5 img-hover-scale overflow-hidden">
-                    <a class="color-white" href="single.html">
-                      <img src="images/thumb-2.jpg" alt="" />
-                    </a>
-                  </div>
-                  <div class="post-content media-body">
-                    <h6 class="post-title mb-15 text-limit-2-row font-medium">
-                      <a href="single.html">
-                        20 Photos to Inspire You to Visit Cambodia
-                      </a>
-                    </h6>
-                    <div class="entry-meta meta-1 float-left font-x-small text-uppercase">
-                      <span class="post-on">27 August</span>
-                      <span class="post-by has-dot">14k views</span>
-                    </div>
-                  </div>
-                </div>
-              </li>
-            </ul>
-          </div>
-        </div>
-
-        <div class="comments-area">
-          <div class="widget-header-2 position-relative mb-30">
-            <h5 class="mt-5 mb-30">Comments</h5>
-          </div>
-          <div class="comment-list wow fadeIn animated">
-            <div class="single-comment justify-content-between d-flex">
-              <div class="user justify-content-between d-flex">
-                <div class="thumb">
-                  <img src="images/author-4.jpg" alt="" />
-                </div>
-                <div class="desc">
-                  <p class="comment">
-                    Vestibulum euismod, leo eget varius gravida, eros enim
-                    interdum urna, non rutrum enim ante quis metus. Duis porta
-                    ornare nulla ut bibendum
+        {/* More from Author */}
+        <div className="mt-6">
+          <p className="font-medium border-b pb-2">
+            More from {authorData?.username}
+          </p>
+          {authorPostsLoading ? (
+            <p>Loading...</p>
+          ) : authorPosts.length > 0 ? (
+            <div className="mt-4 space-y-3">
+              {authorPosts.map((p) => (
+                <a
+                  key={p._id}
+                  href={`/blog/${p._id}`}
+                  className="block p-3 border rounded hover:bg-gray-50"
+                >
+                  <p className="font-medium">{p.title}</p>
+                  <p className="text-xs text-gray-500">
+                    {formatDate(p.createdAt)}
                   </p>
-                  <div class="d-flex justify-content-between">
-                    <div class="d-flex align-items-center">
-                      <h5>
-                        <a href="#">Rosie</a>
-                      </h5>
-                      <p class="date">6 minutes ago </p>
-                    </div>
-                    <div class="reply-btn">
-                      <a href="#" class="btn-reply">
-                        Reply
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
+                </a>
+              ))}
             </div>
-          </div>
-          <div class="comment-list wow fadeIn animated">
-            <div class="single-comment justify-content-between d-flex">
-              <div class="user justify-content-between d-flex">
-                <div class="thumb">
-                  <img src="images/author-2.jpg" alt="" />
-                </div>
-                <div class="desc">
-                  <p class="comment">
-                    Sed ac lorem felis. Ut in odio lorem. Quisque magna dui,
-                    maximus ut commodo sed, vestibulum ac nibh. Aenean a tortor
-                    in sem tempus auctor
-                  </p>
-                  <div class="d-flex justify-content-between">
-                    <div class="d-flex align-items-center">
-                      <h5>
-                        <a href="#">Agatha Christie</a>
-                      </h5>
-                      <p class="date">December 4, 2020 at 3:12 pm </p>
-                    </div>
-                    <div class="reply-btn">
-                      <a href="#" class="btn-reply">
-                        Reply
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div class="single-comment depth-2 justify-content-between d-flex mt-50">
-              <div class="user justify-content-between d-flex">
-                <div class="thumb">
-                  <img src="images/author.jpg" alt="" />
-                </div>
-                <div class="desc">
-                  <p class="comment">
-                    Sed ac lorem felis. Ut in odio lorem. Quisque magna dui,
-                    maximus ut commodo sed, vestibulum ac nibh. Aenean a tortor
-                    in sem tempus auctor
-                  </p>
-                  <div class="d-flex justify-content-between">
-                    <div class="d-flex align-items-center">
-                      <h5>
-                        <a href="#">Steven</a>
-                      </h5>
-                      <p class="date">December 4, 2020 at 3:12 pm </p>
-                    </div>
-                    <div class="reply-btn">
-                      <a href="#" class="btn-reply">
-                        Reply
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="comment-list wow fadeIn animated">
-            <div class="single-comment justify-content-between d-flex">
-              <div class="user justify-content-between d-flex">
-                <div class="thumb">
-                  <img src="images/author-3.jpg" alt="" />
-                </div>
-                <div class="desc">
-                  <p class="comment">
-                    Donec in ullamcorper quam. Aenean vel nibh eu magna gravida
-                    fermentum. Praesent eget nisi pulvinar, sollicitudin eros
-                    vitae, tristique odio.
-                  </p>
-                  <div class="d-flex justify-content-between">
-                    <div class="d-flex align-items-center">
-                      <h5>
-                        <a href="#">Danielle Steel</a>
-                      </h5>
-                      <p class="date">December 4, 2020 at 3:12 pm </p>
-                    </div>
-                    <div class="reply-btn">
-                      <a href="#" class="btn-reply">
-                        Reply
-                      </a>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+          ) : (
+            <p>No other posts.</p>
+          )}
         </div>
-
-        <div class="comment-form wow fadeIn animated">
-          <div class="widget-header-2 position-relative mb-30">
-            <h5 class="mt-5 mb-30">Leave a Reply</h5>
-          </div>
-          <form class="form-contact comment_form" action="#" id="commentForm">
-            <div class="row">
-              <div class="col-12">
-                <div class="form-group">
-                  <textarea
-                    class="form-control w-100"
-                    name="comment"
-                    id="comment"
-                    cols="30"
-                    rows="9"
-                    placeholder="Write Comment"
-                  ></textarea>
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="form-group">
-                  <input
-                    class="form-control"
-                    name="name"
-                    id="name"
-                    type="text"
-                    placeholder="Name"
-                  />
-                </div>
-              </div>
-              <div class="col-sm-6">
-                <div class="form-group">
-                  <input
-                    class="form-control"
-                    name="email"
-                    id="email"
-                    type="email"
-                    placeholder="Email"
-                  />
-                </div>
-              </div>
-              <div class="col-12">
-                <div class="form-group">
-                  <input
-                    class="form-control"
-                    name="website"
-                    id="website"
-                    type="text"
-                    placeholder="Website"
-                  />
-                </div>
-              </div>
-            </div>
-            <div class="form-group">
-              <button type="submit" class="btn button button-contactForm">
-                Post Comment
-              </button>
-            </div>
-          </form>
-        </div>
-      </article>
+      </div>
     </div>
   );
 };

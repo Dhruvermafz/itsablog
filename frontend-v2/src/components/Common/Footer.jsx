@@ -1,136 +1,189 @@
 import React from "react";
-import { Button, Input, Checkbox, Typography, Row, Col } from "antd";
+import { Button, Input, Typography, Row, Col, Space } from "antd";
 import {
   FacebookOutlined,
   TwitterOutlined,
   PinterestOutlined,
+  MailOutlined,
 } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
 
-const { Title, Paragraph } = Typography;
+const { Title, Paragraph, Text } = Typography;
+const { Search } = Input;
 
 const Footer = () => {
   const navigate = useNavigate();
   const currentYear = new Date().getFullYear();
 
   const quickLinks = [
-    { key: "about", label: "About me", link: "/about" },
+    { key: "about", label: "About Groups", link: "/about-groups" },
     { key: "help", label: "Help & Support", link: "/help" },
-    { key: "licensing", label: "Licensing Policy", link: "/licensing" },
-    { key: "refund", label: "Refund Policy", link: "/refund" },
-    { key: "hire", label: "Hire me", link: "/hire" },
+    { key: "guidelines", label: "Community Guidelines", link: "/guidelines" },
+    { key: "terms", label: "Terms of Service", link: "/terms" },
+    { key: "privacy", label: "Privacy Policy", link: "/privacy" },
     { key: "contact", label: "Contact", link: "/contact" },
   ];
 
   const socialLinks = [
-    { key: "facebook", icon: <FacebookOutlined />, href: "#" },
-    { key: "twitter", icon: <TwitterOutlined />, href: "#" },
-    { key: "pinterest", icon: <PinterestOutlined />, href: "#" },
+    {
+      key: "facebook",
+      icon: <FacebookOutlined className="text-xl" />,
+      href: "https://facebook.com",
+    },
+    {
+      key: "twitter",
+      icon: <TwitterOutlined className="text-xl" />,
+      href: "https://twitter.com",
+    },
+    {
+      key: "pinterest",
+      icon: <PinterestOutlined className="text-xl" />,
+      href: "https://pinterest.com",
+    },
   ];
 
-  const handleNewsletterSubmit = (e) => {
-    e.preventDefault();
-    // Add newsletter subscription logic here (e.g., API call)
-    console.log("Newsletter subscription submitted");
+  const handleNewsletter = (value) => {
+    if (value.trim()) {
+      console.log("Subscribed:", value);
+      // Add your API call here
+    }
   };
 
   return (
-    <footer className="footer bg-grey pt-50 pb-20">
-      <div className="container">
-        <Row gutter={[24, 24]}>
-          <Col xs={24} md={12} lg={6}>
-            <div className="sidebar-widget">
-              <Title level={5} className="mb-20">
-                About ItsABlog
-              </Title>
-              <Paragraph className="text-muted">
-                Start writing, no matter what. The water does not flow until the
-                faucet is turned on.
-              </Paragraph>
-            </div>
-          </Col>
-          <Col xs={24} md={12} lg={6}>
-            <div className="sidebar-widget">
-              <Title level={5} className="mb-20">
-                Quick Links
-              </Title>
-              <ul
-                className="quick-links"
-                style={{ listStyle: "none", padding: 0 }}
+    <footer className="bg-slate-50 dark:bg-navy-800 border-t border-slate-200 dark:border-navy-700">
+      <div className="container mx-auto px-6 py-12">
+        <Row gutter={[32, 32]}>
+          {/* Brand & Description */}
+          <Col xs={24} md={6}>
+            <div className="mb-6">
+              <Title
+                level={3}
+                className="text-slate-800 dark:text-navy-50 font-bold mb-3"
               >
-                {quickLinks.map((item) => (
-                  <li key={item.key} style={{ marginBottom: 8 }}>
-                    <a
-                      href={item.link}
-                      onClick={(e) => {
-                        e.preventDefault();
-                        navigate(item.link);
-                      }}
-                      style={{ color: "#666", textDecoration: "none" }}
-                    >
-                      {item.label}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </Col>
-          <Col xs={24} md={12} lg={6}>
-            <div className="sidebar-widget">
-              <Title level={5} className="mb-20">
-                Contact Us
+                ItsABlog
               </Title>
-              <Paragraph className="text-muted">
-                <a href="mailto:write@dhruvermafz.in" style={{ color: "#666" }}>
-                  write@dhruvermafz.in
-                </a>
+              <Paragraph className="text-slate-600 dark:text-navy-300 text-sm leading-relaxed">
+                A community-driven platform for bloggers, creators, and thinkers
+                to share ideas, connect in groups, and grow together.
               </Paragraph>
             </div>
-          </Col>
-          <Col xs={24} md={12} lg={6}>
-            <div className="sidebar-widget">
-              <Title level={5} className="mb-20">
-                Stay Connected
-              </Title>
 
-              <ul className="header-social-network list-inline mt-20">
-                {socialLinks.map((social) => (
-                  <li key={social.key} className="list-inline-item">
-                    <a
-                      href={social.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="social-icon"
-                      style={{ fontSize: 20, marginRight: 12, color: "#666" }}
-                    >
-                      {social.icon}
-                    </a>
-                  </li>
-                ))}
-              </ul>
-            </div>
+            {/* Social Links */}
+            <Space size={12}>
+              {socialLinks.map((social) => (
+                <a
+                  key={social.key}
+                  href={social.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex size-10 items-center justify-center rounded-full bg-slate-200 dark:bg-navy-700 text-slate-600 dark:text-navy-200 hover:bg-primary hover:text-white dark:hover:bg-accent transition-all duration-300"
+                >
+                  {social.icon}
+                </a>
+              ))}
+            </Space>
+          </Col>
+
+          {/* Quick Links */}
+          <Col xs={24} sm={12} md={6}>
+            <Title
+              level={4}
+              className="text-slate-800 dark:text-navy-50 font-semibold mb-4"
+            >
+              Quick Links
+            </Title>
+            <ul className="space-y-2">
+              {quickLinks.slice(0, 3).map((link) => (
+                <li key={link.key}>
+                  <a
+                    href={link.link}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(link.link);
+                    }}
+                    className="text-slate-600 dark:text-navy-300 hover:text-primary dark:hover:text-accent transition-colors text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </Col>
+
+          {/* More Links */}
+          <Col xs={24} sm={12} md={6}>
+            <Title
+              level={4}
+              className="text-slate-800 dark:text-navy-50 font-semibold mb-4"
+            >
+              Legal
+            </Title>
+            <ul className="space-y-2">
+              {quickLinks.slice(3).map((link) => (
+                <li key={link.key}>
+                  <a
+                    href={link.link}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(link.link);
+                    }}
+                    className="text-slate-600 dark:text-navy-300 hover:text-primary dark:hover:text-accent transition-colors text-sm"
+                  >
+                    {link.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </Col>
+
+          {/* Newsletter */}
+          <Col xs={24} md={6}>
+            <Title
+              level={4}
+              className="text-slate-800 dark:text-navy-50 font-semibold mb-4"
+            >
+              Stay Updated
+            </Title>
+            <Paragraph className="text-slate-600 dark:text-navy-300 text-sm mb-4">
+              Subscribe to get the latest blogs, updates, and community
+              highlights.
+            </Paragraph>
+            <Search
+              placeholder="Enter your email"
+              allowClear
+              enterButton={
+                <Button type="primary" icon={<MailOutlined />}>
+                  Subscribe
+                </Button>
+              }
+              size="large"
+              onSearch={handleNewsletter}
+              className="w-full"
+              style={{ borderRadius: "8px" }}
+            />
           </Col>
         </Row>
-        <div className="footer-copy-right pt-30 mt-20">
+
+        {/* Bottom Bar */}
+        <div className="mt-10 pt-8 border-t border-slate-200 dark:border-navy-700">
           <Row justify="space-between" align="middle">
             <Col xs={24} md={12}>
-              <Paragraph className="text-muted">
-                © {currentYear}, ItsABlog
-              </Paragraph>
+              <Text className="text-slate-500 dark:text-navy-400 text-sm">
+                © {currentYear} ItsABlog. All rights reserved.
+              </Text>
             </Col>
-            <Col xs={24} md={12}>
-              <Paragraph className="text-muted">
-                Designed and Developed by{" "}
+            <Col xs={24} md={12} className="text-right">
+              <Text className="text-slate-500 dark:text-navy-400 text-sm">
+                Made with <span className="text-red-500">❤️</span> by{" "}
                 <a
                   href="https://dhruvermafz.in"
                   target="_blank"
                   rel="noopener noreferrer"
-                  style={{ color: "#666" }}
+                  className="text-primary dark:text-accent hover:underline font-medium"
                 >
-                  Dhruvermafz
-                </a>{" "}
-                | All rights reserved
-              </Paragraph>
+                  Dhruv Verma
+                </a>
+              </Text>
             </Col>
           </Row>
         </div>

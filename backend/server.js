@@ -12,7 +12,10 @@ const users = require("./routes/users");
 const comments = require("./routes/comments");
 const messages = require("./routes/messages");
 const email = require("./routes/emailConfirmation");
+const category = require("./routes/category");
 const notify = require("./routes/notify");
+const groups = require("./routes/groups");
+const newsroom = require("./routes/newsroom");
 const httpServer = require("http").createServer(app);
 
 app.use(morgan("dev"));
@@ -24,9 +27,10 @@ const io = require("socket.io")(httpServer, {
   cors: {
     origins: [
       "http://localhost:3000",
+      "http://localhost:5173",
       "https://social-app-gilt-one.vercel.app",
       "https://itsablog.vercel.app",
-      "https://dhruvermafz.vercel.app"
+      "https://dhruvermafz.vercel.app",
     ],
 
     handlePreflightRequest: (req, res) => {
@@ -64,8 +68,10 @@ app.use("/api/users", users);
 app.use("/api/comments", comments);
 app.use("/api/messages", messages);
 app.use("/email", email);
+app.use("/api/category", category);
 app.use("/api/notify", notify);
-
+app.use("/api/groups", groups);
+app.use("/api/newsroom", newsroom);
 app.get("/", (req, res) => {
   res.send(`<h3>Hey! ItsABlog Backend is up!</h3>`);
 });

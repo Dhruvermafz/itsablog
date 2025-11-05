@@ -1,101 +1,42 @@
-@import url("./assets/css/animate.min.css");
-@import url("./assets/css/bootstrap.min.css");
-@import url("./assets/css/elegant-icons.css");
-@import url("./assets/css/nice-select.css");
-@import url("./assets/css/perfect-scrollbar.css");
-@import url("./assets/css/responsive.css");
-@import url("./assets/css/slick.css");
-@import url("./assets/css/slicknav.css");
-@import url("./assets/css/style.css");
-@import url("./assets/css/ticker-style.css");
-@import url("./assets/css/widgets.css");
-
-.about-container {
-  padding: 1.5rem;
-  max-width: 1200px;
+#root {
+  max-width: 1280px;
   margin: 0 auto;
-}
-
-.about-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  padding: 1.5rem;
-  background: #fff;
-}
-
-.about-title {
-  text-align: center;
-  margin-bottom: 0.5rem;
-}
-
-.about-subtitle {
-  text-align: center;
-  font-size: 1.1rem;
-  color: #595959;
-}
-
-.about-description {
-  font-size: 1rem;
-  line-height: 1.6;
+  padding: 2rem;
   text-align: center;
 }
 
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin-bottom: 1rem;
+.logo {
+  height: 6em;
+  padding: 1.5em;
+  will-change: filter;
+  transition: filter 300ms;
+}
+.logo:hover {
+  filter: drop-shadow(0 0 2em #646cffaa);
+}
+.logo.react:hover {
+  filter: drop-shadow(0 0 2em #61dafbaa);
 }
 
-.features-grid .feature-card {
-  border-radius: 8px;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-  text-align: center;
-}
-
-.features-grid .feature-card:hover {
-  transform: translateY(-4px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-}
-
-.cta-button {
-  display: block;
-  margin: 1.5rem auto;
-  border-radius: 8px;
-  padding: 0.5rem 2rem;
-  font-weight: 500;
-}
-
-.footer-text {
-  text-align: center;
-  font-size: 0.9rem;
-  color: #595959;
-}
-
-@media (max-width: 768px) {
-  .about-container {
-    padding: 1rem;
+@keyframes logo-spin {
+  from {
+    transform: rotate(0deg);
   }
-
-  .about-card {
-    padding: 1rem;
-  }
-
-  .about-title {
-    font-size: 1.75rem;
-  }
-
-  .about-description {
-    text-align: left;
+  to {
+    transform: rotate(360deg);
   }
 }
 
-@media (max-width: 576px) {
-  .features-grid .feature-card {
-    margin-bottom: 1rem;
+@media (prefers-reduced-motion: no-preference) {
+  a:nth-of-type(2) .logo {
+    animation: logo-spin infinite 20s linear;
   }
+}
 
-  .cta-button {
-    width: 100%;
-  }
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
 }

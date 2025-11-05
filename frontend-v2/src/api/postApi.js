@@ -1,12 +1,28 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Define API service for posts
 export const postApi = createApi({
   reducerPath: "postApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({
+    baseUrl: "http://localhost:5000/api/posts",
+    prepareHeaders: (headers, { getState }) => {
+      const user = localStorage.getItem("user");
+      if (user) {
+        const parsedUser = JSON.parse(user); // Parse the user string
+        const token = parsedUser?.token;
+        if (token) {
+          headers.set("Authorization", `Bearer ${token}`);
+        }
+      }
+      return headers;
+    },
+  }),
+
   endpoints: (builder) => ({
     getPosts: builder.query({
-      query: () => "/",
+      query: (params) => ({
+        url: "/",
+        params, // Pass query parameters like page, sortBy, author, search
+      }),
     }),
     createPost: builder.mutation({
       query: (postData) => ({
@@ -44,7 +60,10 @@ export const postApi = createApi({
       }),
     }),
     getUserLikedPosts: builder.query({
-      query: (id) => `/liked/${id}`,
+      query: ({ id, params }) => ({
+        url: `/liked/${id}`,
+        params, // Pass query parameters
+      }),
     }),
     getUserLikes: builder.query({
       query: (postId) => `/like/${postId}/users`,

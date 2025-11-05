@@ -1,15 +1,17 @@
+// src/components/GroupPost.jsx
 import { useState } from "react";
 import {
   Card,
-  Typography,
   Avatar,
+  Typography,
+  Button,
   Form,
   Input,
-  Button,
   List,
+  Space,
   message,
 } from "antd";
-import { UserOutlined, CommentOutlined } from "@ant-design/icons";
+import { UserOutlined, CommentOutlined, EyeOutlined } from "@ant-design/icons";
 import axios from "axios";
 import styles from "./Group.module.css";
 
@@ -17,89 +19,119 @@ const { Text, Paragraph } = Typography;
 const { TextArea } = Input;
 
 const GroupPost = ({ post, groupId, setPosts }) => {
+  const [showSpoiler, setShowSpoiler] = useState(false);
   const [commentForm] = Form.useForm();
-  const [submitting, setSubmitting] = useState(false);
+  const [commenting, setCommenting] = useState(false);
 
-  const handleCommentSubmit = async (values) => {
-    setSubmitting(true);
+  // --------------------------------------------------------------- COMMENT
+  const submitComment = async (vals) => {
+    setCommenting(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const res = await axios.post(
         `/api/posts/${post._id}/comments`,
-        { content: values.content },
+        { content: vals.content },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setPosts((prevPosts) =>
-        prevPosts.map((p) => (p._id === post._id ? response.data : p))
-      );
+      setPosts((prev) => prev.map((p) => (p._id === post._id ? res.data : p)));
       commentForm.resetFields();
-      message.success("Comment added successfully!");
-    } catch (error) {
-      console.error("Comment on post error:", error);
-      message.error(error.response?.data?.message || "Failed to add comment");
+      message.success("Comment added");
+    } catch (e) {
+      message.error(e.response?.data?.message || "Failed to comment");
     } finally {
-      setSubmitting(false);
+      setCommenting(false);
     }
   };
 
+  // --------------------------------------------------------------- RENDER
   return (
     <Card className={styles.postCard}>
+      {/* ---------- AUTHOR ---------- */}
       <div className={styles.postHeader}>
         <Avatar
           src={post.user?.avatar || "https://via.placeholder.com/40"}
           size={40}
+          icon={<UserOutlined />}
         />
         <div>
           <Text strong>{post.user?.username || "Unknown"}</Text>
-          <Text type="secondary" className={styles.postMeta}>
+          <Text type="secondary" className={styles.time}>
             {new Date(post.createdAt).toLocaleString()}
           </Text>
         </div>
       </div>
-      <Paragraph className={styles.postContent}>{post.content}</Paragraph>
-      <div className={styles.commentsSection}>
+
+      {/* ---------- CONTENT ---------- */}
+      <Paragraph className={styles.postText}>{post.content}</Paragraph>
+
+      {/* ---------- SPOILER IMAGE ---------- */}
+      {post.spoilerImage && (
+        <div className={styles.spoilerWrapper}>
+          <div className={showSpoiler ? styles.spoilerImg : styles.spoilerBlur}>
+            <img
+              src={post.spoilerImage}
+              alt="spoiler"
+              className={styles.spoilerImg}
+            />
+          </div>
+          {!showSpoiler && (
+            <Button
+              type="primary"
+              icon={<EyeOutlined />}
+              onClick={() => setShowSpoiler(true)}
+              className={styles.showSpoilerBtn}
+            >
+              Show spoilers
+            </Button>
+          )}
+        </div>
+      )}
+
+      {/* ---------- COMMENT SECTION ---------- */}
+      <div className={styles.commentSection}>
         <Text>
-          <CommentOutlined /> {post.comments.length} comments
+          <CommentOutlined /> {post.comments?.length || 0} comments
         </Text>
+
+        {/* comment form */}
         <Form
           form={commentForm}
-          onFinish={handleCommentSubmit}
+          onFinish={submitComment}
           className={styles.commentForm}
         >
           <Form.Item
             name="content"
-            rules={[{ required: true, message: "Comment content is required" }]}
+            rules={[{ required: true, message: "Write something" }]}
           >
-            <TextArea
-              rows={2}
-              placeholder="Add a comment..."
-              showCount
-              maxLength={500}
-            />
+            <TextArea rows={2} placeholder="Add a comment…" />
           </Form.Item>
           <Form.Item>
             <Button
               type="primary"
               htmlType="submit"
-              loading={submitting}
+              loading={commenting}
               size="small"
             >
               Comment
             </Button>
           </Form.Item>
         </Form>
-        {post.comments.length > 0 && (
+
+        {/* comment list */}
+        {post.comments?.length > 0 && (
           <List
             dataSource={post.comments}
-            renderItem={(comment) => (
+            renderItem={(c) => (
               <List.Item className={styles.commentItem}>
-                <div>
-                  <Text strong>{comment.user?.username || "Unknown"}</Text>
-                  <Text type="secondary" className={styles.commentMeta}>
-                    {new Date(comment.createdAt).toLocaleString()}
+                <Space direction="vertical" size={0}>
+                  <Text strong>{c.user?.username || "Anon"}</Text>
+                  <Text type="secondary" className={styles.commentTime}>
+                    {new Date(c.createdAt).toLocaleString()}
                   </Text>
-                  <Paragraph>{comment.content}</Paragraph>
-                </div>
+                  <Paragraph className={styles.commentText}>
+                    {c.content}
+                  </Paragraph>
+                </Space>
               </List.Item>
             )}
           />

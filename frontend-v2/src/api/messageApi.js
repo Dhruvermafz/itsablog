@@ -3,7 +3,17 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 // Define API service for messages
 export const messageApi = createApi({
   reducerPath: "messageApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://yourapiurl.com/api" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({
+    baseUrl: "http://localhost:5000/api/messages",
+    prepareHeaders: (headers, { getState }) => {
+      const user = localStorage.getItem("user");
+      const token = user?.token; // Assuming token is stored in Redux
+      if (token) {
+        headers.set("Authorization", `Bearer ${token}`);
+      }
+      return headers;
+    },
+  }), // Change this to your API base URL
   endpoints: (builder) => ({
     getConversations: builder.query({
       query: () => "/conversations",

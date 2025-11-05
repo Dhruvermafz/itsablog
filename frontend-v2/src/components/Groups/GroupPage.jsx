@@ -1,3 +1,4 @@
+// src/pages/GroupPage.jsx
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import {
@@ -10,10 +11,10 @@ import {
   Form,
   Input,
   message,
+  Card,
 } from "antd";
-import { UserOutlined, PlusOutlined } from "@ant-design/icons";
+import { UserOutlined, PlusOutlined, CommentOutlined } from "@ant-design/icons";
 import axios from "axios";
-import GroupPost from "./GroupPost";
 import styles from "./Group.module.css";
 
 const { Content } = Layout;
@@ -29,12 +30,12 @@ const GroupPage = () => {
   const [postForm] = Form.useForm();
   const [submitting, setSubmitting] = useState(false);
 
-  // Fetch group details and posts
+  // ------------------------------------------------------------------ FETCH
   useEffect(() => {
     const fetchGroupData = async () => {
       try {
         const token = localStorage.getItem("token");
-        const [groupResponse, postsResponse] = await Promise.all([
+        const [grpRes, postsRes] = await Promise.all([
           axios.get(`/api/groups/${groupId}`, {
             headers: { Authorization: `Bearer ${token}` },
           }),
@@ -42,150 +43,144 @@ const GroupPage = () => {
             headers: { Authorization: `Bearer ${token}` },
           }),
         ]);
-        setGroup(groupResponse.data);
-        setPosts(postsResponse.data);
-        setLoading(false);
-      } catch (error) {
-        console.error("Fetch group data error:", error);
-        message.error(
-          error.response?.data?.message || "Failed to load group data"
-        );
+        setGroup(grpRes.data);
+        setPosts(postsRes.data);
+      } catch (e) {
+        message.error(e.response?.data?.message || "Failed to load group");
+      } finally {
         setLoading(false);
       }
     };
     fetchGroupData();
   }, [groupId]);
 
-  // Handle new post submission
+  // ------------------------------------------------------------------ POST
   const handlePostSubmit = async (values) => {
     setSubmitting(true);
     try {
       const token = localStorage.getItem("token");
-      const response = await axios.post(
+      const res = await axios.post(
         `/api/groups/${groupId}/posts`,
         { content: values.content },
         { headers: { Authorization: `Bearer ${token}` } }
       );
-      setPosts([response.data, ...posts]); // Prepend new post
+      setPosts([res.data, ...posts]);
       postForm.resetFields();
-      message.success("Post created successfully!");
-    } catch (error) {
-      console.error("Post to group error:", error);
-      message.error(error.response?.data?.message || "Failed to create post");
+      message.success("Post created!");
+    } catch (e) {
+      message.error(e.response?.data?.message || "Failed to post");
     } finally {
       setSubmitting(false);
     }
   };
 
-  // Handle join/leave group
+  // --------------------------------------------------------------- JOIN/LEAVE
+  const isMember = () =>
+    group?.members?.some((m) => m.user._id === localStorage.getItem("userId"));
+
   const handleJoinLeave = async () => {
     try {
       const token = localStorage.getItem("token");
-      const isMember = group.members.some(
-        (m) => m.user._id === localStorage.getItem("userId")
-      ); // Adjust based on auth
-      const endpoint = isMember
+      const endpoint = isMember()
         ? `/api/groups/${groupId}/leave`
         : `/api/groups/${groupId}/join`;
-      const response = await axios.post(
+      const res = await axios.post(
         endpoint,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      message.success(response.data.message);
-      // Refresh group data
-      const groupResponse = await axios.get(`/api/groups/${groupId}`, {
+      message.success(res.data.message);
+      const grp = await axios.get(`/api/groups/${groupId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      setGroup(groupResponse.data);
-    } catch (error) {
-      console.error("Join/leave group error:", error);
-      message.error(
-        error.response?.data?.message || "Failed to join/leave group"
-      );
+      setGroup(grp.data);
+    } catch (e) {
+      message.error(e.response?.data?.message || "Failed to update membership");
     }
   };
 
-  if (loading) {
-    return <div className={styles.loading}>Loading...</div>;
-  }
-
-  if (!group) {
-    return <div className={styles.noResults}>Group not found.</div>;
-  }
+  // ------------------------------------------------------------------ RENDER
+  if (loading) return <div className={styles.loading}>Loading…</div>;
+  if (!group) return <div className={styles.noResults}>Group not found.</div>;
 
   return (
     <Layout className={styles.groupPage}>
+      {/* -------------------------- BANNER -------------------------- */}
+      <div className={styles.banner}>
+        <img
+          src={group.banner || "https://via.placeholder.com/1200x200"}
+          alt="banner"
+          className={styles.bannerImg}
+        />
+      </div>
+
       <Content className={styles.content}>
-        <div className={styles.groupHeader}>
+        {/* -------------------------- HEADER -------------------------- */}
+        <div className={styles.header}>
           <Avatar
-            src={group.image || "https://via.placeholder.com/64"}
+            src={group.image || "https://via.placeholder.com/80"}
             size={80}
-            className={styles.groupAvatar}
+            className={styles.avatar}
           />
-          <div>
-            <Title level={2} className={styles.groupName}>
+          <div className={styles.headerInfo}>
+            <Title level={2} className={styles.name}>
               {group.name}
             </Title>
             <Text type="secondary">{group.category || "General"}</Text>
           </div>
           <Button
-            type={
-              group.members.some(
-                (m) => m.user._id === localStorage.getItem("userId")
-              )
-                ? "default"
-                : "primary"
-            }
+            type={isMember() ? "default" : "primary"}
+            size="large"
             onClick={handleJoinLeave}
-            className={styles.joinButton}
+            className={styles.joinBtn}
           >
-            {group.members.some(
-              (m) => m.user._id === localStorage.getItem("userId")
-            )
-              ? "Leave"
-              : "Join"}{" "}
-            Community
+            {isMember() ? "Leave Club" : "Member"}
           </Button>
         </div>
-        <div className={styles.groupDetails}>
-          <Paragraph>
+
+        {/* -------------------------- DESCRIPTION & META -------------------------- */}
+        <div className={styles.details}>
+          <Paragraph className={styles.desc}>
             {group.description || "No description available."}
           </Paragraph>
-          <div className={styles.meta}>
+          <Space size="large">
             <Text>
-              <UserOutlined /> {group.members.length.toLocaleString()} members
+              <UserOutlined /> {group.members?.length?.toLocaleString()} members
             </Text>
             <Text>Created by {group.creator?.username || "Unknown"}</Text>
-          </div>
-          {group.rules.length > 0 && (
-            <div className={styles.rules}>
-              <Title level={5}>Rules</Title>
-              <List
-                dataSource={group.rules}
-                renderItem={(rule, index) => (
-                  <List.Item>{`${index + 1}. ${rule}`}</List.Item>
-                )}
-              />
-            </div>
-          )}
+          </Space>
         </div>
-        <div className={styles.postSection}>
-          <Title level={4}>Create a Post</Title>
-          <Form
-            form={postForm}
-            onFinish={handlePostSubmit}
-            className={styles.postForm}
-          >
+
+        {/* -------------------------- RULES -------------------------- */}
+        {group.rules?.length > 0 && (
+          <Card className={styles.rulesCard}>
+            <Title level={5}>Rules</Title>
+            <List
+              dataSource={group.rules}
+              renderItem={(r, i) => (
+                <List.Item className={styles.ruleItem}>
+                  {i + 1}. {r}
+                </List.Item>
+              )}
+            />
+          </Card>
+        )}
+
+        {/* -------------------------- CREATE POST -------------------------- */}
+        <Card className={styles.createCard}>
+          <Title level={4}>
+            What's on your mind, {localStorage.getItem("username")}?
+          </Title>
+          <Form form={postForm} onFinish={handlePostSubmit}>
             <Form.Item
               name="content"
-              rules={[{ required: true, message: "Post content is required" }]}
+              rules={[{ required: true, message: "Content required" }]}
             >
               <TextArea
-                rows={4}
-                placeholder="What's on your mind?"
+                rows={3}
+                placeholder="Share something…"
                 showCount
                 maxLength={1000}
               />
@@ -202,24 +197,24 @@ const GroupPage = () => {
               </Button>
             </Form.Item>
           </Form>
-          <Title level={4}>Posts</Title>
-          {posts.length > 0 ? (
-            <Space direction="vertical" size="large" style={{ width: "100%" }}>
-              {posts.map((post) => (
-                <GroupPost
-                  key={post._id}
-                  post={post}
-                  groupId={groupId}
-                  setPosts={setPosts}
-                />
-              ))}
-            </Space>
-          ) : (
-            <Text className={styles.noResults}>
-              No posts yet. Be the first to post!
-            </Text>
-          )}
-        </div>
+        </Card>
+
+        {/* -------------------------- POSTS -------------------------- */}
+        <Title level={4}>Posts</Title>
+        {posts.length === 0 ? (
+          <Text className={styles.noResults}>No posts yet. Be the first!</Text>
+        ) : (
+          <Space direction="vertical" size="middle" style={{ width: "100%" }}>
+            {posts.map((p) => (
+              <GroupPost
+                key={p._id}
+                post={p}
+                groupId={groupId}
+                setPosts={setPosts}
+              />
+            ))}
+          </Space>
+        )}
       </Content>
     </Layout>
   );

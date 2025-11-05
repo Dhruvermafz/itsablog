@@ -1,62 +1,40 @@
-import { Card, Select, Radio, Typography } from "antd";
-import styles from "./Group.module.css";
+import React from "react";
+import { Select, Space } from "antd";
 
-const { Title } = Typography;
 const { Option } = Select;
 
-const GroupFilters = ({ onFilterChange }) => {
-  const categories = [
-    "All",
-    "Literature",
-    "Politics",
-    "Cinema",
-    "Society",
-    "Tech",
-    "General",
-  ];
-
-  const handleCategoryChange = (value) => {
-    onFilterChange({ category: value });
+const GroupFilters = ({ filters, onChange }) => {
+  const handleCategoryChange = (category) => {
+    onChange({ ...filters, category });
   };
 
-  const handleSortChange = (e) => {
-    onFilterChange({ sort: e.target.value });
+  const handleSortChange = (sort) => {
+    onChange({ ...filters, sort });
   };
 
   return (
-    <Card className={styles.filtersCard} bordered={false}>
-      <Title level={5} className={styles.filterTitle}>
-        Filter Communities
-      </Title>
-      <div className={styles.filterSection}>
-        <Typography.Text strong>Category</Typography.Text>
-        <Select
-          defaultValue="All"
-          className={styles.select}
-          onChange={handleCategoryChange}
-          size="large"
-        >
-          {categories.map((category) => (
-            <Option key={category} value={category}>
-              {category}
-            </Option>
-          ))}
-        </Select>
-      </div>
-      <div className={styles.filterSection}>
-        <Typography.Text strong>Sort By</Typography.Text>
-        <Radio.Group
-          defaultValue="popular"
-          buttonStyle="solid"
-          onChange={handleSortChange}
-          size="large"
-        >
-          <Radio.Button value="popular">Popular</Radio.Button>
-          <Radio.Button value="new">New</Radio.Button>
-          <Radio.Button value="active">Most Active</Radio.Button>
-        </Radio.Group>
-      </div>
-    </Card>
+    <Space>
+      <Select
+        value={filters.category}
+        onChange={handleCategoryChange}
+        style={{ width: 140 }}
+      >
+        <Option value="All">All Categories</Option>
+        <Option value="Entertainment">Entertainment</Option>
+        <Option value="Tech">Tech</Option>
+        <Option value="Sports">Sports</Option>
+        <Option value="Education">Education</Option>
+      </Select>
+
+      <Select
+        value={filters.sort}
+        onChange={handleSortChange}
+        style={{ width: 120 }}
+      >
+        <Option value="new">Newest</Option>
+        <Option value="popular">Popular</Option>
+      </Select>
+    </Space>
   );
 };
 

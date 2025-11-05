@@ -3,7 +3,7 @@ const router = express.Router();
 const postControllers = require("../controllers/postControllers");
 const { verifyToken, optionallyVerifyToken } = require("../middleware/auth");
 
-router.get("/", optionallyVerifyToken, postControllers.getPosts);
+router.get("/", postControllers.getPosts);
 router.post("/", verifyToken, postControllers.createPost);
 
 router.get("/:id", optionallyVerifyToken, postControllers.getPost);
@@ -18,7 +18,9 @@ router.get(
   postControllers.getUserLikedPosts
 );
 router.get("/like/:postId/users", postControllers.getUserLikes);
-
+router.put("/:id/publish", verifyToken, postControllers.publishPost);
+router.put("/:id/archive", verifyToken, postControllers.archivePost);
+router.get("/reports", postControllers.getReportedPosts);
 router.patch("/:id/report", postControllers.reportPost);
 router.patch("/savePost/:id", postControllers.savePost);
 router.patch("/unSavePost/:id", postControllers.unSavePost);
