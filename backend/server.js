@@ -31,6 +31,7 @@ const io = require("socket.io")(httpServer, {
       "https://social-app-gilt-one.vercel.app",
       "https://itsablog.vercel.app",
       "https://dhruvermafz.vercel.app",
+      "https://itsablog.in",
     ],
 
     handlePreflightRequest: (req, res) => {
