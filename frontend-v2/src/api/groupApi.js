@@ -1,10 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { BASE_URL } from "../config";
 // Define API service for groups
 export const groupApi = createApi({
   reducerPath: "groupApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api", // Corrected base URL for group endpoints
+    baseUrl: `${BASE_URL}`, // Corrected base URL for group endpoints
     prepareHeaders: (headers, { getState }) => {
       const user = JSON.parse(localStorage.getItem("user")); // Parse JSON string
       const token = user?.token; // Assuming token is stored in user object

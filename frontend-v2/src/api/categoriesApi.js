@@ -1,10 +1,10 @@
 // src/services/categoryApi.js
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { BASE_URL } from "../config";
 export const categoryApi = createApi({
   reducerPath: "categoryApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/category", // adjust according to your backend route prefix
+    baseUrl: `${BASE_URL}/category`, // adjust according to your backend route prefix
     prepareHeaders: (headers, { getState }) => {
       const user = localStorage.getItem("user");
       const token = user?.token; // Assuming token is stored in Redux

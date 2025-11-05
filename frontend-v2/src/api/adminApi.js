@@ -1,10 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { BASE_URL } from "../config";
 // Define the admin API service
 export const adminApi = createApi({
   reducerPath: "adminApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/admin",
+    baseUrl: `${BASE_URL}/admin`,
     prepareHeaders: (headers, { getState }) => {
       const user = localStorage.getItem("user");
       const token = user?.token; // Assuming token is stored in Redux

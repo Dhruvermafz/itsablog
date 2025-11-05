@@ -1,10 +1,10 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { BASE_URL } from "../config";
 // Define the comment API service
 export const commentApi = createApi({
   reducerPath: "commentApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/comments",
+    baseUrl: `${BASE_URL}/comments`,
     prepareHeaders: (headers, { getState }) => {
       const user = localStorage.getItem("user");
       if (user) {
