@@ -1,7 +1,7 @@
 // src/pages/Home.jsx
 import React, { useState, useEffect } from "react";
 import { useSearchParams, Link } from "react-router-dom";
-import { Select, Spin, message } from "antd";
+import { Select, Spin, message, Pagination } from "antd";
 import {
   useGetPostsQuery,
   useGetUserLikedPostsQuery,
@@ -36,7 +36,6 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
   const {
     data: categoriesData = { data: [], count: 0 },
     isLoading: categoriesLoading,
-    error: categoriesError,
   } = useGetCategoriesQuery();
 
   const categories = categoriesData.data || [];
@@ -55,36 +54,31 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
     isError: postsError,
   } = useGetPostsQuery(query);
 
-  const {
-    data: likedPostsData,
-    isLoading: likedPostsLoading,
-    isError: likedPostsError,
-  } = useGetUserLikedPostsQuery(
-    { id: profileUser?._id, params: query },
-    { skip: !profileUser?._id || contentType !== "liked" }
-  );
+  const { data: likedPostsData, isLoading: likedPostsLoading } =
+    useGetUserLikedPostsQuery(
+      { id: profileUser?._id, params: query },
+      { skip: !profileUser?._id || contentType !== "liked" }
+    );
 
-  const {
-    data: allUsersData,
-    isLoading: allUsersLoading,
-    isError: allUsersError,
-  } = useGetUsersQuery({ limit: 200 });
+  const { data: allUsersData, isLoading: allUsersLoading } = useGetUsersQuery({
+    limit: 200,
+  });
 
   /* -------------------------------------------------
    *  DERIVED STATE
    * ------------------------------------------------- */
   const selectedData = contentType === "posts" ? postsData : likedPostsData;
   const isLoading = contentType === "posts" ? postsLoading : likedPostsLoading;
-  const isError = contentType === "posts" ? postsError : likedPostsError;
   const posts = selectedData?.data || [];
   const count = selectedData?.count || 0;
-  const totalPages = Math.ceil(count / 10);
+  const pageSize = 10;
+  const totalPages = Math.ceil(count / pageSize);
 
   /* -------------------------------------------------
    *  TOP AUTHOR CALCULATION
    * ------------------------------------------------- */
   useEffect(() => {
-    if (allUsersData?.data && !allUsersLoading && !allUsersError) {
+    if (allUsersData?.data && !allUsersLoading) {
       const top = allUsersData.data
         .map((u) => ({
           ...u,
@@ -101,10 +95,10 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
 
       setTopAuthor(top.monthlyPostCount ? top : null);
     }
-  }, [allUsersData, allUsersLoading, allUsersError]);
+  }, [allUsersData, allUsersLoading]);
 
   /* -------------------------------------------------
-   *  RANDOM USERS – Derived from allUsersData
+   *  RANDOM USERS
    * ------------------------------------------------- */
   useEffect(() => {
     if (!allUsersData?.data || allUsersData.data.length === 0) {
@@ -120,13 +114,8 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
       return;
     }
 
-    const shuffled = [...pool];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    setRandomUsers(shuffled.slice(0, 3));
+    const shuffled = [...pool].sort(() => 0.5 - Math.random());
+    setRandomUsers(shuffled.slice(0, 5)); // Increased to 5 for better sidebar fill
   }, [allUsersData?.data, user?._id]);
 
   /* -------------------------------------------------
@@ -178,215 +167,212 @@ const Home = ({ profileUser = null, contentType = "posts" }) => {
   const sorts = {
     posts: {
       "-createdAt": "Latest",
-      "-likeCount": "Likes",
-      "-commentCount": "Comments",
-      createdAt: "Most Recent",
+      "-likeCount": "Most Liked",
+      "-commentCount": "Most Discussed",
+      createdAt: "Oldest",
     },
     liked: {
-      "-createdAt": "Latest",
-      createdAt: "Earliest",
+      "-createdAt": "Latest Saved",
+      createdAt: "Earliest Saved",
     },
   }[contentType];
 
   return (
     <Spin spinning={isLoading || categoriesLoading || allUsersLoading}>
-      <div className="flex flex-col lg:flex-row gap-6">
-        {/* ---------- LEFT: POSTS ---------- */}
-        <div className="lg:w-2/5">
-          {/* Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 mb-6">
-            <Select
-              placeholder="Sort by"
-              style={{ width: "100%", maxWidth: 200 }}
-              onChange={handleSortBy}
-              value={sortBy}
-            >
-              {Object.entries(sorts).map(([value, label]) => (
-                <Option key={value} value={value}>
-                  {label}
-                </Option>
-              ))}
-            </Select>
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* ---------- MAIN CONTENT: POSTS (2/3 width) ---------- */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Filters */}
+            <div className="flex flex-col sm:flex-row gap-4">
+              <Select
+                placeholder="Sort by"
+                className="w-full sm:w-48"
+                onChange={handleSortBy}
+                value={sortBy}
+              >
+                {Object.entries(sorts).map(([value, label]) => (
+                  <Option key={value} value={value}>
+                    {label}
+                  </Option>
+                ))}
+              </Select>
 
-            <Select
-              allowClear
-              placeholder="Filter by category"
-              style={{ width: "100%", maxWidth: 200 }}
-              onChange={handleCategoryChange}
-              value={category}
-            >
-              {categories.map((cat) => (
-                <Option key={cat._id} value={cat._id}>
-                  {cat.name}
-                </Option>
-              ))}
-            </Select>
-          </div>
+              <Select
+                allowClear
+                placeholder="Filter by category"
+                className="w-full sm:w-48"
+                onChange={handleCategoryChange}
+                value={category}
+              >
+                {categories.map((cat) => (
+                  <Option key={cat._id} value={cat._id}>
+                    {cat.name}
+                  </Option>
+                ))}
+              </Select>
+            </div>
 
-          {/* POST LIST */}
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 lg:gap-6">
-            {posts.length > 0 ? (
-              posts.map((post) => (
-                <PostCard
-                  key={post._id}
-                  post={post}
-                  preview="primary"
-                  onSave={handleSavePost}
-                  onDelete={handleDeletePost}
+            {/* POST LIST */}
+            <div className="space-y-8">
+              {posts.length > 0 ? (
+                posts.map((post) => (
+                  <div
+                    key={post._id}
+                    className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg hover:shadow-xl transition-shadow duration-300 overflow-hidden"
+                  >
+                    <PostCard
+                      post={post}
+                      preview="primary"
+                      onSave={handleSavePost}
+                      onDelete={handleDeletePost}
+                    />
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-gray-500 dark:text-gray-400 text-lg">
+                    {postsError
+                      ? "Failed to load posts."
+                      : "No posts available yet."}
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className="flex justify-center mt-12">
+                <Pagination
+                  current={page}
+                  total={count}
+                  pageSize={pageSize}
+                  onChange={handlePageChange}
+                  showSizeChanger={false}
+                  className="ant-pagination-modern"
                 />
-              ))
-            ) : (
-              <p className="col-span-1 text-center text-slate-600 dark:text-navy-200">
-                {isError ? "Failed to load posts." : "No posts available."}
-              </p>
+              </div>
+            )}
+
+            {/* Back to Top */}
+            {page > 1 && (
+              <div className="flex justify-center mt-8">
+                <button
+                  onClick={handleBackToTop}
+                  className="fixed bottom-8 right-8 btn btn-circle btn-primary shadow-lg hover:shadow-xl"
+                >
+                  <FaArrowUp className="text-xl" />
+                </button>
+              </div>
             )}
           </div>
 
-          {/* Pagination */}
-          {totalPages > 1 && (
-            <div className="flex justify-center mt-6">
-              <div className="flex space-x-2">
-                {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                  (p) => (
-                    <button
-                      key={p}
-                      onClick={() => handlePageChange(p)}
-                      className={`btn h-9 w-9 rounded-full p-0 font-medium ${
-                        page === p
-                          ? "bg-primary text-white dark:bg-accent-light"
-                          : "bg-slate-200 hover:bg-slate-300 dark:bg-navy-500 dark:hover:bg-navy-400"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  )
+          {/* ---------- SIDEBAR (1/3 width, sticky) ---------- */}
+          <aside className="space-y-8">
+            {/* Top Author */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                Top Author This Month
+              </h3>
+              {allUsersLoading ? (
+                <Spin />
+              ) : topAuthor ? (
+                <div className="space-y-4">
+                  <UserCard
+                    name={topAuthor.name || "Unknown"}
+                    username={topAuthor.username}
+                    avatar={topAuthor.avatar}
+                    isOnline={topAuthor.isOnline ?? false}
+                    onFollow={() => console.log(`Follow ${topAuthor.username}`)}
+                    size="large"
+                  />
+                  <Link
+                    to={`/u/${topAuthor.username}`}
+                    className="block w-full btn btn-primary rounded-xl"
+                  >
+                    View Profile
+                  </Link>
+                </div>
+              ) : (
+                <p className="text-gray-500 dark:text-gray-400">
+                  No top author this month.
+                </p>
+              )}
+            </div>
+
+            {/* Connect with Writers */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                Connect with Writers
+              </h3>
+              <div className="space-y-4">
+                {allUsersLoading ? (
+                  <Spin />
+                ) : randomUsers.length > 0 ? (
+                  randomUsers.map((u) => (
+                    <UserCard
+                      key={u._id}
+                      name={u.name || "Unknown"}
+                      username={u.username}
+                      avatar={u.avatar}
+                      isOnline={u.isOnline ?? false}
+                      onFollow={() => console.log(`Follow ${u.username}`)}
+                      size="medium"
+                    />
+                  ))
+                ) : (
+                  <p className="text-gray-500 dark:text-gray-400">
+                    No writers to suggest.
+                  </p>
                 )}
               </div>
-            </div>
-          )}
-
-          {/* Back to Top */}
-          {page > 1 && (
-            <div className="flex justify-center mt-4">
-              <button
-                onClick={handleBackToTop}
-                className="btn btn-circle bg-primary text-white hover:bg-primary-focus"
+              <Link
+                to="/users"
+                className="block mt-6 btn btn-outline rounded-xl"
               >
-                <FaArrowUp />
-              </button>
+                See All Writers
+              </Link>
             </div>
-          )}
-        </div>
 
-        {/* ---------- RIGHT: SIDEBAR ---------- */}
-        <div className="lg:w-2/5 flex flex-col space-y-6">
-          {/* Top Author */}
-          <div className="card bg-white dark:bg-navy-700 rounded-lg shadow-md p-5">
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-navy-100">
-              Top Author This Month
-            </h3>
-            {allUsersLoading ? (
-              <div className="flex justify-center py-4">
-                <Spin />
-              </div>
-            ) : topAuthor ? (
-              <>
-                <UserCard
-                  name={topAuthor.name || "Unknown"}
-                  username={topAuthor.username}
-                  avatar={topAuthor.avatar}
-                  isOnline={topAuthor.isOnline ?? false}
-                  onFollow={() => console.log(`Follow ${topAuthor.username}`)}
-                />
-                <Link
-                  to={`/u/${topAuthor.username}`}
-                  className="btn mt-4 w-full bg-primary font-medium text-white hover:bg-primary-focus dark:bg-accent dark:hover:bg-accent-focus"
-                >
-                  View Profile
-                </Link>
-              </>
-            ) : (
-              <p className="text-sm text-slate-600 dark:text-navy-200 mt-4">
-                No top author found.
-              </p>
-            )}
-          </div>
-
-          {/* Connect with New Writers */}
-          <div className="card bg-white dark:bg-navy-700 rounded-lg shadow-md p-5">
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-navy-100">
-              Connect with New Writers
-            </h3>
-            <div className="mt-4 space-y-3">
-              {allUsersLoading ? (
-                <div className="flex justify-center py-4">
+            {/* Explore Categories */}
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-lg p-6">
+              <h3 className="text-xl font-bold text-gray-800 dark:text-gray-100 mb-6">
+                Explore Categories
+              </h3>
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                {categoriesLoading ? (
                   <Spin />
-                </div>
-              ) : randomUsers.length > 0 ? (
-                randomUsers.map((u) => (
-                  <UserCard
-                    key={u._id}
-                    name={u.name || "Unknown"}
-                    username={u.username}
-                    avatar={u.avatar}
-                    isOnline={u.isOnline ?? false}
-                    onFollow={() => console.log(`Follow ${u.username}`)}
-                  />
-                ))
-              ) : (
-                <p className="text-sm text-slate-600 dark:text-navy-200">
-                  No new writers found.
-                </p>
-              )}
-            </div>
-            <Link
-              to="/users"
-              className="btn mt-4 w-full bg-slate-200 font-medium text-slate-700 hover:bg-slate-300 dark:bg-navy-500 dark:text-navy-100 dark:hover:bg-navy-400"
-            >
-              See More Writers
-            </Link>
-          </div>
-
-          {/* NEW: Explore Categories */}
-          <div className="card bg-white dark:bg-navy-700 rounded-lg shadow-md p-5">
-            <h3 className="text-lg font-semibold text-slate-700 dark:text-navy-100">
-              Explore Categories
-            </h3>
-            <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {categoriesLoading ? (
-                <div className="col-span-full flex justify-center py-4">
-                  <Spin />
-                </div>
-              ) : categories.length > 0 ? (
-                categories.map((cat) => (
-                  <Link
-                    key={cat._id}
-                    to={`/category/${cat.slug}`}
-                    className="group flex flex-col items-center p-3 rounded-lg bg-slate-100 hover:bg-slate-200 dark:bg-navy-600 dark:hover:bg-navy-500 transition-colors"
-                  >
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center mb-2">
-                      <span className="text-primary font-bold text-sm">
-                        {cat.name.charAt(0).toUpperCase()}
+                ) : categories.length > 0 ? (
+                  categories.map((cat) => (
+                    <Link
+                      key={cat._id}
+                      to={`/category/${cat.slug}`}
+                      className="group flex flex-col items-center p-4 rounded-xl bg-gray-100 dark:bg-gray-700 hover:bg-primary hover:text-white transition-all duration-300"
+                    >
+                      <div className="w-12 h-12 rounded-full bg-primary/10 dark:bg-primary/20 flex items-center justify-center mb-3 group-hover:bg-white/20">
+                        <span className="text-2xl font-bold group-hover:text-white">
+                          {cat.name.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <span className="text-sm font-medium text-center group-hover:text-white">
+                        {cat.name}
                       </span>
-                    </div>
-                    <span className="text-xs font-medium text-slate-700 dark:text-navy-100 group-hover:text-primary dark:group-hover:text-accent">
-                      {cat.name}
-                    </span>
-                  </Link>
-                ))
-              ) : (
-                <p className="col-span-full text-sm text-slate-600 dark:text-navy-200 text-center">
-                  No categories available.
-                </p>
-              )}
+                    </Link>
+                  ))
+                ) : (
+                  <p className="col-span-full text-center text-gray-500 dark:text-gray-400">
+                    No categories yet.
+                  </p>
+                )}
+              </div>
+              <Link
+                to="/categories"
+                className="block mt-6 btn btn-outline rounded-xl"
+              >
+                View All Categories
+              </Link>
             </div>
-            <Link
-              to="/categories"
-              className="btn mt-4 w-full bg-slate-200 font-medium text-slate-700 hover:bg-slate-300 dark:bg-navy-500 dark:text-navy-100 dark:hover:bg-navy-400"
-            >
-              View All Categories
-            </Link>
-          </div>
+          </aside>
         </div>
       </div>
     </Spin>

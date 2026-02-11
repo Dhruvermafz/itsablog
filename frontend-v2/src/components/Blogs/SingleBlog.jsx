@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from "react";
-import { Card, Input, Button, Typography, Spin, message } from "antd";
+import {
+  Input,
+  Button,
+  Typography,
+  Spin,
+  message,
+  Avatar as AntAvatar,
+  Divider,
+} from "antd";
 import { useEditor, EditorContent } from "@tiptap/react";
 import StarterKit from "@tiptap/starter-kit";
 import Underline from "@tiptap/extension-underline";
@@ -7,12 +15,13 @@ import Link from "@tiptap/extension-link";
 import TextAlign from "@tiptap/extension-text-align";
 import Placeholder from "@tiptap/extension-placeholder";
 import { useNavigate, useParams } from "react-router-dom";
+import { Link as RouterLink } from "react-router-dom";
 import Avatar from "react-avatar";
 import {
-  useGetPostsQuery,
   useGetPostQuery,
   useCreatePostMutation,
   useUpdatePostMutation,
+  useGetPostsQuery,
   useLikePostMutation,
   useUnlikePostMutation,
 } from "../../api/postApi";
@@ -27,33 +36,49 @@ import {
 } from "../../api/commentApi";
 import ErrorAlert from "../Extras/ErrorAlert.jsx";
 import { isLoggedIn } from "../../helpers/authHelper";
+import {
+  FaHeart,
+  FaComment,
+  FaBookmark,
+  FaShareAlt,
+  FaEllipsisV,
+  FaPaperPlane,
+} from "react-icons/fa";
 
-// Helper: Format date
+// Helper: Smart date formatting
 const formatDate = (dateString) => {
   const date = new Date(dateString);
-  return date.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+  const now = new Date();
+  const diffMs = now - date;
+  const diffMins = Math.floor(diffMs / 60000);
+  const diffHours = Math.floor(diffMs / 3600000);
+  const diffDays = Math.floor(diffMs / 86400000);
+
+  if (diffMins < 60) return `${diffMins}m ago`;
+  if (diffHours < 24) return `${diffHours}h ago`;
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 };
 
-// Helper: Estimate read time
+// Helper: Reading time
 const calculateReadTime = (content) => {
-  const wordsPerMinute = 200;
-  const wordCount = content.split(/\s+/).length;
-  const minutes = Math.ceil(wordCount / wordsPerMinute);
+  const words = content.replace(/<[^>]*>/g, "").split(/\s+/).length;
+  const minutes = Math.ceil(words / 200);
   return `${minutes} min read`;
 };
 
-// Custom hook for author posts
+// Custom hook unchanged
 export const useGetAuthorPostsQuery = (
   authorId,
   currentPostId,
   options = {}
 ) => {
   return useGetPostsQuery(
-    {
-      poster: authorId,
-      limit: 6,
-      sortBy: "-createdAt",
-    },
+    { poster: authorId, limit: 6, sortBy: "-createdAt" },
     {
       ...options,
       selectFromResult: ({ data, ...rest }) => ({
@@ -67,63 +92,39 @@ export const useGetAuthorPostsQuery = (
 const SingleBlog = () => {
   const navigate = useNavigate();
   const { id } = useParams();
-  const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState({ title: "", content: "" });
-  const [serverError, setServerError] = useState("");
-  const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [commentContent, setCommentContent] = useState("");
+  const [isCommentOpen, setIsCommentOpen] = useState(false);
   const user = isLoggedIn();
 
-  const isUpdateMode = !!id && window.location.pathname.includes("/edit");
+  const isEditMode = !!id && window.location.pathname.includes("/edit");
 
-  // Fetch post
   const {
     data: post,
     isLoading: fetchingPost,
     error: postError,
   } = useGetPostQuery(id, { skip: !id });
 
-  // Fetch author posts
   const { data: authorPosts = [], isLoading: authorPostsLoading } =
     useGetAuthorPostsQuery(post?.poster?._id, id, {
       skip: !post?.poster?._id || !id,
     });
 
-  const isOwnPost = user?._id === post?.poster?._id;
+  const { data: relatedPostsData, isLoading: fetchingRelated } =
+    useGetPostsQuery(
+      { category: post?.category?.slug, limit: 4, sortBy: "-createdAt" },
+      { skip: !post?.category?.slug }
+    );
 
-  // Fetch related posts
-  const {
-    data: relatedPostsData,
-    isLoading: fetchingRelatedPosts,
-    error: relatedPostsError,
-  } = useGetPostsQuery(
-    {
-      category: post?.category?.slug,
-      limit: 3,
-      sortBy: "-createdAt",
-    },
-    { skip: !post?.category?.slug }
+  const { data: authorData, isLoading: fetchingAuthor } = useGetUserQuery(
+    post?.poster?.username,
+    { skip: !post?.poster?.username }
   );
 
-  // Fetch author
-  const {
-    data: authorData,
-    isLoading: fetchingAuthor,
-    error: authorError,
-  } = useGetUserQuery(post?.poster?.username, {
-    skip: !post?.poster?.username,
-  });
+  const { data: comments = [], isLoading: commentsLoading } =
+    useGetPostCommentsQuery(id, {
+      skip: !isCommentOpen || !id,
+    });
 
-  // Fetch comments
-  const {
-    data: comments,
-    isLoading: commentsLoading,
-    error: commentsError,
-  } = useGetPostCommentsQuery(id, {
-    skip: !isCommentSectionOpen || !id,
-  });
-
-  // Mutations
   const [createPost] = useCreatePostMutation();
   const [updatePost] = useUpdatePostMutation();
   const [createComment, { isLoading: commentLoading }] =
@@ -133,20 +134,22 @@ const SingleBlog = () => {
   const [follow] = useFollowMutation();
   const [unfollow] = useUnfollowMutation();
 
-  // === TIPTAP EDITOR (Edit Mode Only) ===
+  const isOwnPost = user?._id === post?.poster?._id;
+
+  // TipTap Editor
   const editor = useEditor({
     extensions: [
       StarterKit.configure({ heading: { levels: [1, 2, 3] } }),
       Underline,
       Link.configure({ openOnClick: false }),
       TextAlign.configure({ types: ["heading", "paragraph"] }),
-      Placeholder.configure({ placeholder: "Write your post content..." }),
+      Placeholder.configure({ placeholder: "Start writing your story..." }),
     ],
     content: "",
     editorProps: {
       attributes: {
         class:
-          "prose prose-lg dark:prose-invert max-w-none min-h-[300px] p-3 focus:outline-none border rounded-lg",
+          "prose prose-lg dark:prose-invert max-w-none min-h-[500px] p-8 focus:outline-none",
       },
     },
     onUpdate: ({ editor }) => {
@@ -154,485 +157,462 @@ const SingleBlog = () => {
     },
   });
 
-  // Populate editor in edit mode
-  useEffect(() => {
-    if (isUpdateMode && post && editor) {
-      setFormData({
-        title: post.title || "",
-        content: post.content || "",
-      });
-      editor.commands.setContent(post.content || "");
-    }
-  }, [post, isUpdateMode, editor]);
+  const [formData, setFormData] = useState({ title: "", content: "" });
 
-  // Handle errors
   useEffect(() => {
-    const error =
-      postError || relatedPostsError || authorError || commentsError;
-    if (error) {
-      setServerError(error?.data?.error || "Something went wrong");
+    if (isEditMode && post && editor) {
+      setFormData({ title: post.title, content: post.content });
+      editor.commands.setContent(post.content);
     }
-  }, [postError, relatedPostsError, authorError, commentsError]);
+  }, [post, isEditMode, editor]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.title || !formData.content) {
-      message.error("Title and content are required");
-      return;
+    if (!formData.title.trim() || !formData.content.trim()) {
+      return message.error("Title and content are required");
     }
-
-    setLoading(true);
-    const postData = {
-      title: formData.title,
-      content: formData.content,
-      userId: user?._id,
-      category: post?.category?.slug || "default",
-    };
 
     try {
       let result;
-      if (isUpdateMode) {
-        result = await updatePost({ id, postData }).unwrap();
+      if (isEditMode) {
+        result = await updatePost({ id, postData: formData }).unwrap();
       } else {
-        result = await createPost(postData).unwrap();
+        result = await createPost({ ...formData, userId: user._id }).unwrap();
       }
       navigate(`/blog/${result._id || id}`);
+      message.success(isEditMode ? "Post updated!" : "Post published!");
     } catch (err) {
-      setServerError(err?.data?.error || "Failed to save post");
-    } finally {
-      setLoading(false);
+      message.error(err?.data?.error || "Failed to save post");
     }
   };
 
-  const handleFollowToggle = async () => {
-    if (!user) return navigate("/login");
+  const handleLike = async () => {
+    if (!user) return message.warning("Log in to like");
     try {
-      authorData?.isFollowing
-        ? await unfollow(authorData._id).unwrap()
-        : await follow(authorData._id).unwrap();
-    } catch (err) {
-      setServerError("Failed to update follow status");
+      post?.liked ? await unlikePost(id).unwrap() : await likePost(id).unwrap();
+    } catch {
+      message.error("Failed to like post");
     }
   };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!user) return message.error("Please log in to comment.");
-    if (!commentContent.trim())
-      return message.error("Comment cannot be empty.");
+    if (!user) return message.warning("Log in to comment");
+    if (!commentContent.trim()) return;
 
     try {
       await createComment({ id, content: commentContent }).unwrap();
-      message.success("Comment posted!");
       setCommentContent("");
-    } catch (err) {
+      message.success("Comment posted!");
+    } catch {
       message.error("Failed to post comment");
     }
   };
 
-  const handleLike = async () => {
-    if (!user) return message.error("Please log in to like.");
+  const handleFollow = async () => {
+    if (!user) return navigate("/login");
     try {
-      post?.liked ? await unlikePost(id).unwrap() : await likePost(id).unwrap();
-    } catch (err) {
-      message.error("Failed to update like");
+      authorData?.isFollowing
+        ? await unfollow(authorData._id).unwrap()
+        : await follow(authorData._id).unwrap();
+    } catch {
+      message.error("Failed to update follow");
     }
   };
 
-  // === TIPTAP TOOLBAR ===
-  const MenuBar = () => {
-    if (!editor) return null;
+  // Loading & Error
+  if (fetchingPost)
     return (
-      <div className="flex flex-wrap gap-1 p-2 border-b bg-gray-50 dark:bg-navy-700">
-        {["Bold", "Italic", "Underline"].map((style) => (
-          <Button
-            key={style}
-            size="small"
-            onClick={() => editor.chain().focus()[`toggle${style}`]().run()}
-            className={
-              editor.isActive(style.toLowerCase())
-                ? "bg-primary text-white"
-                : ""
-            }
-          >
-            {style === "Bold" ? (
-              <b>B</b>
-            ) : style === "Italic" ? (
-              <i>I</i>
-            ) : (
-              <u>U</u>
-            )}
-          </Button>
-        ))}
-        {[1, 2, 3].map((level) => (
-          <Button
-            key={level}
-            size="small"
-            onClick={() =>
-              editor.chain().focus().toggleHeading({ level }).run()
-            }
-            className={
-              editor.isActive("heading", { level })
-                ? "bg-primary text-white"
-                : ""
-            }
-          >
-            H{level}
-          </Button>
-        ))}
-        {["bulletList", "orderedList"].map((list) => (
-          <Button
-            key={list}
-            size="small"
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={editor.isActive(list) ? "bg-primary text-white" : ""}
-          >
-            {list === "bulletList" ? "•" : "1."} List
-          </Button>
-        ))}
-        <Button
-          size="small"
-          onClick={() => {
-            const url = window.prompt("URL:");
-            if (url) editor.chain().focus().setLink({ href: url }).run();
-          }}
-        >
-          Link
-        </Button>
+      <div className="flex justify-center py-20">
+        <Spin size="large" />
       </div>
     );
-  };
-
-  // === RENDER LOADING / ERROR ===
-  if (fetchingPost && id)
-    return <Spin size="large" className="flex justify-center p-10" />;
-  if (serverError) return <ErrorAlert message={serverError} />;
-
-  // === EDIT MODE (with TipTap) ===
-  if (isUpdateMode) {
+  if (postError)
+    return <ErrorAlert message={postError?.data?.error || "Post not found"} />;
+  if (!post && id)
     return (
-      <div className="max-w-4xl mx-auto p-4">
-        <Card title="Edit Post">
-          <form onSubmit={handleSubmit}>
-            <Typography.Title level={5}>Title</Typography.Title>
+      <div className="text-center py-20 text-gray-500">Post not found</div>
+    );
+
+  // === EDIT MODE ===
+  if (isEditMode) {
+    return (
+      <div className="max-w-5xl mx-auto px-4 py-12">
+        <Typography.Title level={2} className="mb-8 text-center">
+          {isEditMode ? "Edit Your Post" : "Write a New Post"}
+        </Typography.Title>
+
+        <form onSubmit={handleSubmit} className="space-y-8">
+          <div>
             <Input
-              name="title"
+              size="large"
+              placeholder="Post Title..."
               value={formData.title}
               onChange={(e) =>
                 setFormData({ ...formData, title: e.target.value })
               }
-              placeholder="Enter post title"
-              className="mb-4"
+              className="text-4xl font-bold border-none shadow-none focus:border-primary"
             />
+          </div>
 
-            <Typography.Title level={5}>Content</Typography.Title>
-            <div className="border rounded-lg overflow-hidden mb-4">
-              <MenuBar />
-              <EditorContent editor={editor} className="tiptap-editor" />
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden">
+            <div className="border-b p-4 flex flex-wrap gap-2 bg-gray-50 dark:bg-gray-800">
+              <Button
+                size="small"
+                onClick={() => editor.chain().focus().toggleBold().run()}
+                className={
+                  editor?.isActive("bold") ? "bg-primary text-white" : ""
+                }
+              >
+                Bold
+              </Button>
+              <Button
+                size="small"
+                onClick={() => editor.chain().focus().toggleItalic().run()}
+                className={
+                  editor?.isActive("italic") ? "bg-primary text-white" : ""
+                }
+              >
+                Italic
+              </Button>
+              <Button
+                size="small"
+                onClick={() => editor.chain().focus().toggleUnderline().run()}
+                className={
+                  editor?.isActive("underline") ? "bg-primary text-white" : ""
+                }
+              >
+                Underline
+              </Button>
+              {[1, 2, 3].map((l) => (
+                <Button
+                  key={l}
+                  size="small"
+                  onClick={() =>
+                    editor.chain().focus().toggleHeading({ level: l }).run()
+                  }
+                  className={
+                    editor?.isActive("heading", { level: l })
+                      ? "bg-primary text-white"
+                      : ""
+                  }
+                >
+                  H{l}
+                </Button>
+              ))}
+              <Button
+                size="small"
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+              >
+                • List
+              </Button>
+              <Button
+                size="small"
+                onClick={() => {
+                  const url = prompt("Enter URL");
+                  if (url) editor.chain().focus().setLink({ href: url }).run();
+                }}
+              >
+                Link
+              </Button>
             </div>
+            <EditorContent editor={editor} />
+          </div>
 
-            <Button type="primary" htmlType="submit" loading={loading}>
-              Update Post
+          <div className="flex justify-end">
+            <Button
+              type="primary"
+              size="large"
+              htmlType="submit"
+              loading={!editor}
+            >
+              {isEditMode ? "Update Post" : "Publish"}
             </Button>
-          </form>
-          {serverError && <ErrorAlert message={serverError} />}
-        </Card>
+          </div>
+        </form>
       </div>
     );
   }
 
-  // === VIEW MODE (unchanged) ===
-  if (!post && id) return <div>Post not found</div>;
-
+  // === VIEW MODE ===
   return (
-    <div className="grid grid-cols-12 lg:gap-6">
-      {/* Main Content */}
-      <div className="col-span-12 pt-6 lg:col-span-8 lg:pb-6">
-        <div className="card p-4 lg:p-6">
+    <div className="max-w-7xl mx-auto px-4 py-12">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+        {/* Main Article */}
+        <article className="lg:col-span-8">
           {/* Author Header */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
-              <Avatar
-                name={post.poster?.username}
-                src={authorData?.avatar}
-                size="48"
-                round={true}
-                className="mask is-squircle"
-              />
-              <div>
-                <a
-                  href={`/profile/${post.poster?.username}`}
-                  className="font-medium hover:text-primary"
-                >
-                  {post.poster?.username}
-                </a>
-                <div className="mt-1.5 flex items-center text-xs">
-                  <span>{formatDate(post.createdAt)}</span>
-                  <div className="mx-2 w-px h-4 bg-gray-300"></div>
-                  <span>{calculateReadTime(post.content)}</span>
+          <div className="mb-10">
+            <div className="flex items-center justify-between">
+              <RouterLink
+                to={`/u/${post.poster?.username}`}
+                className="flex items-center space-x-4 group"
+              >
+                <Avatar
+                  size="56"
+                  round
+                  src={authorData?.avatar}
+                  name={post.poster?.username}
+                  className="ring-4 ring-white dark:ring-gray-900 shadow-lg"
+                />
+                <div>
+                  <p className="font-semibold text-lg group-hover:text-primary transition-colors">
+                    {post.poster?.username}
+                  </p>
+                  <p className="text-sm text-gray-500">
+                    {formatDate(post.createdAt)} ·{" "}
+                    {calculateReadTime(post.content)}
+                  </p>
                 </div>
+              </RouterLink>
+
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleLike}
+                  className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition"
+                >
+                  <FaHeart
+                    className={`text-2xl ${
+                      post?.liked
+                        ? "text-red-500 fill-current"
+                        : "text-gray-600"
+                    }`}
+                  />
+                  <span className="ml-2 text-sm font-medium">
+                    {post?.likeCount || 0}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setIsCommentOpen(!isCommentOpen)}
+                  className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800"
+                >
+                  <FaComment className="text-2xl text-gray-600" />
+                  <span className="ml-2 text-sm font-medium">
+                    {post?.commentCount || 0}
+                  </span>
+                </button>
+                <button className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <FaBookmark className="text-2xl text-gray-600" />
+                </button>
+                <button className="p-3 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800">
+                  <FaShareAlt className="text-2xl text-gray-600" />
+                </button>
               </div>
             </div>
-            <div className="flex space-x-3">
-              <button
-                onClick={handleLike}
-                className={`btn size-8 rounded-full p-0 ${
-                  post.liked ? "text-secondary" : ""
-                }`}
-              >
-                <svg
-                  className="size-5"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                >
-                  <path d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
-                </svg>
-              </button>
-              {user && (isOwnPost || user.role === "admin") && (
-                <div className="inline-flex">
-                  <button className="btn size-8 rounded-full p-0">
-                    <svg
-                      className="size-5"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path d="M5 12h.01M12 12h.01M19 12h.01M6 12a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0zm7 0a1 1 0 11-2 0 1 1 0 012 0z" />
-                    </svg>
-                  </button>
-                  <div className="popper-root">
-                    <div className="popper-box rounded-md border bg-white py-1.5 dark:bg-navy-700">
-                      <ul>
-                        <li>
-                          <a
-                            href={`/blog/${id}/edit`}
-                            className="block px-3 py-1 hover:bg-gray-100"
-                          >
-                            Edit Post
-                          </a>
-                        </li>
-                        <li>
-                          <a
-                            href="#"
-                            className="block px-3 py-1 hover:bg-gray-100"
-                          >
-                            Delete Post
-                          </a>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
           </div>
 
-          {/* Post Content */}
-          <div className="mt-6">
-            <h1 className="text-2xl font-bold">{post.title}</h1>
-            <div className="mt-4 whitespace-pre-wrap text-base leading-relaxed">
-              {post.content.split("\n").map((p, i) => (
-                <p key={i} className="mb-4">
-                  {p}
-                </p>
+          {/* Title */}
+          <h1 className="text-5xl font-bold leading-tight mb-8 text-gray-900 dark:text-gray-100">
+            {post.title}
+          </h1>
+
+          {/* Featured Image */}
+          {post.image && (
+            <img
+              src={post.image}
+              alt={post.title}
+              className="w-full rounded-2xl shadow-xl mb-12 object-cover max-h-96"
+            />
+          )}
+
+          {/* Content */}
+          <div
+            className="prose prose-lg dark:prose-invert max-w-none mb-16"
+            dangerouslySetInnerHTML={{ __html: post.content }}
+          />
+
+          {/* Tags */}
+          {post.tags?.length > 0 && (
+            <div className="flex flex-wrap gap-3 mb-12">
+              {post.tags.map((tag) => (
+                <RouterLink
+                  key={tag}
+                  to={`/tags/${tag}`}
+                  className="px-5 py-2 bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full font-medium hover:bg-blue-200 dark:hover:bg-blue-800/50 transition"
+                >
+                  #{tag}
+                </RouterLink>
               ))}
             </div>
-          </div>
+          )}
 
-          {/* Like & Comment Buttons */}
-          <div className="mt-5 flex space-x-3">
-            <button
-              onClick={handleLike}
-              className={`btn rounded-full border px-4 ${
-                post.liked ? "text-secondary" : ""
-              }`}
-            >
-              <svg
-                className="size-4.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M6.633 10.5c.806 0 1.533-.446 2.031-1.08a9.041 9.041 0 012.861-2.4c.723-.384 1.35-.956 1.653-1.715a4.498 4.498 0 00.322-1.672V3a.75.75 0 01.75-.75A2.25 2.25 0 0116.5 4.5c0 1.152-.26 2.243-.723 3.218-.266.558.107 1.282.725 1.282h3.126c1.026 0 1.945.694 2.054 1.715.045.422.068.85.068 1.285a11.95 11.95 0 01-2.649 7.521c-.388.482-.987.729-1.605.729H13.48c-.483 0-.964-.078-1.423-.23l-3.114-1.04a4.501 4.501 0 00-1.423-.23H5.904M14.25 9h2.25M5.904 18.75c.083.205.173.405.27.602.197.4-.078.898-.523.898h-.908c-.889 0-1.713-.518-1.972-1.368a12 12 0 01-.521-3.507c0-1.553.295-3.036.831-4.398C3.387 10.203 4.167 9.75 5 9.75h1.053c.472 0 .745.556.5.96a8.958 8.958 0 00-1.302 4.665c0 1.194.232 2.333.654 3.375z" />
-              </svg>
-              <span>{post.likeCount || 0}</span>
-            </button>
-            <button
-              onClick={() => setIsCommentSectionOpen(!isCommentSectionOpen)}
-              className="btn rounded-full border px-4"
-            >
-              <svg
-                className="size-4.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 20.25c4.97 0 9-3.694 9-8.25s-4.03-8.25-9-8.25S3 7.444 3 12c0 2.104.859 4.023 2.273 5.48.432.447.74 1.04.586 1.641a4.483 4.483 0 01-.923 1.785A5.969 5.969 0 006 21c1.282 0 2.47-.402 3.445-1.087.81.22 1.668.337 2.555.337z" />
-              </svg>
-              <span>{post.commentCount || 0}</span>
-            </button>
-          </div>
+          <Divider />
 
-          {/* Comment Section */}
-          {isCommentSectionOpen && (
-            <div className="mt-5 border-t pt-4">
-              {user ? (
-                <form onSubmit={handleCommentSubmit} className="flex mb-4">
-                  <Input
-                    placeholder="Write a comment..."
+          {/* Comments */}
+          <div className="mt-12">
+            <h3 className="text-2xl font-bold mb-8">
+              Discussion ({post.commentCount || 0})
+            </h3>
+
+            {user ? (
+              <form
+                onSubmit={handleCommentSubmit}
+                className="flex items-start space-x-4 mb-10"
+              >
+                <Avatar
+                  size="48"
+                  round
+                  src={user.avatar}
+                  name={user.username}
+                />
+                <div className="flex-1">
+                  <Input.TextArea
+                    rows={3}
+                    placeholder="Add to the discussion..."
                     value={commentContent}
                     onChange={(e) => setCommentContent(e.target.value)}
-                    className="flex-1"
+                    className="mb-3"
                   />
                   <Button
                     type="primary"
                     htmlType="submit"
                     loading={commentLoading}
-                    className="ml-2"
+                    icon={<FaPaperPlane />}
                   >
-                    Send
+                    Post Comment
                   </Button>
-                </form>
-              ) : (
-                <p className="mb-4">
-                  Please{" "}
-                  <a href="/login" className="text-primary">
-                    log in
-                  </a>{" "}
-                  to comment.
-                </p>
-              )}
-              {commentsLoading ? (
-                <p>Loading comments...</p>
-              ) : comments?.length > 0 ? (
-                <div className="space-y-4">
-                  {comments.map((c) => (
-                    <div key={c._id} className="flex space-x-3">
-                      <Avatar
-                        size="32"
-                        round
-                        src={c.commenter?.avatar}
-                        name={c.commenter?.username}
-                      />
-                      <div>
-                        <p className="font-medium">{c.commenter?.username}</p>
-                        <p className="text-sm">{c.content}</p>
-                        <p className="text-xs text-gray-500">
-                          {formatDate(c.createdAt)}
+                </div>
+              </form>
+            ) : (
+              <p className="text-center py-8 text-gray-500">
+                <RouterLink
+                  to="/login"
+                  className="text-primary font-medium hover:underline"
+                >
+                  Log in
+                </RouterLink>{" "}
+                to join the discussion
+              </p>
+            )}
+
+            {commentsLoading ? (
+              <Spin />
+            ) : comments.length > 0 ? (
+              <div className="space-y-8">
+                {comments.map((comment) => (
+                  <div key={comment._id} className="flex space-x-4">
+                    <Avatar
+                      size="40"
+                      round
+                      src={comment.commenter?.avatar}
+                      name={comment.commenter?.username}
+                    />
+                    <div className="flex-1">
+                      <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-6 py-4">
+                        <p className="font-semibold">
+                          {comment.commenter?.username}
+                        </p>
+                        <p className="mt-2 text-gray-700 dark:text-gray-300">
+                          {comment.content}
                         </p>
                       </div>
+                      <p className="text-sm text-gray-500 mt-2">
+                        {formatDate(comment.createdAt)}
+                      </p>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <p>No comments yet.</p>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Related Posts */}
-        <div className="mt-6">
-          <div className="flex justify-between">
-            <p className="font-medium">Related Articles</p>
-            <a href="/blog" className="text-primary text-sm">
-              View All
-            </a>
-          </div>
-          {fetchingRelatedPosts ? (
-            <p>Loading...</p>
-          ) : relatedPostsData?.data?.length > 0 ? (
-            <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-1">
-              {relatedPostsData.data.map((p) => (
-                <div key={p._id} className="card flex">
-                  <img
-                    src={p.image || "/placeholder.jpg"}
-                    className="w-32 h-32 object-cover rounded-l"
-                  />
-                  <div className="p-3 flex-1">
-                    <a
-                      href={`/blog/${p._id}`}
-                      className="font-medium hover:text-primary"
-                    >
-                      {p.title}
-                    </a>
-                    <p className="text-sm text-gray-600 line-clamp-2 mt-1">
-                      {p.content.substring(0, 100)}...
-                    </p>
                   </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p>No related posts.</p>
-          )}
-        </div>
-      </div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-center text-gray-500 py-8">
+                No comments yet. Start the conversation!
+              </p>
+            )}
+          </div>
+        </article>
 
-      {/* Sidebar */}
-      <div className="col-span-12 py-6 lg:col-span-4">
-        <div className="card">
-          <img
-            src={authorData?.banner || "/banner.jpg"}
-            className="h-24 w-full object-cover rounded-t"
-          />
-          <div className="p-4 -mt-12">
-            <Avatar
-              name={authorData?.username || post.poster?.username}
-              src={authorData?.avatar}
-              size="80"
-              round
-              className="border-4 border-white"
-            />
-            <h3 className="mt-2 font-medium">
-              {authorData?.username || post.poster?.username}
-            </h3>
-            <p className="text-sm text-gray-600">
-              {authorData?.biography?.substring(0, 50)}... |{" "}
-              {authorData?.followers?.length || 0} followers
-            </p>
-            <p className="mt-3 text-sm">{authorData?.biography || "No bio."}</p>
-            <div className="mt-4 flex gap-2">
-              {!isOwnPost && (
+        {/* Sidebar */}
+        <aside className="lg:col-span-4 space-y-10">
+          {/* Author Card */}
+          <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-xl overflow-hidden">
+            <div className="h-32 bg-gradient-to-r from-blue-500 to-purple-600"></div>
+            <div className="px-8 pt-4 pb-8 -mt-12">
+              <Avatar
+                size="100"
+                round
+                src={authorData?.avatar}
+                name={post.poster?.username}
+                className="ring-8 ring-white dark:ring-gray-900 shadow-2xl"
+              />
+              <h3 className="mt-4 text-2xl font-bold">
+                {authorData?.username || post.poster?.username}
+              </h3>
+              <p className="text-gray-600 dark:text-gray-400 mt-2">
+                {authorData?.followers?.length || 0} followers
+              </p>
+              <p className="mt-4 text-gray-700 dark:text-gray-300 leading-relaxed">
+                {authorData?.biography || "No bio yet."}
+              </p>
+              {!isOwnPost && user && (
                 <Button
-                  size="small"
-                  onClick={handleFollowToggle}
-                  disabled={fetchingAuthor}
+                  type={authorData?.isFollowing ? "default" : "primary"}
+                  block
+                  size="large"
+                  className="mt-6"
+                  onClick={handleFollow}
+                  loading={fetchingAuthor}
                 >
-                  {authorData?.isFollowing ? "Unfollow" : "Follow"}
+                  {authorData?.isFollowing ? "Following" : "Follow"}
                 </Button>
               )}
             </div>
           </div>
-        </div>
 
-        {/* More from Author */}
-        <div className="mt-6">
-          <p className="font-medium border-b pb-2">
-            More from {authorData?.username}
-          </p>
-          {authorPostsLoading ? (
-            <p>Loading...</p>
-          ) : authorPosts.length > 0 ? (
-            <div className="mt-4 space-y-3">
-              {authorPosts.map((p) => (
-                <a
-                  key={p._id}
-                  href={`/blog/${p._id}`}
-                  className="block p-3 border rounded hover:bg-gray-50"
-                >
-                  <p className="font-medium">{p.title}</p>
-                  <p className="text-xs text-gray-500">
-                    {formatDate(p.createdAt)}
-                  </p>
-                </a>
-              ))}
+          {/* More from Author */}
+          {authorPosts.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold mb-6">
+                More from {post.poster?.username}
+              </h3>
+              <div className="space-y-4">
+                {authorPosts.map((p) => (
+                  <RouterLink
+                    key={p._id}
+                    to={`/blog/${p._id}`}
+                    className="block p-5 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition"
+                  >
+                    <h4 className="font-semibold text-lg mb-2 line-clamp-2">
+                      {p.title}
+                    </h4>
+                    <p className="text-sm text-gray-500">
+                      {formatDate(p.createdAt)}
+                    </p>
+                  </RouterLink>
+                ))}
+              </div>
             </div>
-          ) : (
-            <p>No other posts.</p>
           )}
-        </div>
+
+          {/* Related Posts */}
+          {relatedPostsData?.data?.length > 0 && (
+            <div>
+              <h3 className="text-xl font-bold mb-6">Related Reading</h3>
+              <div className="space-y-4">
+                {relatedPostsData.data.map((p) => (
+                  <RouterLink
+                    key={p._id}
+                    to={`/blog/${p._id}`}
+                    className="flex space-x-4 p-4 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-800 transition"
+                  >
+                    {p.image ? (
+                      <img
+                        src={p.image}
+                        className="w-24 h-24 object-cover rounded-lg"
+                      />
+                    ) : (
+                      <div className="w-24 h-24 bg-gray-200 dark:bg-gray-700 rounded-lg" />
+                    )}
+                    <div className="flex-1">
+                      <h4 className="font-medium line-clamp-2">{p.title}</h4>
+                      <p className="text-sm text-gray-500 mt-1">
+                        {formatDate(p.createdAt)}
+                      </p>
+                    </div>
+                  </RouterLink>
+                ))}
+              </div>
+            </div>
+          )}
+        </aside>
       </div>
     </div>
   );

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { message, Dropdown, Space, Avatar as AntAvatar } from "antd";
+import { message, Dropdown, Avatar as AntAvatar, Spin } from "antd";
 import { useNavigate, Link } from "react-router-dom";
 import {
   useDeletePostMutation,
@@ -12,14 +12,15 @@ import {
 } from "../../api/commentApi";
 import { isLoggedIn } from "../../helpers/authHelper";
 import Avatar from "react-avatar";
+import { FaHeart, FaComment, FaPaperPlane, FaEllipsisV } from "react-icons/fa";
 
-const PostCard = ({ post, preview, removePost }) => {
+const PostCard = ({ post, preview = "primary", removePost }) => {
   const [isCommentSectionOpen, setIsCommentSectionOpen] = useState(false);
   const [commentContent, setCommentContent] = useState("");
   const navigate = useNavigate();
   const user = isLoggedIn();
   const [currentPost, setCurrentPost] = useState(post);
-  const [likeCount, setLikeCount] = useState(post.likeCount);
+  const [likeCount, setLikeCount] = useState(post.likeCount || 0);
 
   const [deletePost, { isLoading: deleteLoading }] = useDeletePostMutation();
   const [likePost] = useLikePostMutation();
@@ -27,372 +28,300 @@ const PostCard = ({ post, preview, removePost }) => {
   const [createComment, { isLoading: commentLoading }] =
     useCreateCommentMutation();
 
-  const { data: comments, isLoading: commentsLoading } =
+  const { data: comments = [], isLoading: commentsLoading } =
     useGetPostCommentsQuery(currentPost._id, { skip: !isCommentSectionOpen });
 
-  const maxHeight = preview === "primary" ? "250px" : null;
   const isAuthor = user?.username === currentPost?.poster?.username;
+  const hasImage = currentPost?.image;
 
   const handleDeletePost = async (e) => {
-    e.domEvent.stopPropagation();
+    e.stopPropagation();
     try {
       await deletePost(currentPost._id).unwrap();
       message.success("Post deleted successfully!");
       if (preview && removePost) removePost(currentPost);
       else navigate("/");
-    } catch (error) {
-      message.error("Failed to delete post. Please try again.");
+    } catch {
+      message.error("Failed to delete post.");
     }
   };
 
   const handleEditPost = (e) => {
-    e.domEvent.stopPropagation();
+    e.stopPropagation();
     navigate(`/blog/${currentPost._id}/edit`);
   };
 
-  const handleLike = async (liked) => {
+  const handleLike = async () => {
     if (!user) {
-      message.error("Please log in to like posts.");
+      message.warning("Please log in to like posts.");
       return;
     }
+
+    const wasLiked = currentPost.liked;
+    const newCount = wasLiked ? likeCount - 1 : likeCount + 1;
+
+    setLikeCount(newCount);
+    setCurrentPost({ ...currentPost, liked: !wasLiked });
+
     try {
-      if (liked) {
-        setLikeCount((prev) => prev + 1);
-        await likePost(currentPost._id).unwrap();
-        setCurrentPost({ ...currentPost, liked: true });
-      } else {
-        setLikeCount((prev) => prev - 1);
+      if (wasLiked) {
         await unlikePost(currentPost._id).unwrap();
-        setCurrentPost({ ...currentPost, liked: false });
+      } else {
+        await likePost(currentPost._id).unwrap();
       }
-    } catch (error) {
-      message.error("Failed to update like. Please try again.");
-      setLikeCount((prev) => (liked ? prev - 1 : prev + 1));
+    } catch {
+      message.error("Failed to update like.");
+      setLikeCount(likeCount);
+      setCurrentPost({ ...currentPost, liked: wasLiked });
     }
   };
 
   const handleCommentSubmit = async (e) => {
     e.preventDefault();
-    if (!user) {
-      message.error("Please log in to comment.");
-      return;
-    }
-    if (!commentContent.trim()) {
-      message.error("Comment cannot be empty.");
-      return;
-    }
+    if (!user) return message.warning("Please log in to comment.");
+    if (!commentContent.trim())
+      return message.warning("Comment cannot be empty.");
+
     try {
       await createComment({
         id: currentPost._id,
         content: commentContent,
       }).unwrap();
-      message.success("Comment posted successfully!");
+      message.success("Comment posted!");
       setCommentContent("");
-    } catch (error) {
-      message.error("Failed to post comment. Please try again.");
+    } catch {
+      message.error("Failed to post comment.");
     }
-  };
-
-  const toggleCommentSection = () => {
-    setIsCommentSectionOpen(!isCommentSectionOpen);
   };
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+    const now = new Date();
+    const diffMs = now - date;
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 60) return `${diffMins}m ago`;
+    if (diffHours < 24) return `${diffHours}h ago`;
+    if (diffDays < 7) return `${diffDays}d ago`;
     return date.toLocaleDateString("en-US", {
-      year: "numeric",
       month: "short",
       day: "numeric",
+      year: "numeric",
     });
   };
 
-  // AntD Dropdown Menu
   const menuItems = [
-    {
-      key: "edit",
-      label: "Edit Post",
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
-          />
-        </svg>
-      ),
-      onClick: handleEditPost,
-    },
+    { key: "edit", label: "Edit Post", onClick: handleEditPost },
     {
       key: "delete",
       label: "Delete Post",
       danger: true,
-      icon: (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          className="h-4 w-4"
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M6 18L18 6M6 6l12 12"
-          />
-        </svg>
-      ),
       onClick: handleDeletePost,
     },
-  ];
+  ].filter((item) => user?.isAdmin || isAuthor);
 
   return (
-    <div className="card bg-white dark:bg-navy-700 rounded-lg shadow-md border border-slate-200 dark:border-navy-500">
+    <div className="bg-white dark:bg-gray-900 rounded-2xl shadow-lg hover:shadow-2xl transition-all duration-300 overflow-hidden border border-gray-100 dark:border-gray-800">
       {/* Header */}
-      <div className="flex items-center justify-between p-4">
-        <div className="flex items-center space-x-3">
-          <div className="relative group">
-            <div className="avatar h-9 w-9">
+      <div className="p-6 pb-4">
+        <div className="flex items-center justify-between">
+          <Link
+            to={`/u/${currentPost?.poster?.username}`}
+            className="flex items-center space-x-4 group"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="relative">
               <Avatar
-                size="36"
+                size="48"
                 round={true}
                 src={currentPost?.poster?.avatar}
-                name={currentPost?.poster?.username || "Unknown User"}
+                name={currentPost?.poster?.username}
+                className="ring-4 ring-white dark:ring-gray-900 shadow-md"
               />
+              {currentPost?.poster?.isOnline && (
+                <span className="absolute bottom-0 right-0 w-4 h-4 bg-green-500 rounded-full ring-4 ring-white dark:ring-gray-900"></span>
+              )}
             </div>
-
-            {/* Hover Card */}
-            <div className="absolute z-20 hidden group-hover:block w-48 rounded-md border border-slate-150 bg-white p-3 text-center shadow-lg dark:border-navy-600 dark:bg-navy-700">
-              <AntAvatar
-                size={64}
-                src={currentPost?.poster?.avatar}
-                alt={currentPost?.poster?.username}
-              >
-                {currentPost?.poster?.username?.[0]}
-              </AntAvatar>
-              <p className="mt-2 font-medium text-slate-700 dark:text-navy-100">
-                {currentPost?.poster?.username}
+            <div>
+              <p className="font-semibold text-gray-900 dark:text-gray-100 group-hover:text-primary dark:group-hover:text-blue-400 transition-colors">
+                {currentPost?.poster?.username || "Unknown"}
               </p>
-              <Link
-                to={`/user/${currentPost?.poster?.username}`}
-                className="text-xs text-primary hover:underline dark:text-accent-light"
-              >
-                @{currentPost?.poster?.username}
-              </Link>
-              <button className="mt-3 h-7 rounded-full bg-primary px-4 text-xs font-medium text-white hover:bg-primary-focus dark:bg-accent dark:hover:bg-accent-focus">
-                Follow
-              </button>
+              <p className="text-sm text-gray-500 dark:text-gray-400">
+                {formatDate(currentPost?.createdAt)}
+                {currentPost?.edited && " · Edited"}
+              </p>
             </div>
-          </div>
+          </Link>
 
-          <div>
-            <p className="text-sm font-medium text-slate-700 dark:text-navy-100">
-              {currentPost?.poster?.username || "Unknown User"}
-            </p>
-            <p className="text-xs text-slate-400 dark:text-navy-300">
-              {formatDate(currentPost?.createdAt)}
-              {currentPost?.edited && " (Edited)"}
-            </p>
-          </div>
-        </div>
-
-        {/* AntD Dropdown for Edit/Delete */}
-        {user && (isAuthor || user.isAdmin) && preview !== "secondary" && (
-          <Dropdown
-            menu={{ items: menuItems }}
-            trigger={["click"]}
-            placement="bottomRight"
-            disabled={deleteLoading}
-          >
-            <button
-              className="btn -mr-1.5 h-8 w-8 rounded-full p-0 hover:bg-slate-300/20 focus:bg-slate-300/20 active:bg-slate-300/25 dark:hover:bg-navy-300/20 dark:focus:bg-navy-300/20 dark:active:bg-navy-300/25"
-              onClick={(e) => e.stopPropagation()}
+          {(isAuthor || user?.isAdmin) && menuItems.length > 0 && (
+            <Dropdown
+              menu={{ items: menuItems }}
+              trigger={["click"]}
+              placement="bottomRight"
             >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="2"
+              <button
+                onClick={(e) => e.stopPropagation()}
+                className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                disabled={deleteLoading}
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"
-                />
-              </svg>
-            </button>
-          </Dropdown>
-        )}
-      </div>
-
-      {/* Content */}
-      <div className="px-4 pt-4">
-        <Link
-          to={`/blog/${currentPost._id}`}
-          className="text-base font-medium text-slate-700 hover:text-primary focus:text-primary dark:text-navy-100 dark:hover:text-accent-light dark:focus:text-accent-light"
-        >
-          {currentPost?.title}
-        </Link>
-
-        {preview !== "secondary" && (
-          <div
-            className="mt-2 line-clamp-3 text-slate-600 dark:text-navy-200"
-            style={{ maxHeight, overflow: "hidden" }}
-          >
-            {currentPost?.content}
-          </div>
-        )}
-
-        <div className="mt-3 flex flex-wrap gap-2">
-          {currentPost?.tags?.map((tag) => (
-            <Link
-              key={tag}
-              to={`/tags/${tag}`}
-              className="tag rounded-full bg-primary/10 text-primary hover:bg-primary/20 focus:bg-primary/20 active:bg-primary/25 dark:bg-accent-light/10 dark:text-accent-light dark:hover:bg-accent-light/20 dark:focus:bg-accent-light/20 dark:active:bg-accent-light/25 px-3 py-1 text-xs"
-            >
-              {tag}
-            </Link>
-          ))}
-        </div>
-      </div>
-
-      {/* Footer: Like & Comment */}
-      <div className="flex justify-between px-4 py-4">
-        <div className="flex items-center space-x-2">
-          {likeCount > 0 && (
-            <span className="text-xs text-slate-400 dark:text-navy-300">
-              {likeCount} {likeCount === 1 ? "Like" : "Likes"}
-            </span>
+                <FaEllipsisV className="text-gray-500" />
+              </button>
+            </Dropdown>
           )}
         </div>
+      </div>
 
-        <Space>
+      {/* Featured Image (if exists) */}
+      {hasImage && preview === "primary" && (
+        <div className="relative overflow-hidden">
+          <img
+            src={currentPost.image}
+            alt={currentPost.title}
+            className="w-full h-64 object-cover hover:scale-105 transition-transform duration-500"
+          />
+        </div>
+      )}
+
+      {/* Content */}
+      <div className="p-6 pt-4">
+        <Link to={`/blog/${currentPost._id}`} className="block">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 hover:text-primary dark:hover:text-blue-400 transition-colors mb-3">
+            {currentPost?.title}
+          </h2>
+        </Link>
+
+        {preview === "primary" && (
+          <p className="text-gray-700 dark:text-gray-300 line-clamp-3 leading-relaxed text-base">
+            {currentPost?.content}
+          </p>
+        )}
+
+        {/* Tags */}
+        {currentPost?.tags?.length > 0 && (
+          <div className="flex flex-wrap gap-2 mt-5">
+            {currentPost.tags.map((tag) => (
+              <Link
+                key={tag}
+                to={`/tags/${tag}`}
+                className="px-4 py-1.5 text-sm font-medium bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 rounded-full hover:bg-blue-200 dark:hover:bg-blue-800/50 transition-colors"
+                onClick={(e) => e.stopPropagation()}
+              >
+                #{tag}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Actions Footer */}
+      <div className="px-6 pb-6 flex items-center justify-between">
+        <div className="flex items-center space-x-6">
           <button
-            onClick={() => handleLike(!currentPost?.liked)}
-            className={`btn h-7 w-7 rounded-full p-0 ${
+            onClick={(e) => {
+              e.stopPropagation();
+              handleLike();
+            }}
+            className={`flex items-center space-x-2 group transition-all ${
               currentPost?.liked
-                ? "text-secondary dark:text-secondary-light"
-                : "hover:bg-slate-300/20 focus:bg-slate-300/20 active:bg-slate-300/25 dark:hover:bg-navy-300/20 dark:focus:bg-navy-300/20 dark:active:bg-navy-300/25"
+                ? "text-red-500"
+                : "text-gray-600 dark:text-gray-400"
             }`}
-            disabled={deleteLoading}
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4.5 w-4.5"
-              fill={currentPost?.liked ? "currentColor" : "none"}
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-              />
-            </svg>
-            <span className="ml-1 text-xs">{likeCount}</span>
+            <FaHeart
+              className={`text-lg group-hover:scale-110 transition-transform ${
+                currentPost?.liked ? "fill-current" : ""
+              }`}
+            />
+            <span className="text-sm font-medium">{likeCount}</span>
           </button>
 
           <button
-            onClick={toggleCommentSection}
-            className="btn h-7 w-7 rounded-full p-0 hover:bg-slate-300/20 focus:bg-slate-300/20 active:bg-slate-300/25 dark:hover:bg-navy-300/20 dark:focus:bg-navy-300/20 dark:active:bg-navy-300/25"
-            disabled={deleteLoading}
+            onClick={(e) => {
+              e.stopPropagation();
+              setIsCommentSectionOpen(!isCommentSectionOpen);
+            }}
+            className="flex items-center space-x-2 text-gray-600 dark:text-gray-400 hover:text-primary transition-colors"
           >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              className="h-4.5 w-4.5"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
-              strokeWidth="2"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5v-4a2 2 0 012-2h10a2 2 0 012 2v4h-4M9 16l3 3m0 0l3-3"
-              />
-            </svg>
-            <span className="ml-1 text-xs">
+            <FaComment className="text-lg" />
+            <span className="text-sm font-medium">
               {currentPost?.commentCount || 0}
             </span>
           </button>
-        </Space>
+        </div>
       </div>
 
       {/* Comment Section */}
       {isCommentSectionOpen && (
-        <div className="border-t border-slate-200 dark:border-navy-500 px-4 py-4">
+        <div className="border-t border-gray-200 dark:border-gray-800 px-6 py-5">
           {user ? (
             <form
               onSubmit={handleCommentSubmit}
-              className="relative flex w-full mb-4"
+              className="flex items-center space-x-3 mb-5"
             >
+              <Avatar size="36" round src={user.avatar} name={user.username} />
               <input
-                className="form-input peer h-10 w-full bg-transparent px-8 py-2 text-sm placeholder:text-slate-400/70 dark:placeholder:text-navy-300"
+                type="text"
                 placeholder="Write a comment..."
                 value={commentContent}
                 onChange={(e) => setCommentContent(e.target.value)}
+                className="flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-full focus:outline-none focus:ring-2 focus:ring-primary text-sm"
                 disabled={commentLoading}
               />
               <button
                 type="submit"
-                className="absolute right-0 top-0 h-full flex items-center justify-center px-3 text-primary dark:text-accent"
-                disabled={commentLoading}
+                disabled={commentLoading || !commentContent.trim()}
+                className="p-2.5 rounded-full bg-primary text-white hover:bg-primary/90 disabled:opacity-50 transition-colors"
               >
-                <i className="fa fa-paper-plane"></i>
+                <FaPaperPlane />
               </button>
             </form>
           ) : (
-            <p className="text-sm text-slate-400 dark:text-navy-300 mb-4">
-              Please{" "}
-              <Link to="/login" className="text-primary hover:underline">
-                log in
+            <p className="text-sm text-gray-500 text-center mb-4">
+              <Link
+                to="/login"
+                className="text-primary hover:underline font-medium"
+              >
+                Log in
               </Link>{" "}
-              to comment.
+              to join the discussion.
             </p>
           )}
 
           {commentsLoading ? (
-            <p className="text-sm text-slate-400 dark:text-navy-300">
-              Loading comments...
-            </p>
-          ) : comments && comments.length > 0 ? (
+            <div className="flex justify-center py-4">
+              <Spin />
+            </div>
+          ) : comments.length > 0 ? (
             <div className="space-y-4">
               {comments.map((comment) => (
-                <div key={comment._id} className="flex items-start space-x-3">
+                <div key={comment._id} className="flex space-x-3">
                   <Avatar
                     size="32"
-                    round={true}
+                    round
                     src={comment.commenter?.avatar}
-                    name={comment.commenter?.username || "Unknown User"}
+                    name={comment.commenter?.username}
                   />
-                  <div>
-                    <p className="text-sm font-medium text-slate-700 dark:text-navy-100">
-                      {comment.commenter?.username || "Unknown User"}
-                    </p>
-                    <p className="text-xs text-slate-600 dark:text-navy-200">
-                      {comment.content}
-                    </p>
-                    <p className="text-xs text-slate-400 dark:text-navy-300">
+                  <div className="flex-1">
+                    <div className="bg-gray-100 dark:bg-gray-800 rounded-2xl px-4 py-3">
+                      <p className="font-medium text-sm text-gray-900 dark:text-gray-100">
+                        {comment.commenter?.username}
+                      </p>
+                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+                        {comment.content}
+                      </p>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-1.5 ml-4">
                       {formatDate(comment.createdAt)}
-                      {comment.edited && " (Edited)"}
                     </p>
                   </div>
                 </div>
               ))}
             </div>
           ) : (
-            <p className="text-sm text-slate-400 dark:text-navy-300">
-              No comments yet.
+            <p className="text-center text-gray-500 text-sm">
+              No comments yet. Be the first!
             </p>
           )}
         </div>
