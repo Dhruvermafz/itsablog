@@ -1,0 +1,123 @@
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+
+export const clubApi = createApi({
+  reducerPath: "clubApi",
+  baseQuery: fetchBaseQuery({
+    baseUrl: "http://localhost:5000/api/clubs", // adjust
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth?.token;
+
+      if (token) {
+        headers.set("authorization", `Bearer ${token}`);
+      }
+
+      return headers;
+    },
+  }),
+  tagTypes: ["Clubs", "Club", "Posts", "Comments"],
+  endpoints: (builder) => ({
+    // ========================
+    // 🏠 CLUBS (PUBLIC)
+    // ========================
+
+    getClubs: builder.query({
+      query: () => "/",
+      providesTags: ["Clubs"],
+    }),
+
+    getClub: builder.query({
+      query: (id) => `/${id}`,
+      providesTags: (result, error, id) => [{ type: "Club", id }],
+    }),
+
+    // ========================
+    // 🔐 CLUBS (PROTECTED)
+    // ========================
+
+    createClub: builder.mutation({
+      query: (data) => ({
+        url: "/",
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["Clubs"],
+    }),
+
+    joinClub: builder.mutation({
+      query: (id) => ({
+        url: `/${id}/join`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, id) => [{ type: "Club", id }, "Clubs"],
+    }),
+
+    // ========================
+    // 📝 CLUB POSTS
+    // ========================
+
+    getClubPosts: builder.query({
+      query: (clubId) => `/${clubId}/posts`,
+      providesTags: (result, error, clubId) => [{ type: "Posts", id: clubId }],
+    }),
+
+    createPost: builder.mutation({
+      query: ({ clubId, ...data }) => ({
+        url: `/${clubId}/posts`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { clubId }) => [
+        { type: "Posts", id: clubId },
+      ],
+    }),
+
+    // ========================
+    // ❤️ POST INTERACTIONS
+    // ========================
+
+    toggleLike: builder.mutation({
+      query: (postId) => ({
+        url: `/posts/${postId}/like`,
+        method: "POST",
+      }),
+      invalidatesTags: ["Posts"],
+    }),
+
+    // ========================
+    // 💬 COMMENTS
+    // ========================
+
+    getPostComments: builder.query({
+      query: (postId) => `/posts/${postId}/comments`,
+      providesTags: (result, error, postId) => [
+        { type: "Comments", id: postId },
+      ],
+    }),
+
+    createComment: builder.mutation({
+      query: ({ postId, text }) => ({
+        url: `/posts/${postId}/comments`,
+        method: "POST",
+        body: { text },
+      }),
+      invalidatesTags: (result, error, { postId }) => [
+        { type: "Comments", id: postId },
+      ],
+    }),
+  }),
+});
+
+export const {
+  useGetClubsQuery,
+  useGetClubQuery,
+
+  useCreateClubMutation,
+  useJoinClubMutation,
+
+  useGetClubPostsQuery,
+  useCreatePostMutation,
+  useToggleLikeMutation,
+
+  useGetPostCommentsQuery,
+  useCreateCommentMutation,
+} = clubApi;

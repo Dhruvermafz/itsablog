@@ -1,77 +1,142 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
-// Define API service
 export const userApi = createApi({
   reducerPath: "userApi",
-  baseQuery: fetchBaseQuery({ baseUrl: "http://localhost:5000/api/users" }), // Change this to your API base URL
+  baseQuery: fetchBaseQuery({
+    baseUrl: "http://localhost:5000/api/users", // adjust
+    prepareHeaders: (headers, { getState }) => {
+      const token = getState().auth?.token;
+
+      if (token) {
+        headers.set("authorization", `Bearer ${token}`);
+      }
+
+      return headers;
+    },
+  }),
+  tagTypes: ["Profile", "Followers", "Following", "ReadingLogs", "LogEntries"],
   endpoints: (builder) => ({
-    register: builder.mutation({
-      query: (userData) => ({
-        url: "/register",
-        method: "POST",
-        body: userData,
-      }),
+    // ========================
+    // 👤 PROFILE (PUBLIC)
+    // ========================
+
+    getProfile: builder.query({
+      query: (username) => `/profile/${username}`,
+      providesTags: (result, error, username) => [
+        { type: "Profile", id: username },
+      ],
     }),
-    login: builder.mutation({
-      query: (userData) => ({
-        url: "/login",
-        method: "POST",
-        body: userData,
-      }),
-    }),
-    getRandomUsers: builder.query({
-      query: () => "/random",
-    }),
-    getAllUsers: builder.query({
-      query: () => "/all",
-    }),
-    getUser: builder.query({
-      query: (username) => `/${username}`,
-    }),
-    updateUser: builder.mutation({
-      query: ({ id, userData }) => ({
-        url: `/${id}`,
-        method: "PATCH",
-        body: userData,
-      }),
-    }),
-    follow: builder.mutation({
-      query: (id) => ({
-        url: `/follow/${id}`,
-        method: "POST",
-      }),
-    }),
-    unfollow: builder.mutation({
-      query: (id) => ({
-        url: `/unfollow/${id}`,
-        method: "DELETE",
-      }),
-    }),
+
     getFollowers: builder.query({
-      query: (id) => `/followers/${id}`,
+      query: (userId) => `/${userId}/followers`,
+      providesTags: (result, error, userId) => [
+        { type: "Followers", id: userId },
+      ],
     }),
+
     getFollowing: builder.query({
-      query: (id) => `/following/${id}`,
+      query: (userId) => `/${userId}/following`,
+      providesTags: (result, error, userId) => [
+        { type: "Following", id: userId },
+      ],
     }),
-    deleteUser: builder.mutation({
-      query: (id) => ({
-        url: `/delete/${id}`,
+
+    // ========================
+    // 🔐 PROFILE UPDATE
+    // ========================
+
+    updateProfile: builder.mutation({
+      query: (data) => ({
+        url: "/profile",
+        method: "PUT",
+        body: data,
+      }),
+      invalidatesTags: ["Profile"],
+    }),
+
+    // ========================
+    // 🤝 FOLLOW SYSTEM
+    // ========================
+
+    followUser: builder.mutation({
+      query: (userId) => ({
+        url: `/${userId}/follow`,
+        method: "POST",
+      }),
+      invalidatesTags: (result, error, userId) => [
+        { type: "Followers", id: userId },
+        { type: "Following" }, // current user
+        { type: "Profile" },
+      ],
+    }),
+
+    unfollowUser: builder.mutation({
+      query: (userId) => ({
+        url: `/${userId}/follow`,
         method: "DELETE",
       }),
+      invalidatesTags: (result, error, userId) => [
+        { type: "Followers", id: userId },
+        { type: "Following" },
+        { type: "Profile" },
+      ],
+    }),
+
+    // ========================
+    // 📖 READING LOGS
+    // ========================
+
+    getReadingLogs: builder.query({
+      query: () => "/reading-logs",
+      providesTags: ["ReadingLogs"],
+    }),
+
+    upsertReadingLog: builder.mutation({
+      query: ({ bookId, ...data }) => ({
+        url: `/reading-log/${bookId}`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: ["ReadingLogs"],
+    }),
+
+    // ========================
+    // 📝 LOG ENTRIES
+    // ========================
+
+    getLogEntries: builder.query({
+      query: (logId) => `/reading-log/${logId}/entries`,
+      providesTags: (result, error, logId) => [
+        { type: "LogEntries", id: logId },
+      ],
+    }),
+
+    addLogEntry: builder.mutation({
+      query: ({ logId, ...data }) => ({
+        url: `/reading-log/${logId}/entries`,
+        method: "POST",
+        body: data,
+      }),
+      invalidatesTags: (result, error, { logId }) => [
+        { type: "LogEntries", id: logId },
+      ],
     }),
   }),
 });
 
 export const {
-  useRegisterMutation,
-  useLoginMutation,
-  useGetRandomUsersQuery,
-  useGetUserQuery,
-  useUpdateUserMutation,
-  useFollowMutation,
-  useUnfollowMutation,
+  useGetProfileQuery,
   useGetFollowersQuery,
   useGetFollowingQuery,
-  useGetAllUsersQuery,
-  useDeleteUserMutation,
+
+  useUpdateProfileMutation,
+
+  useFollowUserMutation,
+  useUnfollowUserMutation,
+
+  useGetReadingLogsQuery,
+  useUpsertReadingLogMutation,
+
+  useGetLogEntriesQuery,
+  useAddLogEntryMutation,
 } = userApi;

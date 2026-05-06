@@ -1,8 +1,10 @@
-import rootReducer from "./rootReducer";
 import { configureStore } from "@reduxjs/toolkit";
-import reduxThunk from "redux-thunk";
+import { authApi } from "./services/authApi";
 
-export const store = configureStore(
-  { reducer: rootReducer, middleware: [reduxThunk] },
-  { ...window.__PRELOADED_STATE__ }
-);
+export const store = configureStore({
+  reducer: {
+    [authApi.reducerPath]: authApi.reducer,
+  },
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware().concat(authApi.middleware),
+});

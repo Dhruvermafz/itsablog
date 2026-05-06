@@ -1,0 +1,90 @@
+@import url("https://fonts.googleapis.com/css2?family=Libre+Baskerville:wght@400;700&family=Source+Serif+4:wght@300;400;600&family=JetBrains+Mono:wght@400;500&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 🌤️ Light Mode - Paper Feel */
+    --background: 40 30% 96%;
+    --foreground: 25 15% 20%;
+
+    --card: 40 30% 98%;
+    --card-foreground: 25 15% 20%;
+
+    --primary: 20 40% 30%; /* ink brown */
+    --primary-foreground: 40 30% 96%;
+
+    --secondary: 40 20% 90%;
+    --secondary-foreground: 25 15% 25%;
+
+    --muted: 40 15% 92%;
+    --muted-foreground: 25 10% 45%;
+
+    --accent: 10 50% 40%; /* subtle red ink */
+    --accent-foreground: 40 30% 96%;
+
+    --destructive: 0 60% 40%;
+    --destructive-foreground: 40 30% 96%;
+
+    --border: 40 15% 85%;
+    --input: 40 15% 85%;
+    --ring: 20 40% 30%;
+
+    --radius: 0.6rem;
+  }
+
+  .dark {
+    /* 🌙 Dark Mode - Night Reading */
+    --background: 25 15% 10%;
+    --foreground: 40 20% 90%;
+
+    --card: 25 15% 12%;
+    --card-foreground: 40 20% 90%;
+
+    --primary: 40 30% 70%;
+    --primary-foreground: 25 15% 10%;
+
+    --secondary: 25 10% 20%;
+    --secondary-foreground: 40 20% 90%;
+
+    --muted: 25 10% 20%;
+    --muted-foreground: 40 10% 65%;
+
+    --accent: 15 60% 55%;
+    --accent-foreground: 25 15% 10%;
+
+    --destructive: 0 60% 50%;
+    --destructive-foreground: 40 20% 90%;
+
+    --border: 25 10% 20%;
+    --input: 25 10% 20%;
+    --ring: 40 30% 70%;
+  }
+
+  /* ✍️ Typography */
+  body {
+    font-family: "Source Serif 4", serif;
+    background: hsl(var(--background));
+    color: hsl(var(--foreground));
+    line-height: 1.7;
+    letter-spacing: 0.2px;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: "Libre Baskerville", serif;
+  }
+
+  p {
+    max-width: 65ch;
+  }
+
+  code,
+  pre {
+    font-family: "JetBrains Mono", monospace;
+  }
+}
