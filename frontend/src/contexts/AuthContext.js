@@ -5,7 +5,7 @@ import {
   useLoginMutation,
   useRegisterMutation,
   useGetMeQuery,
-} from "@/redux/services/authApi"; // adjust path
+} from "@/api/authApi"; // adjust path
 
 const AuthContext = createContext();
 
