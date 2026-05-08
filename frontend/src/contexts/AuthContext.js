@@ -1,88 +1,237 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+
 import {
-  useLoginMutation,
   useRegisterMutation,
+  useLoginMutation,
   useGetMeQuery,
-} from "@/api/authApi"; // adjust path
+} from "@/api/authApi";
 
-const AuthContext = createContext();
+// =========================
+// CONTEXT
+// =========================
 
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error("useAuth must be used within AuthProvider");
-  }
-  return context;
-};
+const AuthContext = createContext(null);
 
-export const AuthProvider = ({ children }) => {
+// =========================
+// PROVIDER
+// =========================
+
+export function AuthProvider({ children }) {
   const [user, setUser] = useState(null);
 
-  // RTK hooks
-  const [loginMutation] = useLoginMutation();
+  const [token, setToken] = useState(null);
+
+  const [loading, setLoading] = useState(true);
+
+  // =========================
+  // RTK QUERY MUTATIONS
+  // =========================
+
   const [registerMutation] = useRegisterMutation();
-  const { data, isLoading, refetch } = useGetMeQuery();
 
-  // Sync user from API
+  const [loginMutation] = useLoginMutation();
+
+  // =========================
+  // LOAD AUTH FROM STORAGE
+  // =========================
+
   useEffect(() => {
-    if (data) {
-      setUser(data);
-    }
-  }, [data]);
+    if (typeof window === "undefined") return;
 
-  // LOGIN
-  const login = async (email, password) => {
     try {
-      const res = await loginMutation({ email, password }).unwrap();
+      const storedToken = localStorage.getItem("token");
 
-      // optionally store token
-      if (res.token) {
-        localStorage.setItem("token", res.token);
+      const storedUser = localStorage.getItem("user");
+
+      if (storedToken) {
+        setToken(storedToken);
       }
 
-      await refetch(); // fetch /me
-      return { success: true };
-    } catch (err) {
-      return {
-        success: false,
-        error: err?.data?.message || "Login failed",
-      };
-    }
-  };
+      if (storedUser) {
+        setUser(JSON.parse(storedUser));
+      }
+    } catch (error) {
+      console.error("Failed to load auth data:", error);
 
+      localStorage.removeItem("token");
+
+      localStorage.removeItem("user");
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  // =========================
+  // GET CURRENT USER
+  // =========================
+
+  const {
+    data: me,
+    isLoading: meLoading,
+    isError,
+  } = useGetMeQuery(undefined, {
+    skip: !token,
+  });
+
+  // =========================
+  // SYNC USER
+  // =========================
+
+  useEffect(() => {
+    if (me?.data) {
+      setUser(me.data);
+
+      localStorage.setItem("user", JSON.stringify(me.data));
+    }
+
+    // Invalid token
+    if (isError) {
+      logout();
+    }
+  }, [me, isError]);
+
+  // =========================
   // REGISTER
-  const register = async (name, email, password) => {
+  // =========================
+
+  const register = async (username, email, password) => {
     try {
-      await registerMutation({ name, email, password }).unwrap();
-      return await login(email, password); // auto login
+      const response = await registerMutation({
+        username,
+        email,
+        password,
+      }).unwrap();
+
+      console.log("REGISTER RESPONSE:", response);
+
+      const userData = response?.user;
+
+      const authToken = response?.token;
+
+      if (!userData || !authToken) {
+        throw new Error("Invalid server response");
+      }
+
+      // Save auth
+      localStorage.setItem("token", authToken);
+
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Update state
+      setToken(authToken);
+
+      setUser(userData);
+
+      return {
+        success: true,
+      };
     } catch (err) {
+      console.error(err);
+
       return {
         success: false,
-        error: err?.data?.message || "Register failed",
+        error: err?.data?.message || err?.message || "Registration failed",
       };
     }
   };
 
-  // LOGOUT
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem("token");
+  // =========================
+  // LOGIN
+  // =========================
+
+  const login = async (email, password) => {
+    try {
+      const response = await loginMutation({
+        email,
+        password,
+      }).unwrap();
+
+      console.log("LOGIN RESPONSE:", response);
+
+      const userData = response?.user;
+
+      const authToken = response?.token;
+
+      if (!userData || !authToken) {
+        throw new Error("Invalid server response");
+      }
+
+      // Save auth
+      localStorage.setItem("token", authToken);
+
+      localStorage.setItem("user", JSON.stringify(userData));
+
+      // Update state
+      setToken(authToken);
+
+      setUser(userData);
+
+      return {
+        success: true,
+      };
+    } catch (err) {
+      console.error(err);
+
+      return {
+        success: false,
+        error: err?.data?.message || err?.message || "Login failed",
+      };
+    }
   };
 
-  return (
-    <AuthContext.Provider
-      value={{
-        user,
-        loading: isLoading,
-        login,
-        register,
-        logout,
-        refetchUser: refetch,
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
-};
+  // =========================
+  // LOGOUT
+  // =========================
+
+  const logout = () => {
+    localStorage.removeItem("token");
+
+    localStorage.removeItem("user");
+
+    setUser(null);
+
+    setToken(null);
+  };
+
+  // =========================
+  // CONTEXT VALUE
+  // =========================
+
+  const value = {
+    user,
+
+    token,
+
+    loading: loading || meLoading,
+
+    register,
+
+    login,
+
+    logout,
+
+    isAuthenticated: !!token,
+  };
+
+  // =========================
+  // PROVIDER
+  // =========================
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+}
+
+// =========================
+// HOOK
+// =========================
+
+export function useAuth() {
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used inside AuthProvider");
+  }
+
+  return context;
+}

@@ -2,11 +2,15 @@ import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
 export const authApi = createApi({
   reducerPath: "authApi",
+
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/auth", // change to your backend URL
-    credentials: "include", // if using cookies
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
+    baseUrl: "http://localhost:5000/api/auth",
+    credentials: "include",
+
+    prepareHeaders: (headers) => {
+      // Get token from localStorage
+      const token =
+        typeof window !== "undefined" ? localStorage.getItem("token") : null;
 
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
@@ -15,6 +19,7 @@ export const authApi = createApi({
       return headers;
     },
   }),
+
   endpoints: (builder) => ({
     // REGISTER
     register: builder.mutation({
@@ -34,7 +39,7 @@ export const authApi = createApi({
       }),
     }),
 
-    // GET CURRENT USER
+    // CURRENT USER
     getMe: builder.query({
       query: () => ({
         url: "/me",
@@ -44,5 +49,4 @@ export const authApi = createApi({
   }),
 });
 
-// Export hooks
 export const { useRegisterMutation, useLoginMutation, useGetMeQuery } = authApi;

@@ -2,119 +2,202 @@
 
 import React from "react";
 import Link from "next/link";
-import { ArrowRight, BookOpen, TrendingUp, Users } from "lucide-react";
+
+import {
+  ArrowRight,
+  BookOpen,
+  Feather,
+  Library,
+  Quote,
+  Sparkles,
+  Users,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { BookPoster } from "@/components/BookPoster";
 import { ReviewCard } from "@/components/ReviewCard";
+
 import { mockBooks, mockReviews } from "@/data/mockData";
 import { useAuth } from "@/contexts/AuthContext";
 
 export default function HomePage() {
   const { user } = useAuth();
+
   const trendingBooks = mockBooks.slice(0, 5);
   const recentReviews = mockReviews.slice(0, 3);
 
   return (
-    <div className="min-h-screen" data-testid="home-page">
-      {/* Hero Section */}
-      <section className="relative overflow-hidden bg-gradient-to-b from-indigo-50/50 to-transparent dark:from-slate-900/50 dark:to-transparent py-20 md:py-32">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="grid md:grid-cols-2 gap-12 items-center">
+    <div className="min-h-screen bg-background text-foreground overflow-hidden">
+      {/* HERO */}
+      <section className="relative border-b border-border">
+        {/* Background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,90,60,0.12),transparent_45%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,220,180,0.08),transparent_40%)]" />
+
+        <div className="container relative mx-auto px-4 md:px-8 lg:px-12 py-24 md:py-32">
+          <div className="grid lg:grid-cols-2 gap-16 items-center">
+            {/* Left */}
             <div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-serif tracking-tight mb-6">
-                A sanctuary for the{" "}
-                <span className="text-primary">written word</span>
+              <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card mb-6">
+                <Sparkles size={16} className="text-primary" />
+
+                <span className="text-sm text-muted-foreground">
+                  Built for readers, reviewers & collectors
+                </span>
+              </div>
+
+              <h1 className="font-serif text-5xl md:text-6xl lg:text-7xl leading-tight tracking-tight mb-8">
+                A home for people who{" "}
+                <span className="text-primary italic">live through books</span>
               </h1>
-              <p className="text-base md:text-lg leading-relaxed text-slate-600 dark:text-slate-300 mb-8 max-w-xl">
-                Discover, review, and share your love for books. Join a
-                community of passionate readers exploring everything from
-                literary classics to modern masterpieces.
+
+              <p className="text-lg md:text-xl text-muted-foreground leading-8 max-w-2xl mb-10">
+                Track your reads, write thoughtful reviews, discover hidden
+                literary gems, and build a reading life surrounded by people who
+                love stories as much as you do.
               </p>
-              <div className="flex gap-4">
-                <Button
-                  asChild
-                  size="lg"
-                  className="bg-primary hover:bg-primary/90 text-white"
-                  data-testid="get-started-button"
-                >
+
+              <div className="flex flex-wrap gap-4">
+                <Button asChild size="lg" className="h-12 px-8 text-base">
                   <Link href="/explore">
-                    Get Started
-                    <ArrowRight className="ml-2" size={20} />
+                    Explore Library
+                    <ArrowRight className="ml-2" size={18} />
                   </Link>
                 </Button>
+
                 {!user && (
                   <Button
                     asChild
                     variant="outline"
                     size="lg"
-                    data-testid="join-button"
+                    className="h-12 px-8 text-base"
                   >
-                    <Link href="/register">Join Now</Link>
+                    <Link href="/register">Join Community</Link>
                   </Button>
                 )}
               </div>
+
+              {/* Reading Stats */}
+              <div className="flex flex-wrap gap-8 mt-14">
+                <div>
+                  <p className="text-3xl font-serif font-bold">20K+</p>
+                  <p className="text-sm text-muted-foreground">Book Reviews</p>
+                </div>
+
+                <div>
+                  <p className="text-3xl font-serif font-bold">8K+</p>
+                  <p className="text-sm text-muted-foreground">
+                    Active Readers
+                  </p>
+                </div>
+
+                <div>
+                  <p className="text-3xl font-serif font-bold">1.5K+</p>
+                  <p className="text-sm text-muted-foreground">Curated Lists</p>
+                </div>
+              </div>
             </div>
-            <div className="hidden md:block">
-              <img
-                src="https://images.unsplash.com/photo-1767627616213-23c3f3c00520?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTY2NjZ8MHwxfHNlYXJjaHw0fHxjb3p5JTIwcmVhZGluZyUyMG5vb2slMjBsaWJyYXJ5fGVufDB8fHx8MTc3Mzc2MTc0Mnww&ixlib=rb-4.1.0&q=85"
-                alt="Cozy reading nook"
-                className="rounded-2xl shadow-2xl"
-              />
+
+            {/* Right */}
+            <div className="relative hidden lg:flex justify-center">
+              <div className="absolute inset-0 blur-3xl opacity-20 bg-primary rounded-full" />
+
+              <div className="relative grid grid-cols-2 gap-6 rotate-[-6deg]">
+                {trendingBooks.slice(0, 4).map((book) => (
+                  <div
+                    key={book.id}
+                    className="transition-transform hover:scale-105 hover:-translate-y-2 duration-300"
+                  >
+                    <BookPoster book={book} />
+                  </div>
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features */}
-      <section className="py-16 bg-slate-50 dark:bg-slate-900/50">
+      {/* FEATURES */}
+      <section className="py-24">
         <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="grid md:grid-cols-3 gap-8">
-            <div className="text-center p-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-                <BookOpen size={32} />
-              </div>
-              <h3 className="font-serif text-2xl mb-3">Discover</h3>
-              <p className="text-slate-600 dark:text-slate-300">
-                Explore new releases, timeless classics, and hidden gems across
-                all genres
-              </p>
-            </div>
-            <div className="text-center p-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-                <TrendingUp size={32} />
-              </div>
-              <h3 className="font-serif text-2xl mb-3">Review</h3>
-              <p className="text-slate-600 dark:text-slate-300">
-                Share your thoughts and read reviews from fellow book lovers
-              </p>
-            </div>
-            <div className="text-center p-6">
-              <div className="inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-primary mb-4">
-                <Users size={32} />
-              </div>
-              <h3 className="font-serif text-2xl mb-3">Connect</h3>
-              <p className="text-slate-600 dark:text-slate-300">
-                Build your reading lists and connect with a community of readers
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
+          <div className="text-center mb-16">
+            <p className="uppercase tracking-[0.2em] text-sm text-primary mb-3">
+              WHY READERS LOVE ITSABLOG
+            </p>
 
-      {/* Trending Books */}
-      <section className="py-16">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl md:text-4xl font-serif tracking-tight">
-              Trending Now
+            <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
+              More than a book platform
             </h2>
-            <Button asChild variant="ghost" data-testid="view-all-books">
+          </div>
+
+          <div className="grid md:grid-cols-3 gap-8">
+            {/* Card */}
+            <div className="rounded-3xl border border-border bg-card p-8 shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6">
+                <Library size={28} />
+              </div>
+
+              <h3 className="text-2xl font-serif mb-4">Curated Discovery</h3>
+
+              <p className="text-muted-foreground leading-7">
+                Find books through thoughtful recommendations, niche lists, and
+                reviews from real readers instead of algorithms.
+              </p>
+            </div>
+
+            {/* Card */}
+            <div className="rounded-3xl border border-border bg-card p-8 shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6">
+                <Feather size={28} />
+              </div>
+
+              <h3 className="text-2xl font-serif mb-4">Meaningful Reviews</h3>
+
+              <p className="text-muted-foreground leading-7">
+                Write deep reflections, annotate memorable quotes, and create a
+                personal archive of your reading journey.
+              </p>
+            </div>
+
+            {/* Card */}
+            <div className="rounded-3xl border border-border bg-card p-8 shadow-sm hover:shadow-xl transition-all duration-300">
+              <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center text-primary mb-6">
+                <Users size={28} />
+              </div>
+
+              <h3 className="text-2xl font-serif mb-4">Reader Community</h3>
+
+              <p className="text-muted-foreground leading-7">
+                Connect with passionate readers, join clubs, exchange thoughts,
+                and build your literary circle.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* TRENDING */}
+      <section className="py-24 border-y border-border bg-card/30">
+        <div className="container mx-auto px-4 md:px-8 lg:px-12">
+          <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-12">
+            <div>
+              <p className="uppercase tracking-[0.2em] text-sm text-primary mb-3">
+                TRENDING SHELF
+              </p>
+
+              <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
+                Books readers can’t stop talking about
+              </h2>
+            </div>
+
+            <Button asChild variant="ghost">
               <Link href="/explore">
-                View All <ArrowRight className="ml-2" size={18} />
+                Browse Library
+                <ArrowRight className="ml-2" size={18} />
               </Link>
             </Button>
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
             {trendingBooks.map((book) => (
               <BookPoster key={book.id} book={book} />
             ))}
@@ -122,15 +205,23 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* Recent Reviews */}
-      <section className="py-16 bg-slate-50 dark:bg-slate-900/50">
+      {/* REVIEWS */}
+      <section className="py-24">
         <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="flex items-center justify-between mb-8">
-            <h2 className="text-3xl md:text-4xl font-serif tracking-tight">
-              Recent Reviews
+          <div className="text-center mb-16">
+            <div className="inline-flex items-center gap-2 text-primary mb-4">
+              <Quote size={18} />
+              <span className="uppercase tracking-[0.2em] text-sm">
+                READER VOICES
+              </span>
+            </div>
+
+            <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
+              Recent reflections & reviews
             </h2>
           </div>
-          <div className="max-w-3xl mx-auto space-y-8">
+
+          <div className="max-w-4xl mx-auto space-y-10">
             {recentReviews.map((review) => (
               <ReviewCard key={review.id} review={review} />
             ))}
@@ -140,22 +231,31 @@ export default function HomePage() {
 
       {/* CTA */}
       {!user && (
-        <section className="py-20 bg-gradient-to-br from-indigo-500 to-purple-600 text-white">
-          <div className="container mx-auto px-4 md:px-8 lg:px-12 text-center">
-            <h2 className="text-3xl md:text-4xl font-serif mb-4">
-              Ready to start your reading journey?
-            </h2>
-            <p className="text-lg mb-8 opacity-90 max-w-2xl mx-auto">
-              Join thousands of book lovers discovering their next favorite read
-            </p>
-            <Button
-              asChild
-              size="lg"
-              variant="secondary"
-              data-testid="cta-join-button"
-            >
-              <Link href="/register">Join ITSABLOG Today</Link>
-            </Button>
+        <section className="py-28">
+          <div className="container mx-auto px-4 md:px-8 lg:px-12">
+            <div className="relative overflow-hidden rounded-[2.5rem] border border-border bg-card px-8 py-20 md:px-16 text-center">
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,90,60,0.12),transparent_50%)]" />
+
+              <div className="relative max-w-3xl mx-auto">
+                <BookOpen size={42} className="mx-auto text-primary mb-6" />
+
+                <h2 className="text-4xl md:text-5xl font-serif tracking-tight mb-6">
+                  Your next favorite book is waiting
+                </h2>
+
+                <p className="text-lg text-muted-foreground leading-8 mb-10">
+                  Create shelves, track your reading habits, share reviews, and
+                  become part of a growing literary community.
+                </p>
+
+                <Button asChild size="lg" className="h-12 px-10 text-base">
+                  <Link href="/register">
+                    Join ITSABLOG
+                    <ArrowRight className="ml-2" size={18} />
+                  </Link>
+                </Button>
+              </div>
+            </div>
           </div>
         </section>
       )}

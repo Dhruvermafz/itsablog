@@ -1,6 +1,7 @@
 import express from "express";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
+import cors from "cors";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
@@ -9,11 +10,20 @@ import bookRoutes from "./modules/books/book.routes.js";
 import clubRoutes from "./modules/clubs/club.routes.js";
 import listRoutes from "./modules/lists/list.routes.js";
 import authorRoutes from "./modules/authors/author.routes.js";
+
 dotenv.config();
 
 const app = express();
 
 // Middleware
+app.use(
+  cors({
+    origin: "http://localhost:3000",
+    credentials: true,
+  }),
+);
+
+app.use(express.json());
 app.use(express.json());
 
 // Routes
@@ -23,6 +33,7 @@ app.use("/api/books", bookRoutes);
 app.use("/api/clubs", clubRoutes);
 app.use("/api/lists", listRoutes);
 app.use("/api/authors", authorRoutes);
+
 // Health check
 app.get("/", (req, res) => {
   res.send("API is running 🚀");
