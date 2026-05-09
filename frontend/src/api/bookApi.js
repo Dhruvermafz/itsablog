@@ -1,16 +1,15 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
+import { API_URL } from "@/lib/config";
 
 export const bookApi = createApi({
   reducerPath: "bookApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/books", // adjust
+    baseUrl: `${API_URL}/books`,
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth?.token;
-
       if (token) {
         headers.set("authorization", `Bearer ${token}`);
       }
-
       return headers;
     },
   }),
@@ -21,7 +20,15 @@ export const bookApi = createApi({
     // ========================
 
     getBooks: builder.query({
-      query: () => "/",
+      query: ({ page = 1, limit = 20, search = "", genres = [] } = {}) => ({
+        url: "/",
+        params: {
+          page,
+          limit,
+          search: search.trim() || undefined,
+          genres: genres.length > 0 ? genres.join(",") : undefined,
+        },
+      }),
       providesTags: ["Books"],
     }),
 

@@ -2,12 +2,19 @@ import React from "react";
 import Link from "next/link";
 
 export const BookPoster = ({ book, className = "" }) => {
+  // Support both old mock data and new API structure
+  const authorName =
+    typeof book.author === "string"
+      ? book.author
+      : book.author?.name || "Unknown Author";
+
+  const bookId = book._id || book.id;
+
   return (
     <Link
-      href={`/book/${book.id}`}
+      href={`/book/${bookId}`}
       className={`group block relative overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-800 transition-all duration-300 hover:shadow-2xl hover:scale-105 ${className}`}
       style={{ aspectRatio: "2/3" }}
-      data-testid={`book-poster-${book.id}`}
     >
       <img
         src={book.coverUrl}
@@ -20,7 +27,7 @@ export const BookPoster = ({ book, className = "" }) => {
           <h3 className="font-serif font-semibold text-sm mb-1 line-clamp-2">
             {book.title}
           </h3>
-          <p className="text-xs opacity-90">{book.author}</p>
+          <p className="text-xs opacity-90">{authorName}</p>
         </div>
       </div>
     </Link>

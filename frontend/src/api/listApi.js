@@ -1,9 +1,9 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-
+import { API_URL } from "@/lib/config";
 export const listApi = createApi({
   reducerPath: "listApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: "http://localhost:5000/api/lists", // adjust
+    baseUrl: `${API_URL}/lists`, // adjust
     prepareHeaders: (headers, { getState }) => {
       const token = getState().auth?.token;
 
