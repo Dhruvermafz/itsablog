@@ -59,50 +59,6 @@ export default function ListsPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* HERO */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,90,60,0.12),transparent_45%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,220,180,0.08),transparent_40%)]" />
-
-        <div className="container relative mx-auto px-4 md:px-8 lg:px-12 py-20 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card mb-6">
-              <Sparkles size={16} className="text-primary" />
-
-              <span className="text-sm text-muted-foreground">
-                Curated reading journeys from passionate readers
-              </span>
-            </div>
-
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif tracking-tight leading-tight mb-6">
-              Discover beautiful{" "}
-              <span className="text-primary italic">book collections</span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-muted-foreground leading-8 max-w-3xl mx-auto mb-10">
-              Explore thematic reading lists, literary rabbit holes, genre
-              essentials, and carefully curated shelves created by the ITSABLOG
-              community.
-            </p>
-
-            {/* Search */}
-            <div className="relative max-w-3xl mx-auto">
-              <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={22}
-              />
-
-              <Input
-                type="text"
-                placeholder="Search lists, creators, or themes..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-16 pl-14 rounded-2xl border-border bg-card text-base shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* SORT BAR */}
       <section className="sticky top-16 z-20 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 md:px-8 lg:px-12 py-5">
@@ -144,66 +100,6 @@ export default function ListsPage() {
             {/* Count */}
             <div className="text-sm text-muted-foreground">
               {sortedLists.length} collections found
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURED STATS */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Card */}
-            <div className="rounded-[2rem] border border-border bg-card p-8">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <Library size={28} />
-              </div>
-
-              <div className="text-5xl font-serif font-bold mb-2">
-                {publicLists.length}
-              </div>
-
-              <p className="text-lg font-medium mb-2">Public Collections</p>
-
-              <p className="text-muted-foreground leading-7">
-                Curated reading lists crafted by readers across every genre and
-                mood.
-              </p>
-            </div>
-
-            {/* Card */}
-            <div className="rounded-[2rem] border border-border bg-card p-8">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <Heart size={28} />
-              </div>
-
-              <div className="text-5xl font-serif font-bold mb-2">
-                {publicLists.reduce((acc, list) => acc + list.likes, 0)}
-              </div>
-
-              <p className="text-lg font-medium mb-2">Community Likes</p>
-
-              <p className="text-muted-foreground leading-7">
-                Thousands of readers supporting and sharing incredible literary
-                collections.
-              </p>
-            </div>
-
-            {/* Card */}
-            <div className="rounded-[2rem] border border-border bg-card p-8">
-              <div className="w-14 h-14 rounded-2xl bg-primary/10 text-primary flex items-center justify-center mb-6">
-                <Users size={28} />
-              </div>
-
-              <div className="text-5xl font-serif font-bold mb-2">
-                {publicLists.reduce((acc, list) => acc + list.followers, 0)}
-              </div>
-
-              <p className="text-lg font-medium mb-2">Followers</p>
-
-              <p className="text-muted-foreground leading-7">
-                Readers building communities around meaningful reading journeys.
-              </p>
             </div>
           </div>
         </div>

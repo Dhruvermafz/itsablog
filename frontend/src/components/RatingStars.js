@@ -1,8 +1,16 @@
-import React from 'react';
-import { Star } from 'lucide-react';
+import React from "react";
+import { Star } from "lucide-react";
 
-export const RatingStars = ({ rating, maxRating = 5, size = 16, interactive = false, onRate }) => {
+export const RatingStars = ({
+  rating,
+  maxRating = 5,
+  size = 18,
+  interactive = false,
+  onRate,
+}) => {
   const [hoverRating, setHoverRating] = React.useState(0);
+
+  const currentRating = interactive ? hoverRating || rating : rating;
 
   const handleClick = (value) => {
     if (interactive && onRate) {
@@ -11,11 +19,12 @@ export const RatingStars = ({ rating, maxRating = 5, size = 16, interactive = fa
   };
 
   return (
-    <div className="flex items-center gap-1">
+    <div className="flex items-center gap-1.5">
       {[...Array(maxRating)].map((_, index) => {
         const starValue = index + 1;
-        const isFilled = (interactive ? (hoverRating || rating) : rating) >= starValue;
-        const isHalf = !isFilled && (interactive ? (hoverRating || rating) : rating) >= starValue - 0.5;
+
+        const isFilled = currentRating >= starValue;
+        const isHalf = !isFilled && currentRating >= starValue - 0.5;
 
         return (
           <button
@@ -25,22 +34,66 @@ export const RatingStars = ({ rating, maxRating = 5, size = 16, interactive = fa
             onClick={() => handleClick(starValue)}
             onMouseEnter={() => interactive && setHoverRating(starValue)}
             onMouseLeave={() => interactive && setHoverRating(0)}
-            className={`${interactive ? 'cursor-pointer hover:scale-110' : 'cursor-default'} transition-transform`}
+            className={`
+              relative rounded-sm
+              transition-all duration-200
+              ${
+                interactive
+                  ? "cursor-pointer hover:scale-110 active:scale-95"
+                  : "cursor-default"
+              }
+            `}
             data-testid={`star-${starValue}`}
           >
             <Star
               size={size}
-              className={`${
-                isFilled
-                  ? 'fill-yellow-400 text-yellow-400'
-                  : isHalf
-                  ? 'fill-yellow-200 text-yellow-400'
-                  : 'fill-none text-slate-300 dark:text-slate-600'
-              } transition-colors`}
+              strokeWidth={1.7}
+              className={`
+                transition-all duration-300
+                ${
+                  isFilled
+                    ? `
+                      fill-accent
+                      text-accent
+                      drop-shadow-[0_1px_2px_rgba(0,0,0,0.08)]
+                    `
+                    : isHalf
+                      ? `
+                      fill-accent/40
+                      text-accent
+                    `
+                      : `
+                      fill-transparent
+                      text-muted-foreground/40
+                    `
+                }
+              `}
             />
+
+            {/* subtle ink glow */}
+            {isFilled && (
+              <span
+                className="
+                  absolute inset-0 rounded-full
+                  bg-accent/10 blur-md
+                  -z-10
+                "
+              />
+            )}
           </button>
         );
       })}
+
+      {/* Optional rating text */}
+      <span
+        className="
+          ml-2 text-sm
+          text-muted-foreground
+          font-serif tracking-wide
+        "
+      >
+        {rating.toFixed(1)}
+      </span>
     </div>
   );
 };

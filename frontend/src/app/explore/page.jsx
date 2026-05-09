@@ -56,49 +56,6 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* HERO */}
-      <section className="relative overflow-hidden border-b border-border">
-        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(120,90,60,0.12),transparent_45%)] dark:bg-[radial-gradient(circle_at_top,rgba(255,220,180,0.08),transparent_40%)]" />
-
-        <div className="container relative mx-auto px-4 md:px-8 lg:px-12 py-20 md:py-24">
-          <div className="max-w-4xl mx-auto text-center">
-            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-4 py-2 mb-6">
-              <Sparkles size={16} className="text-primary" />
-
-              <span className="text-sm text-muted-foreground">
-                Discover books that stay with you forever
-              </span>
-            </div>
-
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-serif tracking-tight leading-tight mb-6">
-              Explore the world of{" "}
-              <span className="text-primary italic">literature</span>
-            </h1>
-
-            <p className="text-lg md:text-xl text-muted-foreground leading-8 max-w-3xl mx-auto mb-10">
-              Browse timeless classics, modern masterpieces, hidden gems, and
-              reader favorites curated for passionate book lovers.
-            </p>
-
-            {/* Search */}
-            <div className="relative max-w-3xl mx-auto">
-              <Search
-                className="absolute left-5 top-1/2 -translate-y-1/2 text-muted-foreground"
-                size={22}
-              />
-
-              <Input
-                type="text"
-                placeholder="Search books, authors, genres..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-16 pl-14 rounded-2xl border-border bg-card text-base shadow-lg"
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
       {/* GENRES */}
       <section className="py-8 border-b border-border bg-card/30 sticky top-16 z-20 backdrop-blur-xl">
         <div className="container mx-auto px-4 md:px-8 lg:px-12">

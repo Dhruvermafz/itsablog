@@ -15,6 +15,10 @@ import {
   BookOpen,
   Search,
   Settings,
+  MoreHorizontal,
+  Compass,
+  List,
+  Users,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -211,7 +215,7 @@ export const Navbar = () => {
               )}
             </div>
 
-            {/* Mobile */}
+            {/* Mobile Top Navbar */}
             <div className="flex md:hidden items-center gap-2">
               <Button
                 variant="ghost"
@@ -228,34 +232,19 @@ export const Navbar = () => {
               {!loading && isAuthenticated ? (
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <button>
-                      <Avatar className="h-9 w-9">
-                        <AvatarImage src={user?.avatar} alt={user?.username} />
-
-                        <AvatarFallback className="bg-primary text-primary-foreground text-sm">
-                          {initials}
-                        </AvatarFallback>
-                      </Avatar>
+                    <button className="flex items-center justify-center h-9 w-9 rounded-full hover:bg-muted transition-colors">
+                      <MoreHorizontal size={22} />
                     </button>
                   </DropdownMenuTrigger>
 
-                  <DropdownMenuContent align="end" className="w-52">
-                    <DropdownMenuItem onClick={() => router.push(profileUrl)}>
-                      <User className="mr-2 h-4 w-4" />
-                      My Profile
-                    </DropdownMenuItem>
+                  <DropdownMenuContent align="end" className="w-56 rounded-2xl">
+                    <div className="px-3 py-2">
+                      <p className="font-semibold">{user?.username}</p>
 
-                    <DropdownMenuItem onClick={() => router.push("/explore")}>
-                      Explore
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => router.push("/lists")}>
-                      Lists
-                    </DropdownMenuItem>
-
-                    <DropdownMenuItem onClick={() => router.push("/clubs")}>
-                      Clubs
-                    </DropdownMenuItem>
+                      <p className="text-xs text-muted-foreground truncate">
+                        {user?.email}
+                      </p>
+                    </div>
 
                     <DropdownMenuSeparator />
 
@@ -268,7 +257,7 @@ export const Navbar = () => {
 
                     <DropdownMenuItem
                       onClick={handleLogout}
-                      className="text-red-500"
+                      className="text-red-500 focus:text-red-500"
                     >
                       <LogOut className="mr-2 h-4 w-4" />
                       Logout
@@ -290,6 +279,73 @@ export const Navbar = () => {
           </div>
         </div>
       </nav>
+
+      {/* Mobile Bottom Navbar */}
+      <div className="md:hidden fixed bottom-4 left-1/2 -translate-x-1/2 z-50">
+        <div className="flex items-center gap-1 px-3 py-2 rounded-2xl border border-border/50 bg-background/80 backdrop-blur-xl shadow-xl">
+          <button
+            onClick={() => router.push("/explore")}
+            className={`flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all ${
+              pathname === "/explore"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Compass size={18} />
+
+            <span className="text-[10px] mt-1">Explore</span>
+          </button>
+
+          <button
+            onClick={() => router.push("/lists")}
+            className={`flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all ${
+              pathname === "/lists"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <List size={18} />
+
+            <span className="text-[10px] mt-1">Lists</span>
+          </button>
+
+          <button
+            onClick={() => router.push("/clubs")}
+            className={`flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all ${
+              pathname === "/clubs"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Users size={18} />
+
+            <span className="text-[10px] mt-1">Clubs</span>
+          </button>
+
+          <button
+            onClick={() => router.push(profileUrl)}
+            className={`flex flex-col items-center justify-center px-4 py-2 rounded-xl transition-all ${
+              pathname === profileUrl
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {isAuthenticated ? (
+              <Avatar className="h-5 w-5">
+                <AvatarImage src={user?.avatar} alt={user?.username} />
+
+                <AvatarFallback className="text-[10px] bg-primary text-primary-foreground">
+                  {initials}
+                </AvatarFallback>
+              </Avatar>
+            ) : (
+              <User size={18} />
+            )}
+
+            <span className="text-[10px] mt-1">Profile</span>
+          </button>
+        </div>
+      </div>
 
       <GlobalSearch open={searchOpen} onOpenChange={setSearchOpen} />
     </>

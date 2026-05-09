@@ -208,18 +208,6 @@ export default function SettingsPage() {
           </Link>
         </Button>
 
-        {/* Header */}
-        <div className="mb-10">
-          <h1 className="text-4xl md:text-5xl font-serif tracking-tight mb-3">
-            Account Settings
-          </h1>
-
-          <p className="text-muted-foreground max-w-2xl">
-            Customize your reading identity, update your account, and manage
-            your ITSABLOG experience.
-          </p>
-        </div>
-
         <Tabs
           defaultValue="profile"
           className="grid lg:grid-cols-[260px_1fr] gap-8"

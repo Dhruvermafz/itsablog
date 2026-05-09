@@ -8,52 +8,27 @@ export const Footer = () => {
       className="mt-24 border-t border-border bg-card/60 backdrop-blur-sm"
       data-testid="footer"
     >
-      <div className="container mx-auto px-4 md:px-8 lg:px-12 py-12">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {/* Brand */}
-          <div className="space-y-4">
+      <div className="container mx-auto px-4 md:px-8 lg:px-12 py-8">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+          {/* Logo + Description */}
+          <div className="flex flex-col md:flex-row items-center gap-4 text-center md:text-left">
             <Link href="/" className="flex items-center gap-3 group">
-              <BookOpen className="w-7 h-7 text-primary transition-transform group-hover:scale-110" />
+              <div className="p-2 rounded-xl bg-primary/10 border border-primary/20">
+                <BookOpen className="w-6 h-6 text-primary transition-transform duration-300 group-hover:scale-110" />
+              </div>
 
-              <span className="text-2xl font-bold tracking-tight font-serif">
+              <span className="text-2xl font-bold tracking-tight font-serif text-foreground">
                 ITSABLOG
               </span>
             </Link>
-
-            <p className="text-muted-foreground text-sm leading-7">
-              A modern reading and writing space crafted for book lovers,
-              thinkers, and storytellers.
-            </p>
           </div>
-        </div>
 
-        {/* Bottom Bar */}
-        <div className="mt-12 pt-6 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-sm text-muted-foreground font-mono">
-            © {new Date().getFullYear()} ITSABLOG. Built with passion for books.
-          </p>
-
+          {/* Links */}
           <div className="flex items-center gap-5 text-sm text-muted-foreground">
-            <Link
-              href="/privacy"
-              className="hover:text-primary transition-colors"
-            >
-              Privacy
-            </Link>
-
-            <Link
-              href="/terms"
-              className="hover:text-primary transition-colors"
-            >
-              Terms
-            </Link>
-
-            <Link
-              href="/contact"
-              className="hover:text-primary transition-colors"
-            >
-              Contact
-            </Link>
+            <p className="text-sm text-muted-foreground max-w-md">
+              © {new Date().getFullYear()} ITSABLOG — Built with passion for
+              books and storytelling.
+            </p>
           </div>
         </div>
       </div>
