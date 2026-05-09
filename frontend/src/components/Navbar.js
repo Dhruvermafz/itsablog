@@ -64,14 +64,17 @@ export const Navbar = () => {
     {
       href: "/explore",
       label: "Explore",
+      icon: Compass,
     },
     {
       href: "/lists",
       label: "Lists",
+      icon: List,
     },
     {
       href: "/clubs",
       label: "Clubs",
+      icon: Users,
     },
   ];
 
@@ -116,22 +119,26 @@ export const Navbar = () => {
                 </kbd>
               </Button>
 
-              {/* Nav Links */}
-              <div className="flex items-center gap-1">
+              {/* Desktop Nav Links */}
+              <div className="flex items-center gap-2">
                 {navLinks.map((link) => {
                   const active = pathname === link.href;
+
+                  const Icon = link.icon;
 
                   return (
                     <Link
                       key={link.href}
                       href={link.href}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
+                      className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-200 ${
                         active
-                          ? "bg-primary text-primary-foreground"
+                          ? "bg-primary text-primary-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
                       }`}
                     >
-                      {link.label}
+                      <Icon size={16} />
+
+                      <span>{link.label}</span>
                     </Link>
                   );
                 })}
@@ -247,6 +254,11 @@ export const Navbar = () => {
                     </div>
 
                     <DropdownMenuSeparator />
+
+                    <DropdownMenuItem onClick={() => router.push(profileUrl)}>
+                      <User className="mr-2 h-4 w-4" />
+                      My Profile
+                    </DropdownMenuItem>
 
                     <DropdownMenuItem onClick={() => router.push("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
