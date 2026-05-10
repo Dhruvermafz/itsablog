@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/pagination";
 
 import { useGetBooksQuery } from "@/api/bookApi";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 
 // Debounce hook
 const useDebounce = (value, delay) => {
@@ -35,13 +36,37 @@ const useDebounce = (value, delay) => {
 };
 
 export default function BooksPage() {
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenres, setSelectedGenres] = useState([]);
-  const [showFilters, setShowFilters] = useState(false);
-  const [currentPage, setCurrentPage] = useState(1);
-  const itemsPerPage = 20;
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
+  // Read from URL
+  const urlPage = parseInt(searchParams.get("page") || "1");
+  const urlSearch = searchParams.get("search") || "";
+  const urlGenres = searchParams.getAll("genre");
+
+  const [searchQuery, setSearchQuery] = useState(urlSearch);
+  const [selectedGenres, setSelectedGenres] = useState(urlGenres);
+  const [showFilters, setShowFilters] = useState(false);
+
+  const itemsPerPage = 20;
   const debouncedSearch = useDebounce(searchQuery, 500);
+
+  // Sync URL when local search changes (debounced)
+  useEffect(() => {
+    if (debouncedSearch !== urlSearch) {
+      updateUrl({ search: debouncedSearch, page: 1 });
+    }
+  }, [debouncedSearch]);
+
+  // Sync genres
+  useEffect(() => {
+    if (
+      JSON.stringify(selectedGenres.sort()) !== JSON.stringify(urlGenres.sort())
+    ) {
+      updateUrl({ genres: selectedGenres, page: 1 });
+    }
+  }, [selectedGenres]);
 
   // Server-side query
   const {
@@ -49,7 +74,7 @@ export default function BooksPage() {
     isLoading,
     error,
   } = useGetBooksQuery({
-    page: currentPage,
+    page: urlPage,
     limit: itemsPerPage,
     search: debouncedSearch,
     genres: selectedGenres,
@@ -61,7 +86,6 @@ export default function BooksPage() {
   const totalBooks = paginationInfo?.total || 0;
   const totalPages = paginationInfo?.pages || 1;
 
-  // Extract unique genres from current results (limitation of server-side)
   const allGenres = useMemo(() => {
     const genresSet = new Set();
     allBooks.forEach((book) => {
@@ -72,25 +96,42 @@ export default function BooksPage() {
     return Array.from(genresSet).sort();
   }, [allBooks]);
 
-  const toggleGenre = (genre) => {
-    if (selectedGenres.includes(genre)) {
-      setSelectedGenres(selectedGenres.filter((g) => g !== genre));
-    } else {
-      setSelectedGenres([...selectedGenres, genre]);
+  const updateUrl = ({ page, search, genres }) => {
+    const params = new URLSearchParams(searchParams.toString());
+
+    if (page !== undefined) params.set("page", page.toString());
+    if (search !== undefined) {
+      if (search) params.set("search", search);
+      else params.delete("search");
     }
-    setCurrentPage(1); // Reset to first page
+    if (genres !== undefined) {
+      params.delete("genre");
+      genres.forEach((g) => params.append("genre", g));
+    }
+
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  const toggleGenre = (genre) => {
+    const newGenres = selectedGenres.includes(genre)
+      ? selectedGenres.filter((g) => g !== genre)
+      : [...selectedGenres, genre];
+
+    setSelectedGenres(newGenres);
   };
 
   const clearFilters = () => {
     setSearchQuery("");
     setSelectedGenres([]);
-    setCurrentPage(1);
+    router.push(pathname, { scroll: false });
   };
 
   const goToPage = (page) => {
-    setCurrentPage(Math.max(1, Math.min(page, totalPages)));
+    const newPage = Math.max(1, Math.min(page, totalPages));
+    updateUrl({ page: newPage });
   };
 
+  // Loading & Error states
   if (isLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -193,9 +234,9 @@ export default function BooksPage() {
             {allBooks.length > 0 ? (
               <>
                 <p className="text-muted-foreground mb-6">
-                  Showing {(currentPage - 1) * itemsPerPage + 1}–
-                  {Math.min(currentPage * itemsPerPage, totalBooks)} of{" "}
-                  {totalBooks} books
+                  Showing {(urlPage - 1) * itemsPerPage + 1}–
+                  {Math.min(urlPage * itemsPerPage, totalBooks)} of {totalBooks}{" "}
+                  books
                 </p>
 
                 <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
@@ -214,10 +255,10 @@ export default function BooksPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              goToPage(currentPage - 1);
+                              goToPage(urlPage - 1);
                             }}
                             className={
-                              currentPage === 1
+                              urlPage === 1
                                 ? "pointer-events-none opacity-50"
                                 : "cursor-pointer"
                             }
@@ -231,13 +272,13 @@ export default function BooksPage() {
                           if (
                             page === 1 ||
                             page === totalPages ||
-                            (page >= currentPage - 2 && page <= currentPage + 2)
+                            (page >= urlPage - 2 && page <= urlPage + 2)
                           ) {
                             return (
                               <PaginationItem key={page}>
                                 <PaginationLink
                                   href="#"
-                                  isActive={currentPage === page}
+                                  isActive={urlPage === page}
                                   onClick={(e) => {
                                     e.preventDefault();
                                     goToPage(page);
@@ -249,10 +290,7 @@ export default function BooksPage() {
                             );
                           }
 
-                          if (
-                            page === currentPage - 3 ||
-                            page === currentPage + 3
-                          ) {
+                          if (page === urlPage - 3 || page === urlPage + 3) {
                             return (
                               <PaginationItem key={page}>
                                 <PaginationEllipsis />
@@ -267,10 +305,10 @@ export default function BooksPage() {
                             href="#"
                             onClick={(e) => {
                               e.preventDefault();
-                              goToPage(currentPage + 1);
+                              goToPage(urlPage + 1);
                             }}
                             className={
-                              currentPage === totalPages
+                              urlPage === totalPages
                                 ? "pointer-events-none opacity-50"
                                 : "cursor-pointer"
                             }

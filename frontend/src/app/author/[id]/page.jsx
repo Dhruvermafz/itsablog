@@ -95,13 +95,14 @@ export default function AuthorPage() {
               {/* Avatar */}
               <div className="relative mx-auto max-w-[280px] lg:max-w-none">
                 <div className="absolute inset-0 bg-primary/10 blur-3xl rounded-[3rem] scale-95" />
-                <Avatar className="w-full aspect-square rounded-3xl border-4 border-background shadow-2xl">
+                <Avatar className="w-72 h-72 rounded-full border-4 border-background shadow-2xl overflow-hidden bg-muted mx-auto">
                   <AvatarImage
                     src={author.avatar}
                     alt={author.name}
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                   />
-                  <AvatarFallback className="text-6xl md:text-7xl font-serif bg-card">
+
+                  <AvatarFallback className="text-6xl font-serif bg-card">
                     {initials}
                   </AvatarFallback>
                 </Avatar>

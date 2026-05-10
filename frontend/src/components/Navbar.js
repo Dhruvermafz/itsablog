@@ -20,7 +20,7 @@ import {
   List,
   Users,
 } from "lucide-react";
-
+import { Book } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { GlobalSearch } from "@/components/GlobalSearch";
 
@@ -184,7 +184,14 @@ export const Navbar = () => {
                       <User className="mr-2 h-4 w-4" />
                       My Profile
                     </DropdownMenuItem>
-
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(`/u/${user.username}/reading-manager`)
+                      }
+                    >
+                      <Book className="mr-2 h-4 w-4" />
+                      My Reading Manager
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
                       Settings
@@ -259,7 +266,14 @@ export const Navbar = () => {
                       <User className="mr-2 h-4 w-4" />
                       My Profile
                     </DropdownMenuItem>
-
+                    <DropdownMenuItem
+                      onClick={() =>
+                        router.push(`/u/${user.username}/reading-manager`)
+                      }
+                    >
+                      <Book className="mr-2 h-4 w-4" />
+                      My Reading Manager
+                    </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => router.push("/settings")}>
                       <Settings className="mr-2 h-4 w-4" />
                       Settings

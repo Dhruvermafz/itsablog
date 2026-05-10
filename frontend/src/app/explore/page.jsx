@@ -3,18 +3,8 @@
 import React, { useMemo, useState } from "react";
 import Link from "next/link";
 
-import {
-  Search,
-  Flame,
-  Sparkles,
-  BookOpen,
-  Library,
-  Filter,
-  ArrowRight,
-  Quote,
-} from "lucide-react";
+import { Flame, Sparkles, BookOpen, ArrowRight, Quote } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -25,19 +15,6 @@ import { useGetAuthorsQuery } from "@/api/authorApi";
 
 export default function ExplorePage() {
   const [searchQuery, setSearchQuery] = useState("");
-  const [selectedGenre, setSelectedGenre] = useState("all");
-
-  const genres = [
-    "all",
-    "Fiction",
-    "Mystery",
-    "Romance",
-    "Science Fiction",
-    "Self-Help",
-    "Historical",
-    "Fantasy",
-    "History",
-  ];
 
   // ========================
   // API CALLS
@@ -48,15 +25,13 @@ export default function ExplorePage() {
     error: booksError,
   } = useGetBooksQuery();
 
-  const { data: authorsResponse } = useGetAuthorsQuery({
-    limit: 20,
-  });
+  const { data: authorsResponse } = useGetAuthorsQuery({ limit: 20 });
 
   const books = booksResponse?.books || [];
   const authors = authorsResponse?.authors || [];
 
   // ========================
-  // FILTER BOOKS
+  // FILTERED BOOKS (Search only)
   // ========================
   const filteredBooks = useMemo(() => {
     return books.filter((book) => {
@@ -64,25 +39,14 @@ export default function ExplorePage() {
         book.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         book.author?.name?.toLowerCase().includes(searchQuery.toLowerCase());
 
-      const matchesGenre =
-        selectedGenre === "all" ||
-        book.genres?.some(
-          (g) => g.toLowerCase() === selectedGenre.toLowerCase(),
-        );
-
-      return matchesSearch && matchesGenre;
+      return matchesSearch;
     });
-  }, [books, searchQuery, selectedGenre]);
+  }, [books, searchQuery]);
 
   const featuredBook = books[0];
-
   const trendingBooks = books.slice(0, 5);
-
   const newReleases = books.filter((b) => b.year && b.year >= 2020).slice(0, 4);
 
-  // ========================
-  // LOADING
-  // ========================
   if (booksLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -94,9 +58,6 @@ export default function ExplorePage() {
     );
   }
 
-  // ========================
-  // ERROR
-  // ========================
   if (booksError) {
     return (
       <div className="min-h-screen flex items-center justify-center text-red-500">
@@ -107,272 +68,230 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* SEARCH */}
-      <section className="border-b border-border bg-card/30">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12 py-8">
-          <div className="relative max-w-2xl mx-auto">
-            <Search
-              className="absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"
-              size={18}
-            />
-
-            <Input
-              placeholder="Search books, authors, genres..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-12 h-14 rounded-full text-lg"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* GENRES */}
-      <section className="py-8 border-b border-border bg-card/30 sticky top-16 z-20 backdrop-blur-xl">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="flex items-center gap-3 overflow-x-auto pb-2 scrollbar-none">
-            <div className="flex items-center gap-2 mr-2 text-muted-foreground flex-shrink-0">
-              <Filter size={18} />
-              <span className="text-sm uppercase tracking-wider">Genres</span>
-            </div>
-
-            {genres.map((genre) => (
-              <Badge
-                key={genre}
-                variant={selectedGenre === genre ? "default" : "outline"}
-                className="cursor-pointer px-5 py-2 rounded-full text-sm whitespace-nowrap transition-all hover:scale-105"
-                onClick={() => setSelectedGenre(genre)}
-              >
-                {genre}
-              </Badge>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* FEATURED SECTION */}
-      {featuredBook && (
-        <section className="py-20">
-          <div className="container mx-auto px-4 md:px-8 lg:px-12">
-            <div className="grid lg:grid-cols-[1.3fr_0.7fr] gap-8">
-              {/* FEATURED BOOK */}
-              <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card p-8 md:p-12">
-                <div className="absolute top-0 right-0 w-72 h-72 bg-primary/5 blur-3xl rounded-full" />
-
-                <div className="relative grid md:grid-cols-2 gap-10 items-center">
-                  <div className="flex justify-center">
-                    <img
-                      src={featuredBook.coverUrl}
-                      alt={featuredBook.title}
-                      className="w-64 rounded-2xl shadow-2xl rotate-[-4deg] hover:rotate-0 transition-transform duration-500"
-                    />
+      <div className="container mx-auto px-4 md:px-8 lg:px-12 py-10">
+        <div className="grid lg:grid-cols-12 gap-10">
+          {/* ==================== MAIN CONTENT (2/3) ==================== */}
+          <div className="lg:col-span-8 space-y-20">
+            {/* TRENDING */}
+            <section>
+              <div className="flex items-end justify-between mb-10">
+                <div>
+                  <div className="inline-flex items-center gap-2 text-primary mb-3">
+                    <BookOpen size={20} />
+                    <span className="uppercase tracking-[0.2em] text-sm">
+                      Trending Now
+                    </span>
                   </div>
+                  <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
+                    Books readers adore right now
+                  </h2>
+                </div>
 
+                <Button asChild variant="outline" className="rounded-full px-6">
+                  <Link href="/explore/books">
+                    View All <ArrowRight className="ml-2" size={16} />
+                  </Link>
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                {trendingBooks.map((book) => (
+                  <BookPoster key={book._id} book={book} />
+                ))}
+              </div>
+            </section>
+
+            {/* NEW RELEASES */}
+            {newReleases.length > 0 && (
+              <section>
+                <div className="flex items-end justify-between mb-10">
                   <div>
-                    <div className="inline-flex items-center gap-2 text-primary mb-4">
-                      <Flame size={18} />
+                    <div className="inline-flex items-center gap-2 text-primary mb-3">
+                      <Sparkles size={20} />
                       <span className="uppercase tracking-[0.2em] text-sm">
-                        Featured Read
+                        Fresh Arrivals
                       </span>
                     </div>
-
-                    <h2 className="text-4xl md:text-5xl font-serif tracking-tight mb-4">
-                      {featuredBook.title}
+                    <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
+                      Recently released stories
                     </h2>
+                  </div>
 
-                    <p className="text-lg text-muted-foreground mb-2">
+                  <Button
+                    asChild
+                    variant="outline"
+                    className="rounded-full px-6"
+                  >
+                    <Link href="/explore/books">
+                      View All <ArrowRight className="ml-2" size={16} />
+                    </Link>
+                  </Button>
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                  {newReleases.map((book) => (
+                    <BookPoster key={book._id} book={book} />
+                  ))}
+                </div>
+              </section>
+            )}
+
+            {/* ALL BOOKS */}
+            <section>
+              <div className="flex items-end justify-between mb-10">
+                <div>
+                  <div className="inline-flex items-center gap-2 text-primary mb-3">
+                    <Quote size={20} />
+                    <span className="uppercase tracking-[0.2em] text-sm">
+                      Complete Collection
+                    </span>
+                  </div>
+                  <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
+                    Browse all books
+                  </h2>
+                </div>
+
+                <Button asChild variant="outline" className="rounded-full px-6">
+                  <Link href="/explore/books">
+                    View All <ArrowRight className="ml-2" size={16} />
+                  </Link>
+                </Button>
+              </div>
+
+              {filteredBooks.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                  {filteredBooks.map((book) => (
+                    <BookPoster key={book._id} book={book} />
+                  ))}
+                </div>
+              ) : (
+                <div className="rounded-3xl border border-border bg-card p-16 text-center">
+                  <h3 className="text-3xl font-serif mb-4">No books found</h3>
+                  <p className="text-muted-foreground text-lg">
+                    Try adjusting your search terms.
+                  </p>
+                </div>
+              )}
+            </section>
+          </div>
+
+          {/* ==================== SIDEBAR (1/3) ==================== */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Compact Featured Read */}
+            {featuredBook && (
+              <div className="rounded-3xl border border-border bg-card p-6">
+                <div className="inline-flex items-center gap-2 text-primary mb-4">
+                  <Flame size={20} />
+                  <span className="uppercase tracking-[0.2em] text-sm font-medium">
+                    Featured Read
+                  </span>
+                </div>
+
+                <div className="flex gap-4">
+                  <img
+                    src={featuredBook.coverUrl}
+                    alt={featuredBook.title}
+                    className="w-24 h-36 object-cover rounded-2xl shadow-md flex-shrink-0"
+                  />
+
+                  <div className="flex-1 min-w-0">
+                    <h3 className="font-serif text-lg leading-tight line-clamp-2 mb-2">
+                      {featuredBook.title}
+                    </h3>
+
+                    <p className="text-sm text-muted-foreground mb-3">
                       by {featuredBook.author?.name || "Unknown"}
                     </p>
 
-                    <p className="text-muted-foreground leading-8 mb-8 line-clamp-4">
+                    <p className="text-xs text-muted-foreground line-clamp-3 mb-4">
                       {featuredBook.synopsis}
                     </p>
 
-                    <Button asChild size="lg">
+                    <Button asChild size="sm" className="w-full rounded-full">
                       <Link href={`/book/${featuredBook._id}`}>
-                        Read More
-                        <ArrowRight className="ml-2" size={18} />
+                        Read Now <ArrowRight className="ml-2" size={16} />
                       </Link>
                     </Button>
                   </div>
                 </div>
               </div>
+            )}
 
-              {/* SIDE PANEL */}
-              <div className="space-y-8">
-                {/* Stats */}
-                <div className="rounded-[2rem] border border-border bg-card p-8">
-                  <div className="flex items-center gap-3 mb-6">
-                    <Library className="text-primary" size={24} />
-                    <h3 className="text-2xl font-serif">Literary Archive</h3>
-                  </div>
+            {/* Trending Books in Sidebar */}
+            <div className="rounded-3xl border border-border bg-card p-6">
+              <h3 className="text-xl font-serif mb-5">Trending Books</h3>
 
-                  <div className="space-y-6">
-                    <div>
-                      <p className="text-4xl font-serif font-bold">
-                        {books.length}
+              <div className="space-y-4">
+                {trendingBooks.slice(0, 4).map((book) => (
+                  <Link
+                    key={book._id}
+                    href={`/book/${book._id}`}
+                    className="flex gap-3 group"
+                  >
+                    <img
+                      src={book.coverUrl}
+                      alt={book.title}
+                      className="w-12 h-16 object-cover rounded-lg flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0 pt-1">
+                      <p className="font-medium text-sm line-clamp-2 group-hover:text-primary transition-colors">
+                        {book.title}
                       </p>
-
-                      <p className="text-muted-foreground">Books Available</p>
-                    </div>
-
-                    <div>
-                      <p className="text-4xl font-serif font-bold">
-                        {authors.length}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {book.author?.name}
                       </p>
-
-                      <p className="text-muted-foreground">Featured Authors</p>
                     </div>
-                  </div>
-                </div>
-
-                {/* AUTHORS */}
-                <div className="rounded-[2rem] border border-border bg-card p-8">
-                  <h3 className="text-2xl font-serif mb-6">Reader Favorites</h3>
-
-                  <div className="space-y-5">
-                    {authors.slice(0, 4).map((author) => (
-                      <Link
-                        key={author._id}
-                        href={`/author/${author._id}`}
-                        className="flex items-center gap-4 hover:opacity-80 transition-opacity"
-                      >
-                        <img
-                          src={author.avatar || "/default-avatar.png"}
-                          alt={author.name}
-                          className="w-14 h-14 rounded-full object-cover border border-border"
-                        />
-
-                        <div>
-                          <p className="font-semibold">{author.name}</p>
-
-                          <p className="text-sm text-muted-foreground">
-                            {author.booksCount} books
-                          </p>
-                        </div>
-                      </Link>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* TRENDING */}
-      <section className="py-20 border-y border-border bg-card/30">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="flex items-end justify-between mb-10 gap-4 flex-wrap">
-            <div>
-              <div className="inline-flex items-center gap-2 text-primary mb-3">
-                <BookOpen size={18} />
-
-                <span className="uppercase tracking-[0.2em] text-sm">
-                  Trending Shelf
-                </span>
+                  </Link>
+                ))}
               </div>
 
-              <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
-                Books readers adore right now
-              </h2>
-            </div>
-
-            {/* FIND ALL */}
-            <Button asChild variant="outline" className="rounded-full px-6">
-              <Link href="/explore/books">
-                Find All
-                <ArrowRight className="ml-2" size={16} />
-              </Link>
-            </Button>
-          </div>
-
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-            {trendingBooks.map((book) => (
-              <BookPoster key={book._id} book={book} />
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* NEW RELEASES */}
-      {newReleases.length > 0 && (
-        <section className="py-20">
-          <div className="container mx-auto px-4 md:px-8 lg:px-12">
-            <div className="flex items-end justify-between mb-10 gap-4 flex-wrap">
-              <div>
-                <div className="inline-flex items-center gap-2 text-primary mb-3">
-                  <Sparkles size={18} />
-
-                  <span className="uppercase tracking-[0.2em] text-sm">
-                    Fresh Arrivals
-                  </span>
-                </div>
-
-                <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
-                  Recently released stories
-                </h2>
-              </div>
-
-              <Button asChild variant="outline" className="rounded-full px-6">
-                <Link href="/explore/books">
-                  Find All
-                  <ArrowRight className="ml-2" size={16} />
-                </Link>
+              <Button variant="ghost" size="sm" className="w-full mt-4" asChild>
+                <Link href="/explore/books">View All Books</Link>
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-              {newReleases.map((book) => (
-                <BookPoster key={book._id} book={book} />
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
+            {/* Popular Authors */}
+            {authors.length > 0 && (
+              <div className="rounded-3xl border border-border bg-card p-6">
+                <h3 className="text-xl font-serif mb-5">Popular Authors</h3>
 
-      {/* ALL BOOKS */}
-      <section className="py-20 border-t border-border">
-        <div className="container mx-auto px-4 md:px-8 lg:px-12">
-          <div className="flex items-end justify-between mb-10 gap-4 flex-wrap">
-            <div>
-              <div className="inline-flex items-center gap-2 text-primary mb-3">
-                <Quote size={18} />
+                <div className="space-y-4">
+                  {authors.slice(0, 5).map((author) => (
+                    <Link
+                      key={author._id}
+                      href={`/author/${author._id}`}
+                      className="flex items-center gap-3 hover:bg-accent/50 -mx-2 px-2 py-2 rounded-xl transition-colors group"
+                    >
+                      <img
+                        src={author.avatar || "/default-avatar.png"}
+                        alt={author.name}
+                        className="w-10 h-10 rounded-full object-cover border border-border"
+                      />
+                      <div>
+                        <p className="font-medium group-hover:text-primary transition-colors">
+                          {author.name}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {author.booksCount || 0} books
+                        </p>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
 
-                <span className="uppercase tracking-[0.2em] text-sm">
-                  Complete Collection
-                </span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="w-full mt-4"
+                  asChild
+                >
+                  <Link href="/authors">Browse All Authors</Link>
+                </Button>
               </div>
-
-              <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
-                Browse all books
-              </h2>
-            </div>
-
-            <Button asChild variant="outline" className="rounded-full px-6">
-              <Link href="/explore/books">
-                Find All
-                <ArrowRight className="ml-2" size={16} />
-              </Link>
-            </Button>
+            )}
           </div>
-
-          {filteredBooks.length > 0 ? (
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-8">
-              {filteredBooks.map((book) => (
-                <BookPoster key={book._id} book={book} />
-              ))}
-            </div>
-          ) : (
-            <div className="rounded-3xl border border-border bg-card p-16 text-center">
-              <h3 className="text-3xl font-serif mb-4">No books found</h3>
-
-              <p className="text-muted-foreground text-lg">
-                Try searching with another title, author, or genre.
-              </p>
-            </div>
-          )}
         </div>
-      </section>
+      </div>
     </div>
   );
 }

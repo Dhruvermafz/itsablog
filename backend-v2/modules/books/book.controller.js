@@ -120,6 +120,28 @@ class BookController {
       next(err);
     }
   }
+  async getReviewsByUser(req, res, next) {
+    try {
+      const { userId } = req.params;
+
+      const page = Number(req.query.page) || 1;
+      const limit = Number(req.query.limit) || 20;
+
+      const data = await bookService.getReviewsByUser(userId, {
+        page,
+        limit,
+        sort: req.query.sort || "-createdAt",
+      });
+
+      res.status(200).json({
+        success: true,
+        data: data.reviews,
+        pagination: data.pagination,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
   async getBooksByAuthor(req, res, next) {
     try {
       const { id } = req.params;

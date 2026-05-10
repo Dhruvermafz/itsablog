@@ -31,7 +31,10 @@ export const clubApi = createApi({
       query: (id) => `/${id}`,
       providesTags: (result, error, id) => [{ type: "Club", id }],
     }),
-
+    checkMembership: builder.query({
+      query: (clubId) => `/${clubId}/membership`,
+      providesTags: (result, error, clubId) => [{ type: "Club", id: clubId }],
+    }),
     // ========================
     // 🔐 CLUBS (PROTECTED)
     // ========================
@@ -95,7 +98,10 @@ export const clubApi = createApi({
         { type: "Comments", id: postId },
       ],
     }),
-
+    getPost: builder.query({
+      query: (postId) => `/posts/${postId}`,
+      providesTags: (result, error, postId) => [{ type: "Posts", id: postId }],
+    }),
     createComment: builder.mutation({
       query: ({ postId, text }) => ({
         url: `/posts/${postId}/comments`,
@@ -115,11 +121,11 @@ export const {
 
   useCreateClubMutation,
   useJoinClubMutation,
-
+  useCheckMembershipQuery,
   useGetClubPostsQuery,
   useCreatePostMutation,
   useToggleLikeMutation,
-
+  useGetPostQuery,
   useGetPostCommentsQuery,
   useCreateCommentMutation,
 } = clubApi;

@@ -601,14 +601,6 @@ export const GlobalSearch = ({ open, onOpenChange }) => {
             flex-shrink-0
           "
         >
-          <div className="flex items-center gap-2">
-            <Clock3 size={14} />
-
-            <span className="hidden sm:inline">
-              Instant search powered by MongoDB
-            </span>
-          </div>
-
           <div className="hidden md:flex items-center gap-4">
             <span>↑↓ navigate</span>
             <span>↵ open</span>

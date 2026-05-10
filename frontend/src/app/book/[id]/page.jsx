@@ -12,20 +12,16 @@ import {
   Heart,
   PenSquare,
   Share2,
+  Flame,
 } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { RatingStars } from "@/components/RatingStars";
 import { ReviewCard } from "@/components/ReviewCard";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
+
 import {
   useGetBookQuery,
   useGetBookReviewsQuery,
@@ -37,13 +33,14 @@ export default function BookDetailPage() {
   const { id } = useParams();
   const router = useRouter();
   const { user } = useAuth();
+
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(0);
-  const [dialogOpen, setDialogOpen] = useState(false);
 
   // RTK Queries
   const { data: bookResponse, isLoading, error } = useGetBookQuery(id);
-  const { data: reviewsResponse } = useGetBookReviewsQuery(id);
+  const { data: reviewsResponse, refetch: refetchReviews } =
+    useGetBookReviewsQuery(id);
   const [createReview] = useCreateReviewMutation();
 
   const book = bookResponse?.data || bookResponse;
@@ -58,6 +55,17 @@ export default function BookDetailPage() {
     return (total / reviews.length).toFixed(1);
   }, [reviews, book]);
 
+  // Top 15 reviews sorted by impressions (likes/impressions field)
+  const topReviews = useMemo(() => {
+    return [...reviews]
+      .sort((a, b) => {
+        const impressionsA = a.likes || a.impressions || a.rating || 0;
+        const impressionsB = b.likes || b.impressions || b.rating || 0;
+        return impressionsB - impressionsA;
+      })
+      .slice(0, 15);
+  }, [reviews]);
+
   const authorName = book?.author?.name || book?.author || "Unknown Author";
   const authorId = book?.author?._id || null;
 
@@ -70,16 +78,18 @@ export default function BookDetailPage() {
       alert("Please provide both a rating and review text");
       return;
     }
+
     try {
       await createReview({
         bookId: id,
         content: reviewText,
         rating,
       }).unwrap();
+
       setReviewText("");
       setRating(0);
-      setDialogOpen(false);
       alert("Thank you! Your review has been submitted.");
+      refetchReviews(); // Refresh reviews
     } catch (err) {
       console.error(err);
       alert("Failed to submit review. Please try again.");
@@ -91,7 +101,7 @@ export default function BookDetailPage() {
       router.push("/login");
       return;
     }
-    alert("Added to your collection! (Full list integration coming soon)");
+    alert("Added to your collection! (Full integration coming soon)");
   };
 
   const handleShare = async () => {
@@ -157,7 +167,6 @@ export default function BookDetailPage() {
           {/* LEFT COLUMN - Cover & Actions */}
           <div className="lg:col-span-5 xl:col-span-4">
             <div className="lg:sticky lg:top-24 space-y-6">
-              {/* Cover Image */}
               <div className="relative aspect-[2/3] overflow-hidden rounded-3xl shadow-2xl border border-border mx-auto max-w-[280px] sm:max-w-sm lg:max-w-none">
                 <img
                   src={book.coverUrl || book.coverImage}
@@ -166,54 +175,7 @@ export default function BookDetailPage() {
                 />
               </div>
 
-              {/* Action Buttons */}
               <div className="space-y-3 px-1">
-                <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-                  <DialogTrigger asChild>
-                    <Button
-                      size="lg"
-                      className="w-full rounded-2xl h-14 text-base font-medium"
-                    >
-                      <PenSquare className="mr-3" size={20} />
-                      Write a Review
-                    </Button>
-                  </DialogTrigger>
-
-                  <DialogContent className="rounded-3xl w-[95vw] sm:max-w-lg p-6">
-                    <DialogHeader>
-                      <DialogTitle className="text-2xl font-serif">
-                        Share your thoughts
-                      </DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-6 mt-6">
-                      <div>
-                        <p className="text-sm text-muted-foreground mb-3">
-                          Your Rating
-                        </p>
-                        <RatingStars
-                          rating={rating}
-                          interactive
-                          onRate={setRating}
-                          size={36}
-                        />
-                      </div>
-                      <Textarea
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="What stayed with you after reading this book?"
-                        rows={7}
-                        className="rounded-2xl resize-none"
-                      />
-                      <Button
-                        onClick={handleSubmitReview}
-                        className="w-full rounded-2xl h-12 text-base"
-                      >
-                        Submit Review
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
-
                 <Button
                   variant="outline"
                   size="lg"
@@ -239,7 +201,6 @@ export default function BookDetailPage() {
 
           {/* RIGHT COLUMN - Content */}
           <div className="lg:col-span-7 xl:col-span-8">
-            {/* Featured Badge */}
             <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-border bg-card mb-6">
               <Sparkles size={16} className="text-primary" />
               <span className="text-xs font-medium tracking-wider text-muted-foreground">
@@ -247,12 +208,10 @@ export default function BookDetailPage() {
               </span>
             </div>
 
-            {/* Title */}
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-serif tracking-tighter leading-tight mb-3">
               {book.title}
             </h1>
 
-            {/* Author */}
             <Link
               href={authorId ? `/author/${authorId}` : "#"}
               className="text-xl sm:text-2xl text-primary hover:underline inline-block mb-8"
@@ -315,7 +274,7 @@ export default function BookDetailPage() {
               </CardContent>
             </Card>
 
-            {/* Reviews Section */}
+            {/* ==================== READER IMPRESSIONS SECTION ==================== */}
             <div>
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
                 <div>
@@ -328,11 +287,7 @@ export default function BookDetailPage() {
                 </div>
 
                 {reviews.length > 0 && (
-                  <Button
-                    asChild
-                    variant="outline"
-                    className="rounded-2xl w-full sm:w-auto"
-                  >
+                  <Button asChild variant="outline" className="rounded-2xl">
                     <Link href={`/book/${book._id || book.id}/reviews`}>
                       View All Reviews
                     </Link>
@@ -340,24 +295,66 @@ export default function BookDetailPage() {
                 )}
               </div>
 
-              {reviews.length > 0 ? (
+              {/* Write Review Form - Directly Visible */}
+              <Card className="rounded-3xl p-6 mb-10 border-border">
+                <div className="flex items-center gap-3 mb-4">
+                  <PenSquare className="text-primary" size={22} />
+                  <h3 className="font-semibold text-lg">Share your thoughts</h3>
+                </div>
+
+                <div className="mb-4">
+                  <p className="text-sm text-muted-foreground mb-2">
+                    Your Rating
+                  </p>
+                  <RatingStars
+                    rating={rating}
+                    interactive
+                    onRate={setRating}
+                    size={36}
+                  />
+                </div>
+
+                <Textarea
+                  value={reviewText}
+                  onChange={(e) => setReviewText(e.target.value)}
+                  placeholder="What stayed with you after reading this book?..."
+                  rows={5}
+                  className="rounded-2xl resize-none mb-4"
+                />
+
+                <Button
+                  onClick={handleSubmitReview}
+                  className="rounded-2xl px-8"
+                  disabled={!reviewText.trim() || rating === 0}
+                >
+                  Post Review
+                </Button>
+              </Card>
+
+              {/* Top 15 Reviews */}
+              {topReviews.length > 0 ? (
                 <div className="space-y-8">
-                  {reviews.slice(0, 3).map((review) => (
-                    <ReviewCard key={review.id || review._id} review={review} />
-                  ))}
+                  {topReviews.map((review) => {
+                    const hasHighImpression =
+                      (review.likes || review.impressions || 0) >= 5;
+                    return (
+                      <div key={review._id || review.id} className="relative">
+                        {hasHighImpression && (
+                          <div className="absolute -top-3 -right-2 bg-orange-500 text-white text-xs px-2.5 py-1 rounded-full flex items-center gap-1 font-medium z-10">
+                            <Flame size={14} />
+                            Popular
+                          </div>
+                        )}
+                        <ReviewCard review={review} />
+                      </div>
+                    );
+                  })}
                 </div>
               ) : (
-                <Card className="rounded-3xl p-10 sm:p-16 text-center">
-                  <h3 className="text-3xl font-serif mb-4">No reviews yet</h3>
-                  <p className="text-muted-foreground mb-8">
-                    Be the first to share your thoughts on this book.
+                <Card className="rounded-3xl p-12 text-center">
+                  <p className="text-muted-foreground mb-6">
+                    No reviews yet. Be the first to share your impression!
                   </p>
-                  <Button
-                    onClick={() => setDialogOpen(true)}
-                    className="rounded-2xl px-8"
-                  >
-                    Write the First Review
-                  </Button>
                 </Card>
               )}
             </div>

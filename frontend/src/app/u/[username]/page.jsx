@@ -4,28 +4,17 @@ import React, { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 
-import { Plus, Trash2, BookOpen, LogOut, Users } from "lucide-react";
+import { Plus, Trash2, LogOut } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 import { Button } from "@/components/ui/button";
 import { ReviewCard } from "@/components/ReviewCard";
 import { BookPoster } from "@/components/BookPoster";
-import { Badge } from "@/components/ui/badge";
 
 import { useAuth } from "@/contexts/AuthContext";
 
-import {
-  getStoredReviews,
-  getStoredLists,
-  mockBooks,
-  saveList,
-} from "@/data/mockData";
-
-import { getStoredReadingShelf, SHELF_TYPES } from "@/data/readingShelfData";
-
-import { BookShelfItem } from "@/components/BookShelfItem";
-import { AddToShelfDialog } from "@/components/AddToShelfDialog";
+import { getStoredLists, mockBooks, saveList } from "@/data/mockData";
 
 import {
   Dialog,
@@ -43,6 +32,8 @@ import {
   useGetFollowersQuery,
   useGetFollowingQuery,
 } from "@/api/userApi";
+
+import { useGetUserReviewsQuery } from "@/api/bookApi";
 
 export default function ProfilePage() {
   const router = useRouter();
@@ -78,10 +69,23 @@ export default function ProfilePage() {
     skip: !profileUser?._id,
   });
 
+  const { data: reviewsResponse, isLoading: reviewsLoading } =
+    useGetUserReviewsQuery(
+      {
+        userId: profileUser?._id,
+        page: 1,
+        limit: 50,
+      },
+      {
+        skip: !profileUser?._id,
+      },
+    );
+
   const followers = followersResponse?.data || [];
   const following = followingResponse?.data || [];
+  const userReviews = reviewsResponse?.data || [];
 
-  const loading = authLoading || profileLoading;
+  const loading = authLoading || profileLoading || reviewsLoading;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -91,40 +95,16 @@ export default function ProfilePage() {
 
   const handleRefresh = () => setRefreshKey((prev) => prev + 1);
 
-  const userReviews = useMemo(() => {
-    if (!profileUser) return [];
-    return getStoredReviews().filter(
-      (review) => review.userId === profileUser._id,
-    );
-  }, [profileUser, refreshKey]);
-
   const userLists = useMemo(() => {
     if (!profileUser) return [];
     return getStoredLists().filter((list) => list.userId === profileUser._id);
   }, [profileUser, refreshKey]);
 
-  const readingShelf = useMemo(() => {
-    if (!profileUser) return [];
-    return getStoredReadingShelf(profileUser._id);
-  }, [profileUser, refreshKey]);
-
-  const currentlyReading = readingShelf.filter(
-    (item) => item.shelfType === SHELF_TYPES.CURRENTLY_READING,
-  );
-  const wantToRead = readingShelf.filter(
-    (item) => item.shelfType === SHELF_TYPES.WANT_TO_READ,
-  );
-  const recommended = readingShelf.filter(
-    (item) => item.shelfType === SHELF_TYPES.RECOMMENDED,
-  );
-  const finished = readingShelf.filter(
-    (item) => item.shelfType === SHELF_TYPES.FINISHED,
-  );
-
   const isOwnProfile = authUser?.username === profileUser?.username;
 
   const handleCreateList = () => {
     if (!newListName.trim()) return;
+
     const newList = {
       id: "list_" + Date.now(),
       userId: profileUser._id,
@@ -132,7 +112,9 @@ export default function ProfilePage() {
       books: [],
       createdAt: new Date().toISOString(),
     };
+
     saveList(newList);
+
     setNewListName("");
     setDialogOpen(false);
     handleRefresh();
@@ -165,19 +147,20 @@ export default function ProfilePage() {
     <div className="min-h-screen bg-background py-8">
       <div className="container mx-auto px-4 md:px-8 lg:px-12">
         <div className="grid lg:grid-cols-12 gap-8">
-          {/* ==================== LEFT SIDEBAR ==================== */}
+          {/* LEFT SIDEBAR */}
           <div className="lg:col-span-4 xl:col-span-3">
             <div className="sticky top-24 bg-card border border-border rounded-[2rem] p-8">
               <div className="flex flex-col items-center text-center mb-8">
                 <img
                   src={profileUser.avatar || "/default-avatar.png"}
                   alt={profileUser.username}
-                  className="w-28 h-28 rounded-2xl object-cover ring-4 ring-background shadow-xl mb-6"
+                  className="w-28 h-28 rounded-full object-cover ring-4 ring-background shadow-xl mb-6"
                 />
 
                 <h1 className="text-3xl font-serif tracking-tight">
                   @{profileUser.username}
                 </h1>
+
                 <p className="text-muted-foreground mt-1">
                   {profileUser.email}
                 </p>
@@ -195,19 +178,10 @@ export default function ProfilePage() {
                   <p className="text-2xl font-semibold">{userReviews.length}</p>
                   <p className="text-sm text-muted-foreground">Reviews</p>
                 </div>
+
                 <div className="bg-muted/50 rounded-2xl p-4">
                   <p className="text-2xl font-semibold">{userLists.length}</p>
                   <p className="text-sm text-muted-foreground">Lists</p>
-                </div>
-                <div className="bg-muted/50 rounded-2xl p-4">
-                  <p className="text-2xl font-semibold">
-                    {readingShelf.length}
-                  </p>
-                  <p className="text-sm text-muted-foreground">Books</p>
-                </div>
-                <div className="bg-muted/50 rounded-2xl p-4">
-                  <p className="text-2xl font-semibold">{followers.length}</p>
-                  <p className="text-sm text-muted-foreground">Followers</p>
                 </div>
               </div>
 
@@ -227,14 +201,10 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          {/* ==================== MAIN CONTENT ==================== */}
+          {/* MAIN CONTENT */}
           <div className="lg:col-span-8 xl:col-span-9">
-            <Tabs defaultValue="bookshelf" className="w-full" key={refreshKey}>
+            <Tabs defaultValue="reviews" className="w-full" key={refreshKey}>
               <TabsList className="w-full md:w-auto mb-10 bg-card border border-border rounded-[2rem] p-1">
-                <TabsTrigger value="bookshelf" className="rounded-[1.5rem]">
-                  <BookOpen size={18} className="mr-2" />
-                  Bookshelf
-                </TabsTrigger>
                 <TabsTrigger value="reviews" className="rounded-[1.5rem]">
                   Reviews
                 </TabsTrigger>
@@ -243,55 +213,12 @@ export default function ProfilePage() {
                 </TabsTrigger>
               </TabsList>
 
-              {/* Bookshelf Tab */}
-              <TabsContent value="bookshelf" className="space-y-12">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-3xl font-serif">Reading Manager</h2>
-                    <p className="text-muted-foreground">
-                      Organize your reading journey
-                    </p>
-                  </div>
-                  {isOwnProfile && (
-                    <AddToShelfDialog
-                      userId={profileUser._id}
-                      onBookAdded={handleRefresh}
-                    />
-                  )}
-                </div>
-
-                <ShelfSection
-                  title="Currently Reading"
-                  items={currentlyReading}
-                  profileUser={profileUser}
-                  handleRefresh={handleRefresh}
-                />
-                <ShelfSection
-                  title="Want To Read"
-                  items={wantToRead}
-                  profileUser={profileUser}
-                  handleRefresh={handleRefresh}
-                />
-                <ShelfSection
-                  title="Recommended"
-                  items={recommended}
-                  profileUser={profileUser}
-                  handleRefresh={handleRefresh}
-                />
-                <ShelfSection
-                  title="Finished"
-                  items={finished}
-                  profileUser={profileUser}
-                  handleRefresh={handleRefresh}
-                />
-              </TabsContent>
-
               {/* Reviews Tab */}
               <TabsContent value="reviews">
                 {userReviews.length > 0 ? (
                   <div className="max-w-3xl mx-auto space-y-8">
                     {userReviews.map((review) => (
-                      <ReviewCard key={review.id} review={review} />
+                      <ReviewCard key={review._id} review={review} />
                     ))}
                   </div>
                 ) : (
@@ -324,6 +251,7 @@ export default function ProfilePage() {
                             Create New List
                           </DialogTitle>
                         </DialogHeader>
+
                         <div className="space-y-4 mt-6">
                           <div>
                             <Label>List Name</Label>
@@ -333,6 +261,7 @@ export default function ProfilePage() {
                               placeholder="My Favorites"
                             />
                           </div>
+
                           <Button
                             onClick={handleCreateList}
                             className="w-full rounded-2xl"
@@ -351,6 +280,7 @@ export default function ProfilePage() {
                       const listBooks = mockBooks.filter((book) =>
                         list.books.includes(book.id),
                       );
+
                       return (
                         <div
                           key={list.id}
@@ -358,6 +288,7 @@ export default function ProfilePage() {
                         >
                           <div className="flex items-center justify-between mb-6">
                             <h3 className="text-2xl font-serif">{list.name}</h3>
+
                             {isOwnProfile && (
                               <Button
                                 variant="ghost"
@@ -396,40 +327,6 @@ export default function ProfilePage() {
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-// Shelf Section Component
-function ShelfSection({ title, items, profileUser, handleRefresh }) {
-  return (
-    <div>
-      <h3 className="text-2xl font-serif mb-6">
-        {title} <span className="text-muted-foreground">({items.length})</span>
-      </h3>
-
-      {items.length > 0 ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-          {items.map((item) => {
-            const book = mockBooks.find((b) => b.id === item.bookId);
-            if (!book) return null;
-            return (
-              <BookShelfItem
-                key={item.id}
-                book={book}
-                shelfType={item.shelfType}
-                recommendedBy={item.recommendedBy}
-                userId={profileUser._id}
-                onRemove={handleRefresh}
-              />
-            );
-          })}
-        </div>
-      ) : (
-        <div className="bg-card border border-dashed border-border rounded-[2rem] py-16 text-center">
-          <p className="text-muted-foreground">No books in this shelf yet.</p>
-        </div>
-      )}
     </div>
   );
 }

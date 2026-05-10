@@ -107,7 +107,11 @@ export default function ClubsPage() {
           ) : filteredClubs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredClubs.map((club) => (
-                <Link key={club.id} href={`/club/${club.id}`} className="group">
+                <Link
+                  key={club.id}
+                  href={`/club/${club._id}`}
+                  className="group"
+                >
                   <Card className="overflow-hidden rounded-[2rem] border-border bg-card/80 hover:-translate-y-2 hover:shadow-2xl transition-all duration-500 h-full">
                     <div className="relative h-64 overflow-hidden">
                       <img

@@ -126,6 +126,23 @@ export const bookApi = createApi({
       }),
       invalidatesTags: ["Reviews"],
     }),
+    // ========================
+    // 👤 USER REVIEWS
+    // ========================
+
+    getUserReviews: builder.query({
+      query: ({ userId, page = 1, limit = 20 }) => ({
+        url: `/reviews/user/${userId}`,
+        params: {
+          page,
+          limit,
+        },
+      }),
+
+      providesTags: (result, error, { userId }) => [
+        { type: "Reviews", id: userId },
+      ],
+    }),
     getBooksByAuthor: builder.query({
       query: ({ authorId, page = 1, limit = 20 }) => ({
         url: `/author/${authorId}`,
@@ -155,7 +172,7 @@ export const {
   useGetBooksQuery,
   useGetBookQuery,
   useGetBooksByCategoryQuery,
-
+  useGetUserReviewsQuery,
   useCreateBookMutation,
   useUpdateBookMutation,
   useDeleteBookMutation,

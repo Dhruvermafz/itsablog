@@ -13,11 +13,11 @@ router.use(protect);
 
 router.post("/", clubController.createClub);
 router.post("/:id/join", clubController.joinClub);
-
+router.get("/:id/membership", clubController.checkMembership);
 // Club Posts
 router.post("/:clubId/posts", clubController.createPost);
 router.get("/:clubId/posts", clubController.getClubPosts);
-
+router.get("/posts/:postId", clubController.getPost);
 // Post Interactions
 router.post("/posts/:postId/like", clubController.toggleLike);
 router.post("/posts/:postId/comments", clubController.createComment);

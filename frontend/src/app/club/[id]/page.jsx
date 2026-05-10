@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState, useEffect, use } from "react";
+import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+
 import {
   ArrowLeft,
   Users,
@@ -20,6 +21,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
+
 import {
   Dialog,
   DialogContent,
@@ -27,91 +29,99 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
-import { Checkbox } from "@/components/ui/checkbox";
 
-import {
-  mockClubs,
-  getStoredClubPosts,
-  isUserMemberOfClub,
-  joinClub,
-  createClubPost,
-} from "@/data/clubsData";
+import { Checkbox } from "@/components/ui/checkbox";
 
 import { useAuth } from "@/contexts/AuthContext";
 
+// RTK Query
+import {
+  useGetClubQuery,
+  useJoinClubMutation,
+  useGetClubPostsQuery,
+  useCreatePostMutation,
+  useCheckMembershipQuery,
+} from "@/api/clubApi";
+
 export default function ClubDetailPage({ params }) {
-  const { id } = use(params);
+  const { id } = React.use(params);
+
   const { user } = useAuth();
+
   const router = useRouter();
 
-  const club = mockClubs.find((c) => c.id === id);
+  // ========================================
+  // Queries
+  // ========================================
+
+  const {
+    data: response,
+    isLoading: clubLoading,
+    error: clubError,
+  } = useGetClubQuery(id);
+
+  const {
+    data: postsData,
+    isLoading: postsLoading,
+    refetch: refetchPosts,
+  } = useGetClubPostsQuery(id);
+
+  const { data: membershipData, refetch: refetchMembership } =
+    useCheckMembershipQuery(id, {
+      skip: !user,
+    });
+
+  // ========================================
+  // Mutations
+  // ========================================
+
+  const [joinClubMutation] = useJoinClubMutation();
+
+  const [createPostMutation] = useCreatePostMutation();
+
+  // ========================================
+  // State
+  // ========================================
 
   const [showJoinDialog, setShowJoinDialog] = useState(false);
+
   const [showCreateModal, setShowCreateModal] = useState(false);
+
   const [acceptedTerms, setAcceptedTerms] = useState(false);
-  const [isMember, setIsMember] = useState(false);
+
   const [newPost, setNewPost] = useState("");
-  const [posts, setPosts] = useState([]);
+
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  useEffect(() => {
-    if (user && club) {
-      setIsMember(isUserMemberOfClub(user.id, id));
-    }
-    if (club) {
-      setPosts(getStoredClubPosts(id));
-    }
-  }, [user, club, id]);
+  // ========================================
+  // Data
+  // ========================================
 
-  const handleJoinClick = () => {
-    if (!user) {
-      router.push("/login");
-      return;
-    }
-    setShowJoinDialog(true);
-  };
+  const club = response?.data || {};
 
-  const handleJoinConfirm = () => {
-    if (!acceptedTerms) return;
-    joinClub(user.id, club.id);
-    setIsMember(true);
-    setShowJoinDialog(false);
-    setAcceptedTerms(false);
-  };
+  const posts = postsData?.data || [];
 
-  const handleCreatePost = async () => {
-    if (!user || !isMember || !newPost.trim()) return;
+  const isMember = membershipData?.data?.isMember || false;
 
-    setIsSubmitting(true);
+  // ========================================
+  // Helpers
+  // ========================================
 
-    const post = {
-      id: "post" + Date.now(),
-      clubId: club.id,
-      userId: user.id,
-      userName: user.name,
-      userAvatar: user.avatar,
-      content: newPost.trim(),
-      likes: 0,
-      comments: 0,
-      createdAt: new Date().toISOString(),
-    };
-
-    createClubPost(post);
-    setPosts([post, ...posts]);
-    setNewPost("");
-    setShowCreateModal(false);
-    setIsSubmitting(false);
-  };
+  const formatNumber = (num) => (num ?? 0).toLocaleString();
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
+
     const now = new Date();
+
     const diffInHours = Math.floor(
       (now.getTime() - date.getTime()) / (1000 * 60 * 60),
     );
 
     if (diffInHours < 1) return "Just now";
+
     if (diffInHours < 24) return `${diffInHours}h ago`;
+
     if (diffInHours < 48) return "Yesterday";
 
     return date.toLocaleDateString("en-US", {
@@ -120,11 +130,80 @@ export default function ClubDetailPage({ params }) {
     });
   };
 
-  if (!club) {
+  // ========================================
+  // Actions
+  // ========================================
+
+  const handleJoinClick = () => {
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    setShowJoinDialog(true);
+  };
+
+  const handleJoinConfirm = async () => {
+    if (!acceptedTerms || !club?._id) return;
+
+    try {
+      await joinClubMutation(id).unwrap();
+
+      await refetchMembership();
+
+      setShowJoinDialog(false);
+
+      setAcceptedTerms(false);
+    } catch (err) {
+      console.error("Failed to join club:", err);
+    }
+  };
+
+  const handleCreatePost = async () => {
+    if (!user || !isMember || !newPost.trim()) return;
+
+    setIsSubmitting(true);
+
+    try {
+      await createPostMutation({
+        clubId: id,
+        content: newPost.trim(),
+      }).unwrap();
+
+      setNewPost("");
+
+      setShowCreateModal(false);
+
+      refetchPosts();
+    } catch (err) {
+      console.error("Failed to create post:", err);
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  // ========================================
+  // Loading
+  // ========================================
+
+  if (clubLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        Loading club...
+      </div>
+    );
+  }
+
+  // ========================================
+  // Error
+  // ========================================
+
+  if (clubError || !club?._id) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center">
           <h1 className="text-3xl font-serif mb-4">Club not found</h1>
+
           <Button asChild>
             <Link href="/clubs">Back to Clubs</Link>
           </Button>
@@ -132,6 +211,10 @@ export default function ClubDetailPage({ params }) {
       </div>
     );
   }
+
+  // ========================================
+  // UI
+  // ========================================
 
   return (
     <div className="min-h-screen bg-background pb-20">
@@ -144,7 +227,7 @@ export default function ClubDetailPage({ params }) {
           </Link>
         </Button>
 
-        {/* Hero Section */}
+        {/* Hero */}
         <div className="relative overflow-hidden rounded-[2rem] mb-10 shadow-2xl border border-border">
           <div className="absolute inset-0">
             <img
@@ -152,6 +235,7 @@ export default function ClubDetailPage({ params }) {
               alt={club.name}
               className="w-full h-full object-cover scale-105"
             />
+
             <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/60 to-black/40" />
           </div>
 
@@ -172,12 +256,14 @@ export default function ClubDetailPage({ params }) {
             <div className="flex flex-wrap items-center gap-6 text-white/80">
               <div className="flex items-center gap-2">
                 <Users size={20} />
-                <span>{club.memberCount.toLocaleString()} readers</span>
+                <span>{formatNumber(club.memberCount)} readers</span>
               </div>
+
               <div className="flex items-center gap-2">
                 <MessageSquare size={20} />
-                <span>{club.postCount} discussions</span>
+                <span>{formatNumber(club.postCount)} discussions</span>
               </div>
+
               <div className="flex items-center gap-2">
                 <TrendingUp size={20} />
                 <span>Very Active</span>
@@ -186,19 +272,21 @@ export default function ClubDetailPage({ params }) {
           </div>
         </div>
 
-        {/* Main Content */}
+        {/* Content */}
         <div className="grid lg:grid-cols-[1fr_360px] gap-8">
           {/* Feed */}
           <div>
-            {/* Desktop Create Post Box */}
+            {/* Create Post */}
             {isMember && (
               <div className="hidden md:block bg-card/80 backdrop-blur-xl border border-border rounded-[2rem] p-6 md:p-8 shadow-xl mb-8">
                 <div className="flex items-center gap-3 mb-5">
                   <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center">
                     <BookOpen className="text-primary" size={24} />
                   </div>
+
                   <div>
                     <h3 className="text-2xl font-serif">Share your thoughts</h3>
+
                     <p className="text-sm text-muted-foreground">
                       Discuss books with the community
                     </p>
@@ -214,35 +302,42 @@ export default function ClubDetailPage({ params }) {
                 />
 
                 <div className="flex justify-end mt-4">
-                  <Button onClick={handleCreatePost} disabled={!newPost.trim()}>
+                  <Button
+                    onClick={handleCreatePost}
+                    disabled={!newPost.trim() || isSubmitting}
+                  >
                     <Send size={18} className="mr-2" />
-                    Publish
+
+                    {isSubmitting ? "Publishing..." : "Publish"}
                   </Button>
                 </div>
               </div>
             )}
 
-            {/* Posts List */}
+            {/* Posts */}
             <div className="space-y-6">
               <div className="flex items-center justify-between">
                 <h2 className="text-3xl font-serif">Community Discussions</h2>
+
                 <Badge variant="outline" className="rounded-full px-4 py-1">
                   {posts.length} Posts
                 </Badge>
               </div>
 
-              {posts.length > 0 ? (
+              {postsLoading ? (
+                <p>Loading discussions...</p>
+              ) : posts.length > 0 ? (
                 posts.map((post) => (
                   <Link
-                    key={post.id}
-                    href={`/post/${post.id}`}
+                    key={post._id}
+                    href={`/post/${post._id}`}
                     className="block group"
                   >
                     <div className="bg-card/80 backdrop-blur-xl border border-border rounded-[2rem] p-6 shadow-lg hover:shadow-xl transition-all duration-300 cursor-pointer">
                       <div className="flex items-start gap-4">
                         <img
-                          src={post.userAvatar}
-                          alt={post.userName}
+                          src={post.author?.avatar || "/default-avatar.png"}
+                          alt={post.author?.name}
                           className="w-14 h-14 rounded-2xl object-cover ring-2 ring-primary/10"
                         />
 
@@ -250,27 +345,16 @@ export default function ClubDetailPage({ params }) {
                           <div className="flex items-center justify-between mb-2">
                             <div>
                               <h4 className="font-semibold text-lg group-hover:text-primary transition-colors">
-                                {post.userName}
+                                {post.author?.name}
                               </h4>
+
                               <div className="flex items-center gap-2 text-sm text-muted-foreground">
                                 <Clock3 size={14} />
+
                                 {formatDate(post.createdAt)}
                               </div>
                             </div>
                           </div>
-
-                          {/* Book Title (if exists) */}
-                          {post.bookTitle && (
-                            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-primary/10 text-primary text-sm mb-3">
-                              <BookOpen size={16} />
-                              {post.bookTitle}
-                              {post.bookAuthor && (
-                                <span className="text-primary/70">
-                                  by {post.bookAuthor}
-                                </span>
-                              )}
-                            </div>
-                          )}
 
                           <p className="text-foreground leading-relaxed text-[15px] mb-5 line-clamp-4">
                             {post.content}
@@ -279,11 +363,14 @@ export default function ClubDetailPage({ params }) {
                           <div className="flex items-center gap-6">
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <Heart size={18} />
-                              <span>{post.likes}</span>
+
+                              <span>{post.likesCount ?? 0}</span>
                             </div>
+
                             <div className="flex items-center gap-2 text-sm text-muted-foreground">
                               <MessageSquare size={18} />
-                              <span>{post.comments}</span>
+
+                              <span>{post.commentsCount ?? 0}</span>
                             </div>
                           </div>
                         </div>
@@ -297,9 +384,11 @@ export default function ClubDetailPage({ params }) {
                     size={40}
                     className="mx-auto text-muted-foreground mb-4"
                   />
+
                   <h3 className="text-2xl font-serif mb-2">
                     No discussions yet
                   </h3>
+
                   <p className="text-muted-foreground">
                     {isMember
                       ? "Be the first to start a conversation!"
@@ -319,8 +408,10 @@ export default function ClubDetailPage({ params }) {
                 <div className="mb-6 bg-green-500/10 border border-green-500/20 rounded-2xl p-4">
                   <div className="flex items-center gap-3 text-green-600 dark:text-green-400">
                     <CheckCircle size={22} />
+
                     <div>
                       <p className="font-semibold">You're a member</p>
+
                       <p className="text-sm">You can post anytime</p>
                     </div>
                   </div>
@@ -340,12 +431,17 @@ export default function ClubDetailPage({ params }) {
                   <p className="text-sm text-muted-foreground mb-1">
                     Created by
                   </p>
-                  <p className="font-semibold">{club.createdBy}</p>
+
+                  <p className="font-semibold">
+                    {club.createdBy?.name || "Unknown"}
+                  </p>
                 </div>
+
                 <div className="p-4 rounded-2xl bg-muted/50">
                   <p className="text-sm text-muted-foreground mb-1">
                     Created on
                   </p>
+
                   <p className="font-semibold">
                     {new Date(club.createdAt).toLocaleDateString("en-US", {
                       month: "long",
@@ -360,7 +456,7 @@ export default function ClubDetailPage({ params }) {
         </div>
       </div>
 
-      {/* Mobile Floating Button */}
+      {/* Mobile Create Button */}
       {isMember && (
         <button
           onClick={() => setShowCreateModal(true)}
@@ -370,9 +466,9 @@ export default function ClubDetailPage({ params }) {
         </button>
       )}
 
-      {/* Mobile Create Post Modal */}
+      {/* Mobile Create Modal */}
       <Dialog open={showCreateModal} onOpenChange={setShowCreateModal}>
-        <DialogContent className="rounded-[2rem] md:rounded-3xl max-w-lg mx-auto h-[85vh] md:h-auto flex flex-col">
+        <DialogContent className="rounded-[2rem] max-w-lg mx-auto h-[85vh] md:h-auto flex flex-col">
           <DialogHeader>
             <DialogTitle className="text-2xl font-serif text-center">
               New Discussion
@@ -383,13 +479,9 @@ export default function ClubDetailPage({ params }) {
             <Textarea
               value={newPost}
               onChange={(e) => setNewPost(e.target.value)}
-              placeholder="What are you thinking about? Share a book review, quote, or question..."
+              placeholder="What are you thinking about?"
               className="flex-1 resize-none text-base bg-background border-border rounded-2xl p-5"
             />
-
-            <p className="text-xs text-muted-foreground mt-3 text-center">
-              Keep discussions respectful and book-related.
-            </p>
           </div>
 
           <DialogFooter className="mt-6 flex gap-3">
@@ -403,6 +495,7 @@ export default function ClubDetailPage({ params }) {
             >
               Cancel
             </Button>
+
             <Button
               onClick={handleCreatePost}
               disabled={!newPost.trim() || isSubmitting}
@@ -434,6 +527,7 @@ export default function ClubDetailPage({ params }) {
                 checked={acceptedTerms}
                 onCheckedChange={setAcceptedTerms}
               />
+
               <label
                 htmlFor="terms"
                 className="text-sm leading-relaxed cursor-pointer"
@@ -451,6 +545,7 @@ export default function ClubDetailPage({ params }) {
             >
               Cancel
             </Button>
+
             <Button
               onClick={handleJoinConfirm}
               disabled={!acceptedTerms}

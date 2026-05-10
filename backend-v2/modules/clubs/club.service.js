@@ -31,11 +31,41 @@ class ClubService {
 
     return { clubs, pagination: { page, limit } };
   }
+  async checkMembership(clubId, userId) {
+    const membership = await clubMember.findOne({
+      club: clubId,
+      user: userId,
+    });
 
-  async getClubById(id) {
-    return await club.findById(id).populate("createdBy", "name avatar");
+    return {
+      isMember: !!membership,
+      role: membership?.role || null,
+    };
   }
+  // ====================== Single Post ======================
 
+  async getPostById(postId) {
+    return await clubPost
+      .findById(postId)
+      .populate("author", "name avatar")
+      .populate("club", "name");
+  }
+  async getClubById(id) {
+    const foundClub = await club
+      .findById(id)
+      .populate("createdBy", "name avatar")
+      .lean();
+
+    if (!foundClub) return null;
+
+    const members = await clubMember
+      .find({ club: id })
+      .populate("user", "name avatar");
+
+    foundClub.members = members;
+
+    return foundClub;
+  }
   // ====================== Membership ======================
   async joinClub(clubId, userId) {
     const existing = await clubMember.findOne({ club: clubId, user: userId });

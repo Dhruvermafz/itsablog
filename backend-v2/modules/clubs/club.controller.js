@@ -50,7 +50,40 @@ class ClubController {
       next(err);
     }
   }
+  async checkMembership(req, res, next) {
+    try {
+      const result = await clubService.checkMembership(
+        req.params.id,
+        req.user.id,
+      );
 
+      res.json({
+        success: true,
+        data: result,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
+  async getPost(req, res, next) {
+    try {
+      const post = await clubService.getPostById(req.params.postId);
+
+      if (!post) {
+        return res.status(404).json({
+          success: false,
+          message: "Post not found",
+        });
+      }
+
+      res.json({
+        success: true,
+        data: post,
+      });
+    } catch (err) {
+      next(err);
+    }
+  }
   async getClubPosts(req, res, next) {
     try {
       const posts = await clubService.getClubPosts(

@@ -17,7 +17,7 @@ router.put("/:id", bookController.updateBook);
 router.delete("/:id", bookController.deleteBook);
 
 router.post("/:id/categories", bookController.addCategories);
-
+router.get("/reviews/user/:userId", bookController.getReviewsByUser);
 // Reviews
 router.post("/:bookId/reviews", bookController.createReview);
 router.get("/:bookId/reviews", bookController.getBookReviews);
