@@ -19,7 +19,11 @@ const app = express();
 // Middleware
 app.use(
   cors({
-    origin: ["http://localhost:3000", "https://itsablog.in"],
+    origin: [
+      "http://localhost:3000",
+      "https://itsablog.in",
+      "https://www.itsablog.in",
+    ],
     credentials: true,
   }),
 );
