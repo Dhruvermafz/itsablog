@@ -6,11 +6,13 @@ export const userApi = createApi({
     baseUrl: `${API_URL}/users`,
     credentials: "include",
 
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
+    prepareHeaders: (headers) => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
 
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
+        if (token) {
+          headers.set("authorization", `Bearer ${token}`);
+        }
       }
 
       return headers;

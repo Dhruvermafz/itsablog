@@ -17,8 +17,6 @@ export const Layout = ({ children }) => {
       {!shouldHideNavbar && <Navbar />}
 
       <main className="flex-1">{children}</main>
-
-      {!shouldHideNavbar && <Footer />}
     </div>
   );
 };

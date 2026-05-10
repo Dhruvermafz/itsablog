@@ -21,7 +21,7 @@ router.post("/:id/categories", bookController.addCategories);
 // Reviews
 router.post("/:bookId/reviews", bookController.createReview);
 router.get("/:bookId/reviews", bookController.getBookReviews);
-
+router.get("/author/:id", bookController.getBooksByAuthor);
 // Bookmark
 router.post("/:id/bookmark", bookController.toggleBookmark);
 // Reviews

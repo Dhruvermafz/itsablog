@@ -1,53 +1,55 @@
 "use client";
 
 import React, { useMemo, useState } from "react";
-
 import Link from "next/link";
 
-import {
-  Users,
-  TrendingUp,
-  Search,
-  Sparkles,
-  BookOpen,
-  MessageCircle,
-  Flame,
-  Compass,
-} from "lucide-react";
+import { Users, BookOpen, MessageCircle } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
-
 import { Badge } from "@/components/ui/badge";
-
 import { Card, CardContent } from "@/components/ui/card";
-
 import { Button } from "@/components/ui/button";
-
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
-import { mockClubs } from "@/data/clubsData";
+import { useGetClubsQuery } from "@/api/clubApi";
 
 export default function ClubsPage() {
   const [searchQuery, setSearchQuery] = useState("");
-
   const [selectedCategory, setSelectedCategory] = useState("all");
 
   const categories = ["all", "Genre", "Reading Group"];
 
+  // Fetch from API
+  const { data: response, isLoading, error } = useGetClubsQuery();
+
+  // Safely extract the clubs array
+  const clubs = response?.data || response?.clubs || [];
+
   const filteredClubs = useMemo(() => {
-    return mockClubs.filter((club) => {
+    if (!Array.isArray(clubs)) return [];
+
+    return clubs.filter((club) => {
       const matchesSearch =
-        club.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        club.description.toLowerCase().includes(searchQuery.toLowerCase());
+        club.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        club.description?.toLowerCase().includes(searchQuery.toLowerCase());
 
       const matchesCategory =
         selectedCategory === "all" || club.category === selectedCategory;
 
       return matchesSearch && matchesCategory;
     });
-  }, [searchQuery, selectedCategory]);
+  }, [clubs, searchQuery, selectedCategory]);
 
-  const featuredClub = mockClubs[0];
+  if (error) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <h3 className="text-2xl font-serif mb-2">Failed to load clubs</h3>
+          <p className="text-muted-foreground">Please try again later.</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div
@@ -64,7 +66,6 @@ export default function ClubsPage() {
                 variant={selectedCategory === category ? "default" : "outline"}
                 className="cursor-pointer rounded-full px-5 py-2 text-sm capitalize"
                 onClick={() => setSelectedCategory(category)}
-                data-testid={`category-filter-${category}`}
               >
                 {category}
               </Badge>
@@ -80,12 +81,10 @@ export default function ClubsPage() {
             <div>
               <div className="inline-flex items-center gap-2 text-primary mb-3">
                 <BookOpen size={18} />
-
                 <span className="uppercase tracking-[0.2em] text-sm">
                   Explore Communities
                 </span>
               </div>
-
               <h2 className="text-4xl md:text-5xl font-serif tracking-tight">
                 Reader Clubs
               </h2>
@@ -96,17 +95,20 @@ export default function ClubsPage() {
             </p>
           </div>
 
-          {filteredClubs.length > 0 ? (
+          {isLoading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
+              {[...Array(6)].map((_, i) => (
+                <div
+                  key={i}
+                  className="h-[28rem] rounded-[2rem] bg-muted animate-pulse"
+                />
+              ))}
+            </div>
+          ) : filteredClubs.length > 0 ? (
             <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
               {filteredClubs.map((club) => (
-                <Link
-                  key={club.id}
-                  href={`/club/${club.id}`}
-                  className="group"
-                  data-testid={`club-card-${club.id}`}
-                >
+                <Link key={club.id} href={`/club/${club.id}`} className="group">
                   <Card className="overflow-hidden rounded-[2rem] border-border bg-card/80 hover:-translate-y-2 hover:shadow-2xl transition-all duration-500 h-full">
-                    {/* Image */}
                     <div className="relative h-64 overflow-hidden">
                       <img
                         src={club.coverImage}
@@ -130,26 +132,23 @@ export default function ClubsPage() {
                         <div className="flex items-center gap-4 text-white/80 text-sm">
                           <div className="flex items-center gap-1">
                             <Users size={15} />
-
-                            <span>{club.memberCount.toLocaleString()}</span>
+                            <span>
+                              {club.memberCount?.toLocaleString() || 0}
+                            </span>
                           </div>
-
                           <div className="flex items-center gap-1">
                             <MessageCircle size={15} />
-
-                            <span>{club.postCount} posts</span>
+                            <span>{club.postCount || 0} posts</span>
                           </div>
                         </div>
                       </div>
                     </div>
 
-                    {/* Content */}
                     <CardContent className="p-7">
                       <p className="text-muted-foreground leading-7 mb-8 line-clamp-3">
                         {club.description}
                       </p>
 
-                      {/* Fake Members */}
                       <div className="flex items-center justify-between">
                         <div className="flex -space-x-3">
                           {[1, 2, 3, 4].map((i) => (
@@ -160,7 +159,6 @@ export default function ClubsPage() {
                               <AvatarImage
                                 src={`https://i.pravatar.cc/100?img=${i + 10}`}
                               />
-
                               <AvatarFallback>R</AvatarFallback>
                             </Avatar>
                           ))}
@@ -179,7 +177,6 @@ export default function ClubsPage() {
             <Card className="rounded-[2rem] border-border bg-card">
               <CardContent className="p-16 text-center">
                 <h3 className="text-3xl font-serif mb-4">No clubs found</h3>
-
                 <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-8">
                   Try searching with another keyword or browse different
                   categories.

@@ -5,11 +5,15 @@ export const bookApi = createApi({
   reducerPath: "bookApi",
   baseQuery: fetchBaseQuery({
     baseUrl: `${API_URL}/books`,
-    prepareHeaders: (headers, { getState }) => {
-      const token = getState().auth?.token;
-      if (token) {
-        headers.set("authorization", `Bearer ${token}`);
+    prepareHeaders: (headers) => {
+      if (typeof window !== "undefined") {
+        const token = localStorage.getItem("token");
+
+        if (token) {
+          headers.set("authorization", `Bearer ${token}`);
+        }
       }
+
       return headers;
     },
   }),
@@ -122,7 +126,17 @@ export const bookApi = createApi({
       }),
       invalidatesTags: ["Reviews"],
     }),
+    getBooksByAuthor: builder.query({
+      query: ({ authorId, page = 1, limit = 20 }) => ({
+        url: `/author/${authorId}`,
+        params: {
+          page,
+          limit,
+        },
+      }),
 
+      providesTags: ["Books"],
+    }),
     // ========================
     // 🔖 BOOKMARK
     // ========================
@@ -146,7 +160,7 @@ export const {
   useUpdateBookMutation,
   useDeleteBookMutation,
   useAddCategoriesMutation,
-
+  useGetBooksByAuthorQuery,
   useGetBookReviewsQuery,
   useCreateReviewMutation,
   useToggleReviewLikeMutation,

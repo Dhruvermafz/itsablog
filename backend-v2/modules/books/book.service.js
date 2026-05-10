@@ -198,7 +198,34 @@ class BookService {
 
     return { liked: true };
   }
+  async getBooksByAuthor(authorId, { page = 1, limit = 20 }) {
+    const skip = (page - 1) * limit;
 
+    const query = {
+      author: authorId,
+    };
+
+    const [books, total] = await Promise.all([
+      Book.find(query)
+        .populate("author", "name avatar")
+        .sort({ createdAt: -1 })
+        .skip(skip)
+        .limit(limit)
+        .lean(),
+
+      Book.countDocuments(query),
+    ]);
+
+    return {
+      books,
+      pagination: {
+        total,
+        pages: Math.ceil(total / limit),
+        currentPage: page,
+        limit,
+      },
+    };
+  }
   async addReviewComment(reviewId, userId, content, parentId = null) {
     const comment = await ReviewComment.create({
       review: reviewId,
