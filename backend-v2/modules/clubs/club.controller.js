@@ -1,4 +1,5 @@
 import clubService from "./club.service.js";
+
 class ClubController {
   async createClub(req, res, next) {
     try {
@@ -21,8 +22,33 @@ class ClubController {
   async getClub(req, res, next) {
     try {
       const club = await clubService.getClubById(req.params.id);
-      if (!club) return res.status(404).json({ message: "Club not found" });
+      if (!club)
+        return res
+          .status(404)
+          .json({ success: false, message: "Club not found" });
       res.json({ success: true, data: club });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  // ====================== NEW: Following & Feed ======================
+  async getFollowingClubs(req, res, next) {
+    try {
+      const result = await clubService.getFollowingClubs(
+        req.user.id,
+        req.query,
+      );
+      res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async getFeed(req, res, next) {
+    try {
+      const result = await clubService.getFeed(req.user.id, req.query);
+      res.json({ success: true, ...result });
     } catch (err) {
       next(err);
     }
@@ -32,6 +58,18 @@ class ClubController {
     try {
       const result = await clubService.joinClub(req.params.id, req.user.id);
       res.json({ success: true, ...result });
+    } catch (err) {
+      next(err);
+    }
+  }
+
+  async checkMembership(req, res, next) {
+    try {
+      const result = await clubService.checkMembership(
+        req.params.id,
+        req.user.id,
+      );
+      res.json({ success: true, data: result });
     } catch (err) {
       next(err);
     }
@@ -50,40 +88,20 @@ class ClubController {
       next(err);
     }
   }
-  async checkMembership(req, res, next) {
-    try {
-      const result = await clubService.checkMembership(
-        req.params.id,
-        req.user.id,
-      );
 
-      res.json({
-        success: true,
-        data: result,
-      });
-    } catch (err) {
-      next(err);
-    }
-  }
   async getPost(req, res, next) {
     try {
       const post = await clubService.getPostById(req.params.postId);
-
-      if (!post) {
-        return res.status(404).json({
-          success: false,
-          message: "Post not found",
-        });
-      }
-
-      res.json({
-        success: true,
-        data: post,
-      });
+      if (!post)
+        return res
+          .status(404)
+          .json({ success: false, message: "Post not found" });
+      res.json({ success: true, data: post });
     } catch (err) {
       next(err);
     }
   }
+
   async getClubPosts(req, res, next) {
     try {
       const posts = await clubService.getClubPosts(
@@ -119,6 +137,31 @@ class ClubController {
       res.status(201).json({ success: true, data: comment });
     } catch (err) {
       next(err);
+    }
+  }
+
+  async editComment(req, res) {
+    try {
+      const comment = await clubService.editComment(
+        req.params.commentId,
+        req.user.id,
+        req.body.content,
+      );
+      res.json({ success: true, data: comment });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
+    }
+  }
+
+  async deleteComment(req, res) {
+    try {
+      const result = await clubService.deleteComment(
+        req.params.commentId,
+        req.user.id,
+      );
+      res.json({ success: true, ...result });
+    } catch (err) {
+      res.status(400).json({ success: false, message: err.message });
     }
   }
 

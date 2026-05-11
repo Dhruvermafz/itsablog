@@ -1,22 +1,23 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { API_URL } from "@/lib/config";
+
 export const clubApi = createApi({
   reducerPath: "clubApi",
   baseQuery: fetchBaseQuery({
-    baseUrl: `${API_URL}/clubs`, // adjust
+    baseUrl: `${API_URL}/clubs`,
     prepareHeaders: (headers) => {
       if (typeof window !== "undefined") {
         const token = localStorage.getItem("token");
-
         if (token) {
           headers.set("authorization", `Bearer ${token}`);
         }
       }
-
       return headers;
     },
   }),
-  tagTypes: ["Clubs", "Club", "Posts", "Comments"],
+
+  tagTypes: ["Clubs", "Club", "Posts", "Comments", "Feed", "Following"],
+
   endpoints: (builder) => ({
     // ========================
     // 🏠 CLUBS (PUBLIC)
@@ -31,12 +32,14 @@ export const clubApi = createApi({
       query: (id) => `/${id}`,
       providesTags: (result, error, id) => [{ type: "Club", id }],
     }),
+
     checkMembership: builder.query({
       query: (clubId) => `/${clubId}/membership`,
       providesTags: (result, error, clubId) => [{ type: "Club", id: clubId }],
     }),
+
     // ========================
-    // 🔐 CLUBS (PROTECTED)
+    // 🔐 PROTECTED ROUTES
     // ========================
 
     createClub: builder.mutation({
@@ -57,12 +60,37 @@ export const clubApi = createApi({
     }),
 
     // ========================
+    // ⭐ NEW: FEED & FOLLOWING
+    // ========================
+
+    getFeed: builder.query({
+      query: (params = {}) => ({
+        url: "/feed",
+        params,
+      }),
+      providesTags: ["Feed"],
+    }),
+
+    getFollowingClubs: builder.query({
+      query: (params = {}) => ({
+        url: "/following",
+        params,
+      }),
+      providesTags: ["Following"],
+    }),
+
+    // ========================
     // 📝 CLUB POSTS
     // ========================
 
     getClubPosts: builder.query({
-      query: (clubId) => `/${clubId}/posts`,
-      providesTags: (result, error, clubId) => [{ type: "Posts", id: clubId }],
+      query: ({ clubId, ...params }) => ({
+        url: `/${clubId}/posts`,
+        params,
+      }),
+      providesTags: (result, error, { clubId }) => [
+        { type: "Posts", id: clubId },
+      ],
     }),
 
     createPost: builder.mutation({
@@ -73,7 +101,13 @@ export const clubApi = createApi({
       }),
       invalidatesTags: (result, error, { clubId }) => [
         { type: "Posts", id: clubId },
+        "Feed",
       ],
+    }),
+
+    getPost: builder.query({
+      query: (postId) => `/posts/${postId}`,
+      providesTags: (result, error, postId) => [{ type: "Posts", id: postId }],
     }),
 
     // ========================
@@ -85,7 +119,7 @@ export const clubApi = createApi({
         url: `/posts/${postId}/like`,
         method: "POST",
       }),
-      invalidatesTags: ["Posts"],
+      invalidatesTags: ["Posts", "Feed"],
     }),
 
     // ========================
@@ -98,19 +132,33 @@ export const clubApi = createApi({
         { type: "Comments", id: postId },
       ],
     }),
-    getPost: builder.query({
-      query: (postId) => `/posts/${postId}`,
-      providesTags: (result, error, postId) => [{ type: "Posts", id: postId }],
-    }),
+
     createComment: builder.mutation({
-      query: ({ postId, text }) => ({
+      query: ({ postId, content }) => ({
         url: `/posts/${postId}/comments`,
         method: "POST",
-        body: { text },
+        body: { content },
       }),
       invalidatesTags: (result, error, { postId }) => [
         { type: "Comments", id: postId },
       ],
+    }),
+
+    editComment: builder.mutation({
+      query: ({ commentId, content }) => ({
+        url: `/posts/comments/${commentId}`,
+        method: "PUT",
+        body: { content },
+      }),
+      invalidatesTags: ["Comments"],
+    }),
+
+    deleteComment: builder.mutation({
+      query: (commentId) => ({
+        url: `/posts/comments/${commentId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: ["Comments"],
     }),
   }),
 });
@@ -118,14 +166,20 @@ export const clubApi = createApi({
 export const {
   useGetClubsQuery,
   useGetClubQuery,
-
+  useCheckMembershipQuery,
   useCreateClubMutation,
   useJoinClubMutation,
-  useCheckMembershipQuery,
+
+  // New Exports
+  useGetFeedQuery,
+  useGetFollowingClubsQuery,
+
   useGetClubPostsQuery,
   useCreatePostMutation,
-  useToggleLikeMutation,
   useGetPostQuery,
+  useToggleLikeMutation,
   useGetPostCommentsQuery,
   useCreateCommentMutation,
+  useEditCommentMutation,
+  useDeleteCommentMutation,
 } = clubApi;

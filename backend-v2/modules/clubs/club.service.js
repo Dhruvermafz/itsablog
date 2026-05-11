@@ -9,7 +9,6 @@ class ClubService {
   async createClub(clubData, userId) {
     const newClub = await club.create({ ...clubData, createdBy: userId });
 
-    // Auto join as admin
     await clubMember.create({
       club: newClub._id,
       user: userId,
@@ -31,25 +30,7 @@ class ClubService {
 
     return { clubs, pagination: { page, limit } };
   }
-  async checkMembership(clubId, userId) {
-    const membership = await clubMember.findOne({
-      club: clubId,
-      user: userId,
-    });
 
-    return {
-      isMember: !!membership,
-      role: membership?.role || null,
-    };
-  }
-  // ====================== Single Post ======================
-
-  async getPostById(postId) {
-    return await clubPost
-      .findById(postId)
-      .populate("author", "name avatar")
-      .populate("club", "name");
-  }
   async getClubById(id) {
     const foundClub = await club
       .findById(id)
@@ -63,9 +44,77 @@ class ClubService {
       .populate("user", "name avatar");
 
     foundClub.members = members;
-
     return foundClub;
   }
+
+  async checkMembership(clubId, userId) {
+    const membership = await clubMember.findOne({
+      club: clubId,
+      user: userId,
+    });
+
+    return {
+      isMember: !!membership,
+      role: membership?.role || null,
+    };
+  }
+
+  // ====================== Following Clubs ======================
+  async getFollowingClubs(userId, { page = 1, limit = 20 } = {}) {
+    const skip = (page - 1) * limit;
+
+    const memberships = await clubMember
+      .find({ user: userId })
+      .populate({
+        path: "club",
+        populate: { path: "createdBy", select: "name avatar" },
+      })
+      .sort("-createdAt")
+      .skip(skip)
+      .limit(limit);
+
+    const clubs = memberships.map((m) => m.club);
+
+    return {
+      clubs,
+      pagination: { page, limit, total: memberships.length },
+    };
+  }
+
+  // ====================== Feed (Posts from followed clubs) ======================
+  async getFeed(userId, { page = 1, limit = 15 } = {}) {
+    const skip = (page - 1) * limit;
+
+    // Get club IDs user is member of
+    const memberships = await clubMember.find({ user: userId }).select("club");
+    const clubIds = memberships.map((m) => m.club);
+
+    if (clubIds.length === 0) {
+      return { posts: [], pagination: { page, limit, total: 0 } };
+    }
+
+    const posts = await clubPost
+      .find({ club: { $in: clubIds } })
+      .populate("author", "name avatar")
+      .populate("club", "name coverImage")
+      .sort({ createdAt: -1 })
+      .skip(skip)
+      .limit(limit);
+
+    return {
+      posts,
+      pagination: { page, limit },
+    };
+  }
+
+  // ====================== Single Post ======================
+  async getPostById(postId) {
+    return await clubPost
+      .findById(postId)
+      .populate("author", "name avatar")
+      .populate("club", "name coverImage");
+  }
+
   // ====================== Membership ======================
   async joinClub(clubId, userId) {
     const existing = await clubMember.findOne({ club: clubId, user: userId });
@@ -131,6 +180,39 @@ class ClubService {
     await clubPost.findByIdAndUpdate(postId, { $inc: { commentsCount: 1 } });
 
     return comment.populate("user", "name avatar");
+  }
+
+  async editComment(commentId, userId, content) {
+    const comment = await postComment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+    if (comment.user.toString() !== userId.toString())
+      throw new Error("Unauthorized");
+
+    const TEN_MINUTES = 10 * 60 * 1000;
+    if (Date.now() - new Date(comment.createdAt).getTime() > TEN_MINUTES) {
+      throw new Error("Comment can only be edited within 10 minutes");
+    }
+
+    comment.content = content;
+    comment.isEdited = true;
+    comment.editedAt = new Date();
+    await comment.save();
+
+    return comment.populate("user", "name avatar");
+  }
+
+  async deleteComment(commentId, userId) {
+    const comment = await postComment.findById(commentId);
+    if (!comment) throw new Error("Comment not found");
+    if (comment.user.toString() !== userId.toString())
+      throw new Error("Unauthorized");
+
+    await comment.deleteOne();
+    await clubPost.findByIdAndUpdate(comment.post, {
+      $inc: { commentsCount: -1 },
+    });
+
+    return { message: "Comment deleted successfully" };
   }
 
   async getPostComments(postId, { page = 1, limit = 20 }) {
