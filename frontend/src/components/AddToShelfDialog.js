@@ -19,8 +19,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "./ui/select";
-import { mockBooks } from "@/data/mockData";
-import { addToShelf, SHELF_TYPES } from "@/data/readingShelfData";
+
+import { useGetBooksQuery } from "@/api/bookApi";
+
+import { useUpsertReadingLogMutation } from "@/api/userApi";
+
+const SHELF_TYPES = {
+  CURRENTLY_READING: "currently_reading",
+  WANT_TO_READ: "want_to_read",
+  RECOMMENDED: "recommended",
+  FINISHED: "finished",
+};
 
 export const AddToShelfDialog = ({ userId, onBookAdded }) => {
   const [open, setOpen] = useState(false);
@@ -29,45 +38,56 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
   const [shelfType, setShelfType] = useState(SHELF_TYPES.WANT_TO_READ);
   const [recommendedBy, setRecommendedBy] = useState("");
 
-  const filteredBooks = mockBooks.filter(
-    (book) =>
-      book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      book.author.toLowerCase().includes(searchQuery.toLowerCase()),
+  const [upsertReadingLog, { isLoading: isAdding }] =
+    useUpsertReadingLogMutation();
+
+  // Search books using real API
+  const { data: booksResponse, isFetching } = useGetBooksQuery(
+    { search: searchQuery, limit: 10 },
+    { skip: !searchQuery },
   );
 
-  const handleAdd = () => {
+  const filteredBooks = booksResponse?.books || [];
+
+  const handleAdd = async () => {
     if (!selectedBook) {
       alert("Please select a book");
       return;
     }
 
-    addToShelf(
-      userId,
-      selectedBook.id,
-      shelfType,
-      shelfType === SHELF_TYPES.RECOMMENDED ? recommendedBy : null,
-    );
+    try {
+      await upsertReadingLog({
+        bookId: selectedBook._id || selectedBook.id,
+        shelfType: shelfType,
+        recommendedBy:
+          shelfType === SHELF_TYPES.RECOMMENDED ? recommendedBy : null,
+      }).unwrap();
 
-    // Reset form
-    setOpen(false);
-    setSearchQuery("");
-    setSelectedBook(null);
-    setShelfType(SHELF_TYPES.WANT_TO_READ);
-    setRecommendedBy("");
+      // Reset form
+      setOpen(false);
+      setSearchQuery("");
+      setSelectedBook(null);
+      setShelfType(SHELF_TYPES.WANT_TO_READ);
+      setRecommendedBy("");
 
-    onBookAdded();
+      alert("Book added to shelf successfully!");
+      onBookAdded();
+    } catch (error) {
+      console.error(error);
+      alert(error?.data?.message || "Failed to add book to shelf");
+    }
   };
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button data-testid="add-to-shelf-button">
+        <Button>
           <Plus className="mr-2" size={18} />
           Add Book to Shelf
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-2xl" data-testid="add-book-dialog">
+      <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="font-serif text-2xl">
             Add Book to Your Shelf
@@ -82,33 +102,33 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search by title or author..."
-              data-testid="search-book-input"
             />
           </div>
 
           {/* Book Results */}
           {searchQuery && (
             <div className="max-h-48 overflow-y-auto border rounded-lg">
-              {filteredBooks.length > 0 ? (
-                filteredBooks.slice(0, 5).map((book) => (
+              {isFetching ? (
+                <p className="p-4 text-sm text-center">Searching...</p>
+              ) : filteredBooks.length > 0 ? (
+                filteredBooks.slice(0, 6).map((book) => (
                   <button
-                    key={book.id}
+                    key={book._id || book.id}
                     onClick={() => {
                       setSelectedBook(book);
                       setSearchQuery("");
                     }}
-                    className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left"
-                    data-testid={`book-option-${book.id}`}
+                    className="w-full flex items-center gap-3 p-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors text-left border-b last:border-none"
                   >
                     <img
-                      src={book.coverUrl}
+                      src={book.coverUrl || book.coverImage}
                       alt={book.title}
                       className="w-12 h-16 object-cover rounded"
                     />
                     <div>
                       <p className="font-semibold text-sm">{book.title}</p>
                       <p className="text-xs text-slate-600 dark:text-slate-400">
-                        {book.author}
+                        {book.author?.name || book.author}
                       </p>
                     </div>
                   </button>
@@ -129,14 +149,14 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
               </p>
               <div className="flex items-center gap-3">
                 <img
-                  src={selectedBook.coverUrl}
+                  src={selectedBook.coverUrl || selectedBook.coverImage}
                   alt={selectedBook.title}
                   className="w-12 h-16 object-cover rounded"
                 />
                 <div>
                   <p className="font-semibold">{selectedBook.title}</p>
                   <p className="text-sm text-slate-600 dark:text-slate-400">
-                    {selectedBook.author}
+                    {selectedBook.author?.name || selectedBook.author}
                   </p>
                 </div>
               </div>
@@ -147,7 +167,7 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
           <div>
             <Label>Add to Shelf</Label>
             <Select value={shelfType} onValueChange={setShelfType}>
-              <SelectTrigger data-testid="shelf-type-select">
+              <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -165,7 +185,7 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
             </Select>
           </div>
 
-          {/* Recommended By (conditional) */}
+          {/* Recommended By */}
           {shelfType === SHELF_TYPES.RECOMMENDED && (
             <div>
               <Label>Recommended By</Label>
@@ -173,7 +193,6 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
                 value={recommendedBy}
                 onChange={(e) => setRecommendedBy(e.target.value)}
                 placeholder="Who recommended this book?"
-                data-testid="recommended-by-input"
               />
             </div>
           )}
@@ -181,9 +200,9 @@ export const AddToShelfDialog = ({ userId, onBookAdded }) => {
           <Button
             onClick={handleAdd}
             className="w-full"
-            data-testid="confirm-add-button"
+            disabled={isAdding || !selectedBook}
           >
-            Add to Shelf
+            {isAdding ? "Adding..." : "Add to Shelf"}
           </Button>
         </div>
       </DialogContent>

@@ -59,7 +59,7 @@ export default function BookDetailPage() {
 
   const [reviewText, setReviewText] = useState("");
   const [rating, setRating] = useState(0);
-  const [selectedListId, setSelectedListId] = useState("");
+  const [selectedListId, setSelectedListId] = useState < string > "";
   const [addDialogOpen, setAddDialogOpen] = useState(false);
 
   // RTK Queries

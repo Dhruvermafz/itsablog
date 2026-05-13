@@ -1,204 +1,149 @@
 import axios from "axios";
 import { normalizeAndInsert } from "./normalise.service.js";
 
+// ======================================================
+// CONFIG
+// ======================================================
+
+const MAX_INSERTS = 500;
+const OPENLIBRARY_LIMIT = 40;
+const seenBooks = new Set();
+
+// ======================================================
+// QUERY GROUPS
+// ======================================================
+
+// QUERY GROUPS
+// ======================================================
+
 const QUERY_GROUPS = [
-  // 🔥 Trending Fiction
   {
-    name: "TRENDING_FICTION",
-    weight: 6,
+    name: "HINDU_SCRIPTURES_AND_DHARMA",
+    weight: 3,
     queries: [
-      "2025 bestselling fiction books",
-      "new fiction releases 2025",
-      "popular contemporary novels",
-      "viral fiction books",
-      "award winning fiction 2025",
-      "top selling novels this year",
-    ],
-  },
+      // Core Scriptures
+      "Bhagavad Gita",
+      "Mahabharata",
+      "Ramayana",
+      "Valmiki Ramayana",
+      "Ramcharitmanas",
+      "Vedas",
+      "Rigveda",
+      "Samaveda",
+      "Yajurveda",
+      "Atharvaveda",
+      "Upanishads",
+      "Puranas",
+      "Shiva Purana",
+      "Vishnu Purana",
+      "Bhagavata Purana",
+      "Markandeya Purana",
+      "Devi Bhagavatam",
 
-  // 🔥 Modern Nonfiction
-  {
-    name: "MODERN_NONFICTION",
-    weight: 5,
-    queries: [
-      "best nonfiction books 2025",
-      "popular self help books",
-      "modern psychology books",
-      "startup business books",
-      "productivity books",
-      "memoirs and biographies",
-      "technology books 2025",
-    ],
-  },
+      // Philosophy & Darshan
+      "Vedanta philosophy",
+      "Advaita Vedanta",
+      "Dvaita philosophy",
+      "Kashmir Shaivism",
+      "Samkhya philosophy",
+      "Yoga Sutras of Patanjali",
+      "Nyaya philosophy",
+      "Mimamsa philosophy",
+      "Chanakya Arthashastra",
+      "Manusmriti",
 
-  // 🔥 Trending Authors
-  {
-    name: "TRENDING_AUTHORS",
-    weight: 6,
-    queries: [
-      "books by Colleen Hoover",
-      "books by Taylor Jenkins Reid",
-      "books by Rebecca Yarros",
-      "books by Ali Hazelwood",
-      "books by Emily Henry",
-      "books by Matt Haig",
-      "books by James Clear",
-      "books by Morgan Housel",
-      "books by Yuval Noah Harari",
-      "books by Bonnie Garmus",
-      "books by Freida McFadden",
-      "books by R.F. Kuang",
-    ],
-  },
+      // Saints & Spiritual Thinkers
+      "Swami Vivekananda",
+      "Adi Shankaracharya",
+      "Ramakrishna Paramahamsa",
+      "Sri Aurobindo",
+      "Ramana Maharshi",
+      "Paramahansa Yogananda",
+      "Jiddu Krishnamurti",
+      "Sadhguru books",
+      "A. C. Bhaktivedanta Swami",
+      "Dayananda Saraswati",
 
-  // 🔥 Genres
-  {
-    name: "GENRE_BASED",
-    weight: 5,
-    queries: [
-      "popular fantasy novels",
-      "science fiction bestsellers",
-      "romance books trending",
-      "thriller mystery novels",
-      "dark academia books",
-      "young adult fiction",
-      "historical fiction books",
-    ],
-  },
+      // Bhakti & Devotional
+      "Hanuman Chalisa",
+      "Shiv Tandav Stotram",
+      "Bhaja Govindam",
+      "Vishnu Sahasranamam",
+      "Durga Saptashati",
+      "Ashtavakra Gita",
+      "Avadhuta Gita",
+      "Narada Bhakti Sutra",
 
-  // 🔥 BookTok
-  {
-    name: "BOOKTOK_BOOKSTAGRAM",
-    weight: 5,
-    queries: [
-      "booktok trending books",
-      "bookstagram famous books",
-      "viral tiktok novels",
-      "popular goodreads books",
-      "most reviewed books 2025",
-    ],
-  },
+      // Hindu History & Civilization
+      "Sita Ram Goel",
+      "Ram Swarup",
+      "Koenraad Elst",
+      "Sanjeev Sanyal",
+      "Meenakshi Jain",
+      "Hindu civilization books",
+      "history of Hindu temples",
+      "Indic civilization",
+      "ancient Bharat history",
+      "decolonized Indian history",
 
-  // 🔥 Recent Releases
-  {
-    name: "RECENT_RELEASES",
-    weight: 7,
-    queries: [
-      "new books released 2025",
-      "upcoming novels 2025",
-      "latest fiction releases",
-      "new hardcover books",
-      "new literary fiction",
-      "new sci fi releases",
-      "new romance releases",
-    ],
-  },
+      // Mythology & Retellings
+      "Amish Tripathi Shiva Trilogy",
+      "Devdutt Pattanaik mythology",
+      "Anand Neelakantan",
+      "Ashok K. Banker",
+      "Mahabharata retellings",
+      "Ramayana retellings",
 
-  // 🇮🇳 Legendary Hindi Writers
-  {
-    name: "LEGENDARY_HINDI_WRITERS",
-    weight: 10,
-    queries: [
-      "Munshi Premchand",
-      "Harivansh Rai Bachchan",
-      "Ramdhari Singh Dinkar",
-      "Mahadevi Verma",
-      "Suryakant Tripathi Nirala",
-      "Jaishankar Prasad",
-      "Maithili Sharan Gupt",
-      "Phanishwar Nath Renu",
-      "Bhisham Sahni",
-      "Nirmal Verma",
-      "Krishna Sobti",
-      "Mannu Bhandari",
-      "Agyeya",
-      "Amrita Pritam",
-      "Dharamvir Bharati",
-      "Shivani",
-      "Bharatendu Harishchandra",
-      "Subhadra Kumari Chauhan",
-      "Hazari Prasad Dwivedi",
-      "Rahi Masoom Raza",
-      "Sarveshwar Dayal Saxena",
-      "Harishankar Parsai",
-      "Sharad Joshi",
-      "Kaka Hathrasi",
-      "Gajanan Madhav Muktibodh",
-      "Nagarjun",
-      "Bhavani Prasad Mishra",
-      "Raghuvir Sahay",
-      "Kamleshwar",
-      "Mohan Rakesh",
-      "Yashpal",
-      "Uday Prakash",
-      "Nasira Sharma",
-      "Mridula Garg",
-      "Kashinath Singh",
-      "Vishnu Prabhakar",
-      "Acharya Chatursen",
-      "Devaki Nandan Khatri",
-      "Rahul Sankrityayan",
-      "Ismat Chughtai",
-      "Saadat Hasan Manto",
-      "Qurratulain Hyder",
-      "Gulzar",
-      "Javed Akhtar",
+      // Tantra / Esoteric
+      "Tantra books",
+      "Aghora books",
+      "Kularnava Tantra",
+      "Vijnana Bhairava Tantra",
+      "Shakta philosophy",
+      "Sri Vidya",
 
-      "Hindi classic novels",
-      "Hindi sahitya",
-      "Hindi literary fiction",
-      "Hindi poetry collection",
-      "Hindi novels",
-      "Hindi short stories",
-      "Hindi historical fiction",
-      "Hindi award winning books",
-      "Sahitya Akademi winners Hindi",
-      "Jnanpith award winners",
-    ],
-  },
-
-  // 🇮🇳 Indian Literature
-  {
-    name: "INDIAN_LITERATURE",
-    weight: 8,
-    queries: [
-      "Indian mythology retellings",
-      "modern Indian novels",
-      "Indian literary fiction",
-      "Urdu literature",
-      "Bengali classics",
-      "Tamil literary fiction",
-      "Marathi literature",
-      "Malayalam novels",
-      "Kannada literature",
-      "Indian poetry books",
-      "Indian regional literature",
+      // Discovery Queries
+      "best Hindu philosophy books",
+      "books on Sanatan Dharma",
+      "Hindu spiritual classics",
+      "Indian metaphysics",
+      "books about moksha",
+      "books on karma and dharma",
+      "Hindu cosmology",
+      "ancient Indian wisdom",
+      "Vedantic literature",
+      "books banned on Hindu history",
+      "Hindu warrior history",
+      "Hindu scriptures explained",
     ],
   },
 ];
+// ======================================================
+// HELPERS
+// ======================================================
 
-const MAX_INSERTS = 500;
-
-// 🔥 Better Shuffle
 function shuffle(arr) {
   return [...arr].sort(() => Math.random() - 0.5);
 }
 
-// 📅 Recent Priority
-function isRecent(info) {
-  const year = parseInt(info.publishedDate?.slice(0, 4));
-
-  return year && year >= 2020;
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-// 📚 Hindi classics allowed
+function hasPreferredLanguage(info) {
+  const langs = info.language || [];
+  if (!langs.length) return true;
+  return langs.some((lang) => {
+    const l = String(lang).toLowerCase().trim();
+    return ["eng", "en", "hin", "hi", "english", "hindi"].includes(l);
+  });
+}
+
 function isValidBook(info) {
-  const text = `
-    ${info.title || ""}
-    ${info.subtitle || ""}
-    ${(info.categories || []).join(" ")}
-    ${info.description || ""}
-  `.toLowerCase();
+  if (!info.title?.trim()) return false;
+
+  const text =
+    `${info.title} ${info.subtitle || ""} ${(info.categories || []).join(" ")}`.toLowerCase();
 
   const bannedKeywords = [
     "study guide",
@@ -211,160 +156,128 @@ function isValidBook(info) {
     "exam preparation",
     "solution manual",
     "textbook",
-    "encyclopedia",
+    "sparknotes",
+    "cliffsnotes",
   ];
 
-  const hasBanned = bannedKeywords.some((word) =>
-    text.includes(word.toLowerCase()),
-  );
-
-  return !hasBanned;
+  return !bannedKeywords.some((word) => text.includes(word));
 }
 
-// 🔥 Transform OpenLibrary → Your DB format
+function isDuplicate(info) {
+  if (!info.title) return true;
+  const key = `${info.title}|${(info.authors || []).join(",")}`
+    .toLowerCase()
+    .trim();
+  if (seenBooks.has(key)) return true;
+  seenBooks.add(key);
+  return false;
+}
+
+// ======================================================
+// TRANSFORM
+// ======================================================
+
 function transformOpenLibraryBook(book) {
   return {
     title: book.title || null,
-
+    subtitle: book.subtitle || null,
     authors: book.author_name || [],
-
     publishedDate: book.first_publish_year
       ? String(book.first_publish_year)
       : null,
-
     description: null,
-
     categories: book.subject ? book.subject.slice(0, 10) : [],
-
     image: book.cover_i
       ? `https://covers.openlibrary.org/b/id/${book.cover_i}-L.jpg`
       : null,
-
     language: book.language || [],
-
     pageCount: book.number_of_pages_median || null,
   };
 }
 
-// 🔥 Fetch from OpenLibrary
+// ======================================================
+// FETCH
+// ======================================================
+
 async function fetchOpenLibraryBooks(query) {
   try {
-    const res = await axios.get(
-      `https://openlibrary.org/search.json?q=${encodeURIComponent(
-        query,
-      )}&limit=50`,
-    );
-
+    const url = `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=${OPENLIBRARY_LIMIT}`;
+    const res = await axios.get(url, { timeout: 15000 });
     return res.data.docs || [];
   } catch (err) {
-    console.log("❌ OpenLibrary failed:", query);
-
+    console.log(`❌ OpenLibrary failed: ${query}`);
     return [];
   }
 }
 
-// 🔥 Fetch from Google Books
-async function fetchGoogleBooks(query) {
-  try {
-    const res = await axios.get(
-      `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(
-        query,
-      )}&orderBy=relevance&maxResults=40`,
-    );
+// ======================================================
+// INSERT BATCH (Improved with error visibility)
+// ======================================================
 
-    return res.data.items || [];
-  } catch (err) {
-    console.log("❌ Google API failed:", query);
+async function insertBatch(batch) {
+  if (batch.length === 0) return 0;
 
-    return [];
-  }
-}
+  let success = 0;
 
-// 🚀 Main Seeder
-export async function runDailySeed() {
-  let inserted = 0;
-
-  let expandedQueries = [];
-
-  // 🔥 Add weights
-  for (const group of QUERY_GROUPS) {
-    for (let i = 0; i < group.weight; i++) {
-      expandedQueries.push(...group.queries);
+  for (const book of batch) {
+    try {
+      const result = await normalizeAndInsert(book);
+      if (result) success++;
+    } catch (err) {
+      console.error(`❌ Failed to insert "${book.title}":`, err.message);
     }
   }
 
-  expandedQueries = shuffle(expandedQueries);
+  console.log(`📚 Batch inserted: ${success}/${batch.length}`);
+  return success;
+}
 
-  for (const query of expandedQueries) {
+// ======================================================
+// MAIN
+// ======================================================
+
+export async function runDailySeed() {
+  let inserted = 0;
+  const queries = shuffle(QUERY_GROUPS.flatMap((g) => g.queries));
+
+  console.log(`🚀 Starting Seeder with ${queries.length} queries\n`);
+
+  for (const query of queries) {
     if (inserted >= MAX_INSERTS) break;
 
     console.log(`🔍 Searching: ${query}`);
+    await sleep(800);
 
-    // =========================================
-    // 🔥 OPEN LIBRARY
-    // =========================================
+    const rawBooks = await fetchOpenLibraryBooks(query);
+    const batch = [];
 
-    const openLibraryBooks = await fetchOpenLibraryBooks(query);
-
-    for (const rawBook of openLibraryBooks) {
+    for (const rawBook of rawBooks) {
       if (inserted >= MAX_INSERTS) break;
 
       const info = transformOpenLibraryBook(rawBook);
 
-      if (!isValidBook(info)) {
+      if (
+        !isValidBook(info) ||
+        !hasPreferredLanguage(info) ||
+        isDuplicate(info)
+      ) {
         continue;
       }
 
-      try {
-        const result = await normalizeAndInsert(info);
+      batch.push(info);
 
-        if (result) {
-          inserted++;
-
-          console.log(`📚 OpenLibrary Inserted: ${info.title}`);
-        }
-      } catch (err) {
-        console.log("⚠️ OpenLibrary skipped:", err.message);
+      if (batch.length >= 20) {
+        const count = await insertBatch(batch);
+        inserted += count;
+        batch.length = 0;
       }
     }
 
-    // =========================================
-    // 🔥 GOOGLE BOOKS
-    // =========================================
-
-    const googleBooks = await fetchGoogleBooks(query);
-
-    let items = googleBooks.sort((a, b) => {
-      const aRecent = isRecent(a.volumeInfo) ? 1 : 0;
-      const bRecent = isRecent(b.volumeInfo) ? 1 : 0;
-
-      return bRecent - aRecent;
-    });
-
-    for (const item of items) {
-      if (inserted >= MAX_INSERTS) break;
-
-      const info = item.volumeInfo;
-
-      if (!isValidBook(info)) {
-        continue;
-      }
-
-      try {
-        const result = await normalizeAndInsert(info);
-
-        if (result) {
-          inserted++;
-
-          console.log(
-            `📦 Google Inserted (${info.publishedDate}): ${info.title}`,
-          );
-        }
-      } catch (err) {
-        console.log("⚠️ Google skipped:", err.message);
-      }
+    if (batch.length > 0) {
+      const count = await insertBatch(batch);
+      inserted += count;
     }
   }
 
-  console.log(`🎯 Total inserted today: ${inserted}`);
+  console.log(`\n🎯 Seeding complete. Total inserted: ${inserted}`);
 }

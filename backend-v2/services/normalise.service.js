@@ -4,89 +4,81 @@ import bookCategory from "../models/bookCategory.js";
 import bookCategoryMap from "../models/bookCategoryMap.js";
 import slugify from "slugify";
 
-// 🔧 helpers (ensure these exist)
 import {
   cleanText,
   cleanTitle,
   parseYear,
   normalizeGenres,
-  getQualityScore,
   detectNationality,
 } from "../utils/helpers.js";
 
 export async function normalizeAndInsert(info) {
-  // ❌ Reject bad data
-  if (!info.title || !info.authors || !info.description) return null;
+  if (!info.title?.trim()) return null;
+  if (!info.authors?.length) return null;
 
-  // 🌍 Language filter
-  if (!["en", "hi", "ru"].includes(info.language)) return null;
-
-  // ⭐ Quality filter
-  if (getQualityScore(info) < 6) return null;
+  const description =
+    info.description || `${info.title} by ${info.authors[0]}.`;
 
   // ========================
-  // 👤 AUTHOR (lowercase safe)
+  // AUTHOR
   // ========================
   const rawAuthorName = cleanText(info.authors[0]);
-  const normalizedAuthorName = rawAuthorName.toLowerCase();
 
   let existingAuthor = await author.findOne({
-    name: new RegExp(`^${normalizedAuthorName}$`, "i"),
+    name: new RegExp(`^${rawAuthorName}$`, "i"),
   });
 
   if (!existingAuthor) {
     existingAuthor = await author.create({
-      name: rawAuthorName, // keep original casing for UI
-      bio: cleanText(info.description).slice(0, 500),
+      name: rawAuthorName,
+      bio: description.slice(0, 500),
       nationality: detectNationality(rawAuthorName),
     });
   }
 
   // ========================
-  // 📚 BOOK DUPLICATE CHECK
+  // DUPLICATE CHECK (Improved)
   // ========================
-  const isbn = info.industryIdentifiers?.[0]?.identifier || null;
-
-  let existingBook = null;
-
-  if (isbn) {
-    existingBook = await book.findOne({ isbn });
-  } else {
-    existingBook = await book.findOne({
-      title: new RegExp(`^${cleanTitle(info.title)}$`, "i"),
-      author: existingAuthor._id,
-    });
-  }
+  const existingBook = await book.findOne({
+    title: new RegExp(`^${cleanTitle(info.title)}$`, "i"),
+    author: existingAuthor._id,
+  });
 
   if (existingBook) return null;
 
   // ========================
-  // 📖 CREATE BOOK
+  // CREATE BOOK
   // ========================
-  const createdBook = await book.create({
+  const bookData = {
     title: cleanTitle(info.title),
     author: existingAuthor._id,
-    synopsis: cleanText(info.description),
-    coverUrl: info.imageLinks?.thumbnail,
+    synopsis: cleanText(description),
+    coverUrl: info.image,
     year: parseYear(info.publishedDate),
     pages: info.pageCount,
-    isbn,
-    genres: normalizeGenres(info.categories),
-  });
+    genres: normalizeGenres(info.categories || []),
+  };
 
-  // ========================
-  // 📊 UPDATE AUTHOR
-  // ========================
+  // Only add isbn if it actually exists
+  if (info.isbn) {
+    bookData.isbn = info.isbn;
+  }
+
+  const createdBook = await book.create(bookData);
+
+  // Update author stats
   await author.findByIdAndUpdate(existingAuthor._id, {
     $inc: { booksCount: 1 },
   });
 
   // ========================
-  // 🏷 CATEGORY MAPPING
+  // CATEGORIES
   // ========================
   if (info.categories?.length) {
     for (const cat of info.categories) {
       const name = cat.trim();
+      if (!name) continue;
+
       const slug = slugify(name.toLowerCase(), { lower: true });
 
       let category = await bookCategory.findOne({ slug });
@@ -109,5 +101,6 @@ export async function normalizeAndInsert(info) {
     }
   }
 
+  console.log(`✅ Inserted: ${info.title}`);
   return createdBook;
 }

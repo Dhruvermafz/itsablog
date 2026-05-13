@@ -1,21 +1,28 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter, useParams } from "next/navigation";
 
 import { Plus, Trash2, LogOut } from "lucide-react";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-
 import { Button } from "@/components/ui/button";
 import { ReviewCard } from "@/components/ReviewCard";
 import { BookPoster } from "@/components/BookPoster";
 
 import { useAuth } from "@/contexts/AuthContext";
 
-import { getStoredLists, mockBooks, saveList } from "@/data/mockData";
-
+// Don't forget to import:
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
@@ -35,6 +42,12 @@ import {
 
 import { useGetUserReviewsQuery } from "@/api/bookApi";
 
+import {
+  useGetUserListsQuery,
+  useCreateListMutation,
+  useDeleteListMutation,
+} from "@/api/listApi";
+
 export default function ProfilePage() {
   const router = useRouter();
   const params = useParams();
@@ -50,14 +63,14 @@ export default function ProfilePage() {
     isAuthenticated,
   } = useAuth();
 
-  const [newListName, setNewListName] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [newListName, setNewListName] = useState("");
+  const [newListDescription, setNewListDescription] = useState("");
+  const [newListVisibility, setNewListVisibility] = useState("false");
 
+  // Queries
   const { data: profileResponse, isLoading: profileLoading } =
-    useGetProfileQuery(username, {
-      skip: !username,
-    });
+    useGetProfileQuery(username, { skip: !username });
 
   const profileUser = profileResponse?.data;
 
@@ -71,21 +84,24 @@ export default function ProfilePage() {
 
   const { data: reviewsResponse, isLoading: reviewsLoading } =
     useGetUserReviewsQuery(
-      {
-        userId: profileUser?._id,
-        page: 1,
-        limit: 50,
-      },
-      {
-        skip: !profileUser?._id,
-      },
+      { userId: profileUser?._id, page: 1, limit: 50 },
+      { skip: !profileUser?._id },
     );
 
-  const followers = followersResponse?.data || [];
-  const following = followingResponse?.data || [];
+  const { data: userListsResponse, isLoading: listsLoading } =
+    useGetUserListsQuery(profileUser?._id, {
+      skip: !profileUser?._id,
+    });
+
+  const [createList, { isLoading: isCreating }] = useCreateListMutation();
+  const [deleteList, { isLoading: isDeleting }] = useDeleteListMutation();
+
+  const userLists = userListsResponse?.data || [];
   const userReviews = reviewsResponse?.data || [];
 
-  const loading = authLoading || profileLoading || reviewsLoading;
+  const loading =
+    authLoading || profileLoading || reviewsLoading || listsLoading;
+  const isOwnProfile = authUser?.username === profileUser?.username;
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -93,38 +109,34 @@ export default function ProfilePage() {
     }
   }, [authLoading, isAuthenticated, router]);
 
-  const handleRefresh = () => setRefreshKey((prev) => prev + 1);
+  const handleCreateList = async () => {
+    if (!newListName.trim() || !profileUser) return;
 
-  const userLists = useMemo(() => {
-    if (!profileUser) return [];
-    return getStoredLists().filter((list) => list.userId === profileUser._id);
-  }, [profileUser, refreshKey]);
+    try {
+      await createList({
+        title: newListName.trim(), // ← Changed from "name" to "title"
+        description: "", // optional
+        isPublic: true,
+      }).unwrap();
 
-  const isOwnProfile = authUser?.username === profileUser?.username;
-
-  const handleCreateList = () => {
-    if (!newListName.trim()) return;
-
-    const newList = {
-      id: "list_" + Date.now(),
-      userId: profileUser._id,
-      name: newListName.trim(),
-      books: [],
-      createdAt: new Date().toISOString(),
-    };
-
-    saveList(newList);
-
-    setNewListName("");
-    setDialogOpen(false);
-    handleRefresh();
+      setNewListName("");
+      setDialogOpen(false);
+      // Optional: show success toast
+    } catch (error) {
+      console.error("Failed to create list:", error);
+      alert(error?.data?.message || "Failed to create list");
+    }
   };
 
-  const handleDeleteList = (listId) => {
-    const lists = getStoredLists();
-    const updatedLists = lists.filter((list) => list.id !== listId);
-    localStorage.setItem("itsablog_lists", JSON.stringify(updatedLists));
-    handleRefresh();
+  const handleDeleteList = async (listId) => {
+    if (!confirm("Are you sure you want to delete this list?")) return;
+
+    try {
+      await deleteList(listId).unwrap();
+    } catch (error) {
+      console.error("Failed to delete list:", error);
+      alert(error?.data?.message || "Failed to delete list");
+    }
   };
 
   if (loading) {
@@ -156,15 +168,12 @@ export default function ProfilePage() {
                   alt={profileUser.username}
                   className="w-28 h-28 rounded-full object-cover ring-4 ring-background shadow-xl mb-6"
                 />
-
                 <h1 className="text-3xl font-serif tracking-tight">
                   @{profileUser.username}
                 </h1>
-
                 <p className="text-muted-foreground mt-1">
                   {profileUser.email}
                 </p>
-
                 {profileUser.bio && (
                   <p className="mt-4 text-foreground leading-relaxed">
                     {profileUser.bio}
@@ -172,13 +181,11 @@ export default function ProfilePage() {
                 )}
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 gap-4 text-center">
                 <div className="bg-muted/50 rounded-2xl p-4">
                   <p className="text-2xl font-semibold">{userReviews.length}</p>
                   <p className="text-sm text-muted-foreground">Reviews</p>
                 </div>
-
                 <div className="bg-muted/50 rounded-2xl p-4">
                   <p className="text-2xl font-semibold">{userLists.length}</p>
                   <p className="text-sm text-muted-foreground">Lists</p>
@@ -203,7 +210,7 @@ export default function ProfilePage() {
 
           {/* MAIN CONTENT */}
           <div className="lg:col-span-8 xl:col-span-9">
-            <Tabs defaultValue="reviews" className="w-full" key={refreshKey}>
+            <Tabs defaultValue="reviews" className="w-full">
               <TabsList className="w-full md:w-auto mb-10 bg-card border border-border rounded-[2rem] p-1">
                 <TabsTrigger value="reviews" className="rounded-[1.5rem]">
                   Reviews
@@ -232,41 +239,86 @@ export default function ProfilePage() {
                   </div>
                 )}
               </TabsContent>
-
               {/* Lists Tab */}
               <TabsContent value="lists">
                 {isOwnProfile && (
                   <div className="mb-8">
                     <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
                       <DialogTrigger asChild>
-                        <Button size="lg" className="rounded-2xl">
+                        <Button
+                          size="lg"
+                          className="rounded-2xl"
+                          disabled={isCreating}
+                        >
                           <Plus className="mr-2" size={20} />
                           Create New List
                         </Button>
                       </DialogTrigger>
 
-                      <DialogContent className="rounded-[2rem]">
+                      <DialogContent className="rounded-[2rem] max-w-md">
                         <DialogHeader>
                           <DialogTitle className="font-serif text-2xl">
                             Create New List
                           </DialogTitle>
                         </DialogHeader>
 
-                        <div className="space-y-4 mt-6">
+                        <div className="space-y-6 mt-6">
+                          {/* Title */}
                           <div>
-                            <Label>List Name</Label>
+                            <Label>
+                              List Title <span className="text-red-500">*</span>
+                            </Label>
                             <Input
                               value={newListName}
                               onChange={(e) => setNewListName(e.target.value)}
                               placeholder="My Favorites"
+                              onKeyDown={(e) =>
+                                e.key === "Enter" && handleCreateList()
+                              }
                             />
+                          </div>
+
+                          {/* Description */}
+                          <div>
+                            <Label>Description</Label>
+                            <Textarea
+                              value={newListDescription}
+                              onChange={(e) =>
+                                setNewListDescription(e.target.value)
+                              }
+                              placeholder="A collection of books that changed my perspective..."
+                              rows={3}
+                              className="rounded-2xl resize-none"
+                            />
+                          </div>
+
+                          {/* Visibility */}
+                          <div>
+                            <Label>Visibility</Label>
+                            <Select
+                              value={newListVisibility}
+                              onValueChange={setNewListVisibility}
+                            >
+                              <SelectTrigger className="rounded-2xl">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="true">
+                                  Public (Anyone can see)
+                                </SelectItem>
+                                <SelectItem value="false">
+                                  Private (Only me)
+                                </SelectItem>
+                              </SelectContent>
+                            </Select>
                           </div>
 
                           <Button
                             onClick={handleCreateList}
-                            className="w-full rounded-2xl"
+                            className="w-full rounded-2xl h-12"
+                            disabled={isCreating || !newListName.trim()}
                           >
-                            Create List
+                            {isCreating ? "Creating List..." : "Create List"}
                           </Button>
                         </div>
                       </DialogContent>
@@ -274,41 +326,66 @@ export default function ProfilePage() {
                   </div>
                 )}
 
+                {/* Rest of your lists display remains the same */}
                 {userLists.length > 0 ? (
                   <div className="space-y-8">
                     {userLists.map((list) => {
-                      const listBooks = mockBooks.filter((book) =>
-                        list.books.includes(book.id),
-                      );
+                      const listId = list._id || list.id;
 
                       return (
                         <div
-                          key={list.id}
+                          key={listId}
                           className="bg-card border border-border rounded-[2rem] p-8"
                         >
                           <div className="flex items-center justify-between mb-6">
-                            <h3 className="text-2xl font-serif">{list.name}</h3>
+                            <div>
+                              <h3 className="text-2xl font-serif">
+                                {list.title || list.name}
+                              </h3>
+                              {list.description && (
+                                <p className="text-muted-foreground mt-1 line-clamp-2">
+                                  {list.description}
+                                </p>
+                              )}
+                            </div>
 
                             {isOwnProfile && (
                               <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={() => handleDeleteList(list.id)}
+                                onClick={() => handleDeleteList(listId)}
+                                disabled={isDeleting}
                               >
                                 <Trash2 size={20} className="text-red-500" />
                               </Button>
                             )}
                           </div>
 
-                          {listBooks.length > 0 ? (
+                          {/* Visibility Badge */}
+                          <div className="mb-6">
+                            <Badge
+                              variant={
+                                list.isPublic === false
+                                  ? "secondary"
+                                  : "default"
+                              }
+                            >
+                              {list.isPublic === false ? "Private" : "Public"}
+                            </Badge>
+                          </div>
+
+                          {list.books?.length > 0 || list.items?.length > 0 ? (
                             <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-6">
-                              {listBooks.map((book) => (
-                                <BookPoster key={book.id} book={book} />
+                              {(list.books || list.items || []).map((book) => (
+                                <BookPoster
+                                  key={book._id || book.id}
+                                  book={book}
+                                />
                               ))}
                             </div>
                           ) : (
                             <p className="text-muted-foreground py-12 text-center">
-                              This list is empty.
+                              This list is empty. Start adding books!
                             </p>
                           )}
                         </div>

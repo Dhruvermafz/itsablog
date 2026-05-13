@@ -3,7 +3,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
+html {
+  font-size: clamp(14px, 1.2vw, 16px);
+}
 @layer base {
   :root {
     /* 🌤️ Light Mode - Paper Feel */
